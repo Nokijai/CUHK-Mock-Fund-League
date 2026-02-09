@@ -1,0 +1,8 @@
+<%= form_with model: [portfolio, trade] do |f| %>
+  <%= render "shared/errors", object: trade %>
+  <%= f.text_field :symbol, placeholder: "Symbol" %>
+  <%= f.select :trade_type, %w[buy sell] %>
+  <%= f.number_field :quantity, placeholder: "Quantity" %>
+  <%= f.number_field :price, placeholder: "Price", step: 0.01 %>
+  <%= f.submit %>
+<% end %>

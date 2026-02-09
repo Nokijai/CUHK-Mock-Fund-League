@@ -1,0 +1,19 @@
+<h1>Leaderboard: <%= @league.name %></h1>
+<table>
+  <thead>
+    <tr>
+      <th>Rank</th>
+      <th>Participant</th>
+      <th>Portfolio Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @rankings.each_with_index do |ranking, index| %>
+      <tr>
+        <td><%= index + 1 %></td>
+        <td><%= ranking[:name] %></td>
+        <td><%= ranking[:value] %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

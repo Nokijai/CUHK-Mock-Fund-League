@@ -1,0 +1,6 @@
+<h1>Trade History</h1>
+<ul>
+  <% @trades.each do |trade| %>
+    <li><%= trade.symbol %> - <%= trade.trade_type %> - <%= trade.quantity %> @ <%= trade.price %></li>
+  <% end %>
+</ul>

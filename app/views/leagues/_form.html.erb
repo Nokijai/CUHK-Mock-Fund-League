@@ -1,0 +1,9 @@
+<%= form_with model: league do |f| %>
+  <%= render "shared/errors", object: league %>
+  <%= f.text_field :name, placeholder: "Name" %>
+  <%= f.text_area :description, placeholder: "Description" %>
+  <%= f.number_field :starting_capital, placeholder: "Starting Capital" %>
+  <%= f.date_field :start_date %>
+  <%= f.date_field :end_date %>
+  <%= f.submit %>
+<% end %>

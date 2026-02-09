@@ -1,0 +1,4 @@
+<h1><%= @league.name %></h1>
+<p><%= @league.description %></p>
+<%= link_to "Edit", edit_league_path(@league) %>
+<%= link_to "Leaderboard", league_leaderboard_path(@league) %>
