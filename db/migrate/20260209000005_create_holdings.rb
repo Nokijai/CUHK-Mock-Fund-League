@@ -8,6 +8,6 @@ class CreateHoldings < ActiveRecord::Migration[8.0]
 
       t.timestamps
     end
-    add_index :holdings, [:portfolio_id, :symbol], unique: true
+    add_index :holdings, [ :portfolio_id, :symbol ], unique: true
   end
 end

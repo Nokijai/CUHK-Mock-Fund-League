@@ -24,11 +24,11 @@ gem "bcrypt", "~> 3.1.7"
 gem "devise"
 
 # Testing
-gem "rspec-rails", "~> 7.0", group: [:development, :test]
-gem "factory_bot_rails", group: [:development, :test]
-gem "database_cleaner-active_record", group: [:development, :test]
-gem "cucumber-rails", require: false, group: [:development, :test]
-gem "capybara", group: [:development, :test]
+gem "rspec-rails", "~> 7.0", group: [ :development, :test ]
+gem "factory_bot_rails", group: [ :development, :test ]
+gem "database_cleaner-active_record", group: [ :development, :test ]
+gem "cucumber-rails", require: false, group: [ :development, :test ]
+gem "capybara", group: [ :development, :test ]
 
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem
 gem "tzinfo-data", platforms: %i[ windows jruby ]

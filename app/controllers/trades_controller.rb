@@ -1,6 +1,6 @@
 class TradesController < ApplicationController
-  before_action :set_trade, only: [:show]
-  before_action :set_portfolio, only: [:new, :create]
+  before_action :set_trade, only: [ :show ]
+  before_action :set_portfolio, only: [ :new, :create ]
 
   def index
     @trades = Trade.all

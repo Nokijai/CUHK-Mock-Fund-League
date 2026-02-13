@@ -6,10 +6,10 @@ Rails.application.routes.draw do
   resources :leagues do
     get "leaderboard", to: "leaderboards#show", as: :leaderboard
   end
-  resources :league_memberships, only: [:index, :create, :destroy]
+  resources :league_memberships, only: [ :index, :create, :destroy ]
 
-  resources :portfolios, only: [:show] do
-    resources :trades, only: [:index, :new, :create, :show]
+  resources :portfolios, only: [ :show ] do
+    resources :trades, only: [ :index, :new, :create, :show ]
   end
 
   get "stocks/search", to: "stocks#search"
@@ -17,7 +17,7 @@ Rails.application.routes.draw do
 
   namespace :api do
     namespace :v1 do
-      resources :trades, only: [:create]
+      resources :trades, only: [ :create ]
       get "stock_prices/:symbol", to: "stock_prices#show", as: :stock_price
     end
   end

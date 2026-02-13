@@ -10,6 +10,6 @@ class CreateTrades < ActiveRecord::Migration[8.0]
 
       t.timestamps
     end
-    add_index :trades, [:portfolio_id, :executed_at]
+    add_index :trades, [ :portfolio_id, :executed_at ]
   end
 end

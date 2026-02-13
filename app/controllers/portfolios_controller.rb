@@ -1,5 +1,5 @@
 class PortfoliosController < ApplicationController
-  before_action :set_portfolio, only: [:show]
+  before_action :set_portfolio, only: [ :show ]
 
   def show
   end

@@ -1,5 +1,5 @@
 class LeaderboardsController < ApplicationController
-  before_action :set_league, only: [:show]
+  before_action :set_league, only: [ :show ]
 
   def show
     @rankings = LeaderboardService.new(@league).compute

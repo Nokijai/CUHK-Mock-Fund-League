@@ -1,5 +1,5 @@
 class LeagueMembershipsController < ApplicationController
-  before_action :set_league_membership, only: [:show, :destroy]
+  before_action :set_league_membership, only: [ :show, :destroy ]
 
   def index
     @league_memberships = LeagueMembership.all
