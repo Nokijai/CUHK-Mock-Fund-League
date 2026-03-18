@@ -5,7 +5,14 @@ class StocksController < ApplicationController
   end
 
   def show
-    @stock = StockPriceService.new.get_price(params[:symbol])
-    render json: @stock
+    @symbol = params[:symbol].upcase
+    service = StockPriceService.new
+    @quote = service.get_quote(@symbol)
+    @history = service.get_history(@symbol, range: params[:range] || "1mo")
+
+    respond_to do |format|
+      format.html
+      format.json { render json: { quote: @quote, history: @history } }
+    end
   end
 end

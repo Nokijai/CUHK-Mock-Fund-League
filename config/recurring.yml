@@ -1,0 +1,6 @@
+# Solid Queue recurring tasks
+# Run with: bin/jobs
+
+stock_price_update:
+  class: StockPriceUpdateAllJob
+  schedule: every 15 minutes
