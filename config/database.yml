@@ -21,8 +21,14 @@ default: &default
 
 
 development:
-  <<: *default
-  database: cuhk_mock_fund_league_development
+  primary:
+    <<: *default
+    database: cuhk_mock_fund_league_development
+  # Same DB as primary; Solid Queue uses this config for job/recurring tables.
+  queue:
+    <<: *default
+    database: cuhk_mock_fund_league_development
+    migrations_paths: db/queue_migrate
 
   # The specified database role being used to connect to PostgreSQL.
   # To create additional roles in PostgreSQL see `$ createuser --help`.
@@ -87,18 +93,25 @@ test:
 production:
   primary: &primary_production
     <<: *default
-    database: cuhk_mock_fund_league_production
-    username: cuhk_mock_fund_league
-    password: <%= ENV["CUHK_MOCK_FUND_LEAGUE_DATABASE_PASSWORD"] %>
+    # Production MUST be configured via environment variables (never commit credentials).
+    #
+    # - Heroku: DATABASE_URL is provided automatically when you attach a Postgres add-on.
+    # - RDS/other: set DATABASE_URL yourself, e.g.
+    #   postgres://USER:PASSWORD@HOST:5432/DBNAME
+    url: <%= ENV["DATABASE_URL"] %>
   cache:
     <<: *primary_production
-    database: cuhk_mock_fund_league_production_cache
+    # By default we reuse DATABASE_URL for cache/queue/cable as well.
+    # If you split databases later, set CACHE_DATABASE_URL.
+    url: <%= ENV["CACHE_DATABASE_URL"] || ENV["DATABASE_URL"] %>
     migrations_paths: db/cache_migrate
   queue:
     <<: *primary_production
-    database: cuhk_mock_fund_league_production_queue
+    # If you split databases later, set QUEUE_DATABASE_URL.
+    url: <%= ENV["QUEUE_DATABASE_URL"] || ENV["DATABASE_URL"] %>
     migrations_paths: db/queue_migrate
   cable:
     <<: *primary_production
-    database: cuhk_mock_fund_league_production_cable
+    # If you split databases later, set CABLE_DATABASE_URL.
+    url: <%= ENV["CABLE_DATABASE_URL"] || ENV["DATABASE_URL"] %>
     migrations_paths: db/cable_migrate

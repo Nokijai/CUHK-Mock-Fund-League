@@ -1,4 +1,8 @@
 <%= form_with model: [ portfolio, trade ], class: "terminal-form" do |f| %>
+  <%# Keep ticker search filter after a failed submit (matches assign_available_stocks). %>
+  <%= hidden_field_tag :q, params[:q] if params[:q].present? %>
+  <%# Preserve selected chart interval when re-rendering after validation errors. %>
+  <%= hidden_field_tag :quote_interval, @quote_interval if defined?(@quote_interval) && @quote_interval.present? %>
   <%= render "shared/errors", object: trade %>
   <div class="terminal-form-grid">
     <div class="terminal-field">

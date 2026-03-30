@@ -10,9 +10,10 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_09_000007) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_30_000001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
+  enable_extension "pg_stat_statements"
 
   create_table "holdings", force: :cascade do |t|
     t.decimal "average_cost", precision: 15, scale: 4, default: "0.0"
@@ -57,6 +58,22 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_09_000007) do
     t.index ["league_id"], name: "index_portfolios_on_league_id"
     t.index ["user_id", "league_id"], name: "index_portfolios_on_user_id_and_league_id", unique: true
     t.index ["user_id"], name: "index_portfolios_on_user_id"
+  end
+
+  create_table "stock_candles", force: :cascade do |t|
+    t.datetime "candle_at", null: false
+    t.decimal "close", precision: 15, scale: 4
+    t.datetime "created_at", null: false
+    t.decimal "high", precision: 15, scale: 4
+    t.string "interval", null: false
+    t.decimal "low", precision: 15, scale: 4
+    t.decimal "open", precision: 15, scale: 4
+    t.string "symbol", null: false
+    t.datetime "updated_at", null: false
+    t.decimal "volume", precision: 20, scale: 2
+    t.index ["candle_at"], name: "index_stock_candles_on_candle_at"
+    t.index ["symbol", "interval", "candle_at"], name: "index_stock_candles_on_symbol_interval_candle_at", unique: true
+    t.index ["symbol", "interval"], name: "index_stock_candles_on_symbol_and_interval"
   end
 
   create_table "stock_prices", force: :cascade do |t|

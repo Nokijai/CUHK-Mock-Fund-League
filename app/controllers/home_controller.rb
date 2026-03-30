@@ -21,6 +21,17 @@ class HomeController < ApplicationController
     @market_movers = market_movers_rows
   end
 
+  # Handles GET /trading (nav link, bookmarks, SW). Resolves portfolio on the server so
+  # the header does not need a separate nav_p check that could disagree with the DB.
+  def trading_redirect
+    portfolio = demo_focus_portfolio
+    if portfolio
+      redirect_to new_portfolio_trade_path(portfolio), status: :see_other
+    else
+      redirect_to leagues_path, status: :see_other
+    end
+  end
+
   private
 
   def demo_focus_portfolio
@@ -64,24 +75,16 @@ class HomeController < ApplicationController
     end.sort_by { |r| -r[:mkt] }.first(4)
   end
 
-  MOVER_CHG = {
-    "NVDA" => 2.31, "AAPL" => 1.15, "MSFT" => -0.42, "GOOGL" => 0.88, "0700" => -1.05, "META" => 0.55
-  }.freeze
-
-  MOVER_LABELS = {
-    "NVDA" => "NVIDIA Corp", "AAPL" => "Apple Inc", "MSFT" => "Microsoft", "GOOGL" => "Alphabet",
-    "0700" => "Tencent", "META" => "Meta Platforms"
-  }.freeze
-
   def market_movers_rows
-    %w[NVDA AAPL MSFT GOOGL 0700].filter_map do |sym|
+    # Surface a slice of the Nestak watchlist; prices come from DB (refreshed by jobs).
+    MarketData::NestakTop30::SYMBOLS.first(6).filter_map do |sym|
       sp = StockPrice.find_by(symbol: sym)
       next unless sp
       {
         symbol: sym,
-        name: MOVER_LABELS[sym] || sym,
+        name: MarketData::NestakTop30::DISPLAY_NAMES[sym] || sym,
         price: sp.price.to_f,
-        chg: MOVER_CHG[sym] || 0.0
+        chg: 0.0
       }
     end
   end

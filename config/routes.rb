@@ -3,6 +3,9 @@ Rails.application.routes.draw do
 
   root "home#dashboard"
 
+  # Bookmark / cache may still request /trading; redirect to real nested trade URL.
+  get "trading", to: "home#trading_redirect", as: :trading
+
   resources :leagues do
     get "leaderboard", to: "leaderboards#show", as: :leaderboard
   end
