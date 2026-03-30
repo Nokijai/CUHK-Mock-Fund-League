@@ -1,8 +1,25 @@
-<%= form_with model: [portfolio, trade] do |f| %>
+<%= form_with model: [ portfolio, trade ], class: "terminal-form" do |f| %>
   <%= render "shared/errors", object: trade %>
-  <%= f.text_field :symbol, placeholder: "Symbol" %>
-  <%= f.select :trade_type, %w[buy sell] %>
-  <%= f.number_field :quantity, placeholder: "Quantity" %>
-  <%= f.number_field :price, placeholder: "Price", step: 0.01 %>
-  <%= f.submit %>
+  <div class="terminal-form-grid">
+    <div class="terminal-field">
+      <%= f.label :symbol, "SYMBOL", class: "terminal-label" %>
+      <%= f.text_field :symbol, class: "terminal-input", placeholder: "AAPL", required: true %>
+    </div>
+    <div class="terminal-field">
+      <%= f.label :trade_type, "SIDE", class: "terminal-label" %>
+      <%= f.select :trade_type, %w[buy sell], {}, class: "terminal-input terminal-select" %>
+    </div>
+    <div class="terminal-field">
+      <%= f.label :quantity, "QUANTITY", class: "terminal-label" %>
+      <%= f.number_field :quantity, class: "terminal-input", min: 1, required: true %>
+    </div>
+    <div class="terminal-field">
+      <%= f.label :price, "LIMIT / EXEC PRICE", class: "terminal-label" %>
+      <%= f.number_field :price, class: "terminal-input", step: 0.01, min: 0, required: true %>
+    </div>
+  </div>
+  <div class="terminal-form-actions">
+    <%= f.submit "SUBMIT ORDER", class: "terminal-btn terminal-btn-primary" %>
+    <%= link_to "BACK TO PORTFOLIO", portfolio_path(portfolio), class: "terminal-btn" %>
+  </div>
 <% end %>

@@ -1,2 +1,44 @@
-<h1>New Trade</h1>
-<%= render "trade_form", trade: @trade, portfolio: @portfolio %>
+<% content_for :title, "Trading — MOCK-FUND" %>
+<div class="terminal-page-head">
+  <h1 class="terminal-page-title">NEW TRADE</h1>
+  <div class="terminal-page-meta"><%= @portfolio.user&.name %> · <%= @portfolio.league&.name %> · Cash <%= number_to_currency(@portfolio.cash_balance, precision: 2) %></div>
+</div>
+<div class="terminal-trading-grid">
+  <div class="terminal-form-shell terminal-form-shell--narrow">
+    <%= render "trade_form", trade: @trade, portfolio: @portfolio %>
+  </div>
+  <div class="terminal-window terminal-available-stocks">
+    <div class="terminal-window-title">AVAILABLE STOCKS</div>
+    <p class="terminal-stocks-hint">Reference prices · click USE to fill symbol and price</p>
+    <div class="terminal-stocks-scroll">
+      <table class="terminal-table terminal-table-compact">
+        <thead>
+          <tr>
+            <th>SYM</th>
+            <th>NAME</th>
+            <th class="num">LAST</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if @available_stocks.any? %>
+            <% @available_stocks.each do |sp| %>
+              <tr>
+                <td><strong><%= sp.symbol %></strong></td>
+                <td class="terminal-ellipsis terminal-stock-name"><%= stock_name_for(sp.symbol) %></td>
+                <td class="num"><%= number_to_currency(sp.price, precision: 2) %></td>
+                <td class="terminal-stock-use">
+                  <%= link_to "USE", new_portfolio_trade_path(@portfolio, prefill_symbol: sp.symbol, prefill_price: sp.price), class: "terminal-link-use" %>
+                </td>
+              </tr>
+            <% end %>
+          <% else %>
+            <tr>
+              <td colspan="4" class="terminal-muted-cell">No quotes loaded. Run <code>bin/rails db:seed</code>.</td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

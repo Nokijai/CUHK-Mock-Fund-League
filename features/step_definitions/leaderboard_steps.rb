@@ -4,5 +4,5 @@ Given("I am viewing a league leaderboard") do
 end
 
 Then("I should see the leaderboard") do
-  expect(page).to have_content("Leaderboard")
+  expect(page).to have_content("LEADERBOARD")
 end

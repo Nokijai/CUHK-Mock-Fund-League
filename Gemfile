@@ -21,7 +21,10 @@ gem "jbuilder"
 gem "bcrypt", "~> 3.1.7"
 
 # User authentication
-gem "devise"
+gem "devise", ">= 5.0.3"
+gem "rack", ">= 3.2.5"
+gem "nokogiri", ">= 1.19.1"
+gem "action_text-trix", ">= 2.1.17"
 
 # Testing
 gem "rspec-rails", "~> 7.0", group: [ :development, :test ]

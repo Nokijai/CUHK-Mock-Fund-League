@@ -1,7 +1,7 @@
 Rails.application.routes.draw do
   get "up" => "rails/health#show", as: :rails_health_check
 
-  root "home#index"
+  root "home#dashboard"
 
   resources :leagues do
     get "leaderboard", to: "leaderboards#show", as: :leaderboard

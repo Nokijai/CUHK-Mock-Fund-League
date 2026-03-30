@@ -1,16 +1,20 @@
 class TradesController < ApplicationController
   before_action :set_trade, only: [ :show ]
-  before_action :set_portfolio, only: [ :new, :create ]
+  before_action :set_portfolio, only: [ :index, :new, :create ]
 
   def index
-    @trades = Trade.all
+    @trades = @portfolio.trades
   end
 
   def show
   end
 
   def new
-    @trade = Trade.new(portfolio: @portfolio)
+    sym = params[:prefill_symbol].to_s.upcase.presence
+    pr = params[:prefill_price]
+    price = pr.present? ? BigDecimal(pr.to_s) : nil
+    @trade = Trade.new(portfolio: @portfolio, symbol: sym, price: price)
+    @available_stocks = StockPrice.order(:symbol)
   end
 
   def create
@@ -18,6 +22,7 @@ class TradesController < ApplicationController
     if @trade.save
       redirect_to @portfolio, notice: "Trade was successfully executed."
     else
+      @available_stocks = StockPrice.order(:symbol)
       render :new, status: :unprocessable_entity
     end
   end

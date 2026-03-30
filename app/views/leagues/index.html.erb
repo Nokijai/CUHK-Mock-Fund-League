@@ -1,7 +1,36 @@
-<h1>Leagues</h1>
-<%= link_to "New League", new_league_path %>
-<ul>
-  <% @leagues.each do |league| %>
-    <li><%= link_to league.name, league_path(league) %></li>
+<% content_for :title, "Leagues — MOCK-FUND" %>
+<div class="terminal-page-head terminal-page-head--row">
+  <div>
+    <h1 class="terminal-page-title">LEAGUES</h1>
+    <div class="terminal-page-meta">Select a competition</div>
+  </div>
+  <%= link_to "CREATE LEAGUE", new_league_path, class: "terminal-btn terminal-btn-primary" %>
+</div>
+<div class="terminal-window">
+  <table class="terminal-table">
+    <thead>
+      <tr>
+        <th>NAME</th>
+        <th class="num">START CAPITAL</th>
+        <th>DATES</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @leagues.each do |league| %>
+        <tr>
+          <td><strong><%= league.name %></strong></td>
+          <td class="num"><%= number_to_currency(league.starting_capital, precision: 0) %></td>
+          <td class="terminal-muted-cell"><%= league.start_date %> → <%= league.end_date %></td>
+          <td class="terminal-table-actions">
+            <%= link_to "OPEN", league_path(league) %>
+            <%= link_to "RANK", league_leaderboard_path(league) %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+  <% if @leagues.empty? %>
+    <p class="terminal-empty">No leagues. <%= link_to "Create one", new_league_path %>.</p>
   <% end %>
-</ul>
+</div>

@@ -1,76 +1,89 @@
-# Create sample data for development
+require "bcrypt"
 
-# Users
-admin = User.create!(email: "admin@example.com", name: "Admin", password_digest: BCrypt::Password.create("password123"), role: "admin")
-user1 = User.create!(email: "alice@example.com", name: "Alice Wong", password_digest: BCrypt::Password.create("password123"), role: "user")
-user2 = User.create!(email: "bob@example.com", name: "Bob Chan", password_digest: BCrypt::Password.create("password123"), role: "user")
-user3 = User.create!(email: "charlie@example.com", name: "Charlie Lee", password_digest: BCrypt::Password.create("password123"), role: "user")
+StockPrice.delete_all
+Trade.delete_all
+Holding.delete_all
+Portfolio.delete_all
+LeagueMembership.delete_all
+League.delete_all
+User.delete_all
 
-# Leagues
-league1 = League.create!(
-  name: "CUHK Spring 2026 League",
-  description: "Mock trading competition for CUHK students",
-  start_date: Date.today,
-  end_date: Date.today + 90.days,
-  starting_capital: 100000.00
-)
-
-league2 = League.create!(
-  name: "Beginner League",
-  description: "Practice league for new traders",
-  start_date: Date.today,
-  end_date: Date.today + 30.days,
-  starting_capital: 50000.00
-)
-
-# League Memberships
-[user1, user2, user3].each do |user|
-  LeagueMembership.create!(user: user, league: league1, joined_at: Time.current)
+def digest(pw)
+  BCrypt::Password.create(pw)
 end
 
-[user1, user2].each do |user|
-  LeagueMembership.create!(user: user, league: league2, joined_at: Time.current)
+[
+  [ "AAPL", 189.23 ],
+  [ "MSFT", 378.50 ],
+  [ "GOOGL", 141.20 ],
+  [ "NVDA", 875.10 ],
+  [ "0700", 328.00 ],
+  [ "META", 485.30 ]
+].each do |sym, pr|
+  StockPrice.create!(symbol: sym, price: pr, updated_at: Time.current)
 end
 
-# Portfolios
-portfolio1 = Portfolio.create!(user: user1, league: league1, cash_balance: 95000.00, total_value: 100500.00)
-portfolio2 = Portfolio.create!(user: user2, league: league1, cash_balance: 80000.00, total_value: 102000.00)
-portfolio3 = Portfolio.create!(user: user3, league: league1, cash_balance: 100000.00, total_value: 100000.00)
+league = League.create!(
+  name: "Spring 2026 Competition",
+  description: "CUHK Mock-Fund virtual trading league. Virtual capital only.",
+  starting_capital: 100_000,
+  start_date: Date.current - 30,
+  end_date: Date.current + 90,
+  rules: { "max_position_pct" => 25 }
+)
 
-# Stock Prices
-stocks = [
-  { symbol: "AAPL", price: 178.50 },
-  { symbol: "GOOGL", price: 141.25 },
-  { symbol: "MSFT", price: 415.80 },
-  { symbol: "TSLA", price: 175.30 },
-  { symbol: "AMZN", price: 178.90 },
-  { symbol: "NVDA", price: 875.50 },
-  { symbol: "META", price: 505.75 },
-  { symbol: "0700.HK", price: 298.40 },
-  { symbol: "9988.HK", price: 72.85 },
-  { symbol: "1299.HK", price: 45.20 }
+participants = [
+  { name: "Alex Chen", cash: 900, holdings: { "NVDA" => [ 135, 800.0 ] } },
+  { name: "Jordan Lee", cash: 200, holdings: { "MSFT" => [ 200, 360.0 ], "GOOGL" => [ 274, 135.0 ] } },
+  { name: "Demo Trader", cash: 61_331.50, holdings: { "0700" => [ 100, 312.50 ], "AAPL" => [ 50, 178.20 ] } },
+  { name: "Sam Wong", cash: 10_000, holdings: { "META" => [ 60, 470.0 ], "0700" => [ 80, 315.0 ] } },
+  { name: "Taylor Ho", cash: 30_000, holdings: { "GOOGL" => [ 450, 135.0 ] } },
+  { name: "Riley Au", cash: 55_000, holdings: { "AAPL" => [ 100, 182.0 ] } },
+  { name: "Casey Lam", cash: 40_000, holdings: { "MSFT" => [ 50, 365.0 ], "NVDA" => [ 10, 820.0 ] } },
+  { name: "Morgan Yip", cash: 85_000, holdings: {} },
+  { name: "Jamie Ng", cash: 25_000, holdings: { "0700" => [ 170, 308.0 ] } },
+  { name: "Quinn Lau", cash: 35_000, holdings: { "NVDA" => [ 50, 820.0 ] } },
+  { name: "Blake Cheung", cash: 70_000, holdings: { "AAPL" => [ 30, 184.0 ] } },
+  { name: "Sky Mak", cash: 58_000, holdings: { "MSFT" => [ 40, 372.0 ] } }
 ]
 
-stocks.each do |stock|
-  StockPrice.create!(symbol: stock[:symbol], price: stock[:price])
+participants.each_with_index do |row, i|
+  u = User.create!(
+    email: "participant#{i + 1}@demo.local",
+    name: row[:name],
+    role: "participant",
+    password_digest: digest("password")
+  )
+  LeagueMembership.create!(user: u, league: league, joined_at: Time.current - rand(20).days)
+  p = Portfolio.create!(user: u, league: league, cash_balance: row[:cash], total_value: 0)
+  row[:holdings].each do |sym, (qty, avg)|
+    Holding.create!(portfolio: p, symbol: sym, quantity: qty, average_cost: avg)
+  end
 end
 
-# Holdings
-Holding.create!(portfolio: portfolio1, symbol: "AAPL", quantity: 20, average_cost: 175.00)
-Holding.create!(portfolio: portfolio1, symbol: "GOOGL", quantity: 15, average_cost: 140.00)
-Holding.create!(portfolio: portfolio2, symbol: "MSFT", quantity: 30, average_cost: 410.00)
-Holding.create!(portfolio: portfolio2, symbol: "NVDA", quantity: 10, average_cost: 850.00)
+admin = User.create!(
+  email: "admin@demo.local",
+  name: "League Admin",
+  role: "admin",
+  password_digest: digest("password")
+)
+LeagueMembership.create!(user: admin, league: league, joined_at: Time.current)
 
-# Trades
-Trade.create!(portfolio: portfolio1, symbol: "AAPL", trade_type: "buy", quantity: 20, price: 175.00, executed_at: 2.days.ago)
-Trade.create!(portfolio: portfolio1, symbol: "GOOGL", trade_type: "buy", quantity: 15, price: 140.00, executed_at: 1.day.ago)
-Trade.create!(portfolio: portfolio2, symbol: "MSFT", trade_type: "buy", quantity: 30, price: 410.00, executed_at: 3.days.ago)
-Trade.create!(portfolio: portfolio2, symbol: "NVDA", trade_type: "buy", quantity: 10, price: 850.00, executed_at: 1.day.ago)
+demo_user = User.find_by(name: "Demo Trader")
+demo_p = demo_user.portfolios.first
+[
+  [ "0700", "buy", 100, 312.50 ],
+  [ "AAPL", "buy", 50, 178.20 ],
+  [ "0700", "buy", 20, 305.00 ]
+].each do |sym, ttype, qty, pr|
+  Trade.create!(
+    portfolio: demo_p,
+    symbol: sym,
+    trade_type: ttype,
+    quantity: qty,
+    price: pr,
+    executed_at: Time.current - rand(1..10).days
+  )
+end
 
-puts "Seed data created successfully!"
-puts "Users: #{User.count}"
-puts "Leagues: #{League.count}"
-puts "Portfolios: #{Portfolio.count}"
-puts "Stock Prices: #{StockPrice.count}"
-puts "Holdings: #{Holding.count}"
-puts "Trades: #{Trade.count}"
+puts "Seeded league=#{league.name}, users=#{User.count}. Demo login: participant3@demo.local / password"

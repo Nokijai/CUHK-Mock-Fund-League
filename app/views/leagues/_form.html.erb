@@ -1,9 +1,29 @@
-<%= form_with model: league do |f| %>
+<%= form_with model: league, class: "terminal-form" do |f| %>
   <%= render "shared/errors", object: league %>
-  <%= f.text_field :name, placeholder: "Name" %>
-  <%= f.text_area :description, placeholder: "Description" %>
-  <%= f.number_field :starting_capital, placeholder: "Starting Capital" %>
-  <%= f.date_field :start_date %>
-  <%= f.date_field :end_date %>
-  <%= f.submit %>
+  <div class="terminal-form-grid">
+    <div class="terminal-field">
+      <%= f.label :name, "LEAGUE NAME", class: "terminal-label" %>
+      <%= f.text_field :name, class: "terminal-input", placeholder: "e.g. Fall 2026 Cup", required: true %>
+    </div>
+    <div class="terminal-field terminal-field-full">
+      <%= f.label :description, "DESCRIPTION", class: "terminal-label" %>
+      <%= f.text_area :description, class: "terminal-input terminal-textarea", rows: 4, placeholder: "Rules summary for participants" %>
+    </div>
+    <div class="terminal-field">
+      <%= f.label :starting_capital, "STARTING CAPITAL (USD)", class: "terminal-label" %>
+      <%= f.number_field :starting_capital, class: "terminal-input", value: league.starting_capital.presence || 100_000, min: 1, step: 1000 %>
+    </div>
+    <div class="terminal-field">
+      <%= f.label :start_date, "START DATE", class: "terminal-label" %>
+      <%= f.date_field :start_date, class: "terminal-input" %>
+    </div>
+    <div class="terminal-field">
+      <%= f.label :end_date, "END DATE", class: "terminal-label" %>
+      <%= f.date_field :end_date, class: "terminal-input" %>
+    </div>
+  </div>
+  <div class="terminal-form-actions">
+    <%= f.submit league.persisted? ? "UPDATE LEAGUE" : "CREATE LEAGUE", class: "terminal-btn terminal-btn-primary" %>
+    <%= link_to "CANCEL", leagues_path, class: "terminal-btn" %>
+  </div>
 <% end %>
