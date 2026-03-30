@@ -1,0 +1,41 @@
+<div style="display: flex; align-items: center; justify-content: center; min-height: calc(100vh - 60px); padding: 2rem;">
+  <div class="terminal-form-shell terminal-form-shell--narrow" style="width: 100%; max-width: 480px;">
+    <div class="terminal-window">
+      <div class="terminal-window-title">REGISTER</div>
+      <div style="padding: 1.5rem;">
+        <%= form_for(resource, as: resource_name, url: registration_path(resource_name)) do |f| %>
+          <%= render "devise/shared/error_messages", resource: resource %>
+
+          <div style="margin-bottom: 1rem;">
+            <%= f.label :name, "NAME", class: "terminal-label" %>
+            <%= f.text_field :name, class: "terminal-input", placeholder: "Your full name" %>
+          </div>
+
+          <div style="margin-bottom: 1rem;">
+            <%= f.label :email, "EMAIL", class: "terminal-label" %>
+            <%= f.email_field :email, autofocus: true, autocomplete: "email", class: "terminal-input", placeholder: "user@example.com" %>
+          </div>
+
+          <div style="margin-bottom: 1rem;">
+            <%= f.label :password, "PASSWORD", class: "terminal-label" %>
+            <div style="font-size: 10px; color: var(--terminal-muted); margin-top: 0.25rem; margin-bottom: 0.35rem;">
+              Must be at least 8 characters with uppercase, lowercase, number, and special character
+            </div>
+            <%= f.password_field :password, autocomplete: "new-password", class: "terminal-input", placeholder: "Enter password" %>
+          </div>
+
+          <div style="margin-bottom: 1rem;">
+            <%= f.label :password_confirmation, "CONFIRM PASSWORD", class: "terminal-label" %>
+            <%= f.password_field :password_confirmation, autocomplete: "new-password", class: "terminal-input", placeholder: "Re-enter password" %>
+          </div>
+
+          <div class="terminal-form-actions" style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--terminal-border);">
+            <%= f.submit "SIGN UP", class: "terminal-btn terminal-btn-primary" %>
+          </div>
+        <% end %>
+
+        <%= render "devise/shared/links" %>
+      </div>
+    </div>
+  </div>
+</div>
