@@ -1,13 +1,14 @@
 <% content_for :title, "Leaderboard — #{@league.name}" %>
 
-<div class="lb-page" data-current-user-id="<%= @current_user_id %>">
+<div class="lb-page" data-current-user-id="<%= @current_user_id %>"
+     data-end-time="<%= @league.end_date&.to_time&.end_of_day&.to_i&.*(1000) %>">
 
-  <%# ── Competition Selector Bar ── %>
+  <%# ── League Selector Bar ── %>
   <div class="lb-comp-bar">
     <div class="lb-comp-selector">
-      <span class="lb-comp-label">COMPETITION</span>
+      <span class="lb-comp-label">LEAGUE</span>
       <div class="lb-comp-dropdown">
-        <button class="lb-comp-current" onclick="this.parentElement.classList.toggle('open')">
+        <button class="lb-comp-current" type="button" onclick="this.parentElement.classList.toggle('open')">
           <%= @league.name.upcase %>
           <span class="lb-comp-arrow">▾</span>
         </button>
@@ -22,9 +23,9 @@
       </div>
     </div>
     <div class="lb-comp-actions">
-      <button class="terminal-btn" onclick="document.getElementById('lb-prizes-modal').style.display='flex'">VIEW PRIZES</button>
+      <button class="terminal-btn" type="button" onclick="document.getElementById('lb-prizes-modal').style.display='flex'">PRIZES</button>
       <%= link_to "RULES", league_path(@league), class: "terminal-btn" %>
-      <%= link_to "BACK TO LEAGUE", league_path(@league), class: "terminal-btn" %>
+      <%= link_to "BACK", league_path(@league), class: "terminal-btn" %>
     </div>
   </div>
 
@@ -38,10 +39,10 @@
         <span class="lb-status-value lb-status-live">LIVE</span>
       <% end %>
     </div>
-    <div class="lb-status-item">
+    <div class="lb-status-item lb-status-timer">
       <span class="lb-status-label">TIME REMAINING</span>
       <% if @league.end_date && @league.end_date >= Date.current %>
-        <span class="lb-status-value" id="lb-countdown" data-end="<%= @end_timestamp %>">--D --:--:--</span>
+        <span class="lb-status-value lb-countdown" id="lb-countdown">--D --:--:--</span>
       <% elsif @league.end_date %>
         <span class="lb-status-value lb-status-finished">ENDED</span>
       <% else %>
@@ -66,9 +67,9 @@
   <%# ── Main Content: Table + Detail Panel ── %>
   <div class="lb-content">
 
-    <%# ── Leaderboard Table ── %>
+    <%# ── Leaderboard Table (Left) ── %>
     <div class="lb-table-wrap">
-      <div class="terminal-window">
+      <div class="terminal-window lb-table-window">
         <div class="terminal-window-title">RANKINGS</div>
         <div class="lb-table-scroll" id="lb-table-scroll">
           <table class="terminal-table lb-table">
@@ -76,9 +77,8 @@
               <tr>
                 <th class="num lb-col-rank">RANK</th>
                 <th class="lb-col-name">NAME</th>
-                <th class="num lb-col-value">PORTFOLIO VALUE</th>
                 <th class="num lb-col-return">RETURN %</th>
-                <th class="num lb-col-gain">GAIN/LOSS</th>
+                <th class="num lb-col-value">PORTFOLIO VALUE</th>
                 <th class="lb-col-trend">TREND</th>
               </tr>
             </thead>
@@ -95,18 +95,15 @@
                     <% end %>
                   </td>
                   <td class="lb-name-cell"><%= row[:name] %></td>
-                  <td class="num"><%= number_to_currency(row[:portfolio_value], precision: 2) %></td>
                   <td class="num <%= row[:total_return_pct] >= 0 ? 'terminal-text-up' : 'terminal-text-down' %>">
                     <%= sprintf("%+.2f%%", row[:total_return_pct]) %>
                   </td>
-                  <td class="num <%= row[:portfolio_value] - row[:starting_balance] >= 0 ? 'terminal-text-up' : 'terminal-text-down' %>">
-                    <%= number_to_currency(row[:portfolio_value] - row[:starting_balance], precision: 2) %>
-                  </td>
+                  <td class="num"><%= number_to_currency(row[:portfolio_value], precision: 2) %></td>
                   <td class="lb-trend-cell">
-                    <svg class="lb-sparkline" viewBox="0 0 80 20" preserveAspectRatio="none">
+                    <svg class="lb-sparkline" viewBox="0 0 70 20" preserveAspectRatio="none">
                       <% vals = row[:trend] %>
                       <% mn = vals.min.to_f; mx = vals.max.to_f; rng = mx - mn; rng = 1 if rng < 1 %>
-                      <% pts = vals.each_with_index.map { |v, j| x = (j.to_f / (vals.size - 1) * 78 + 1).round(1); y = (19 - (v - mn) / rng * 17).round(1); "#{x},#{y}" }.join(" ") %>
+                      <% pts = vals.each_with_index.map { |v, j| x = (j.to_f / (vals.size - 1) * 68 + 1).round(1); y = (18 - (v - mn) / rng * 16).round(1); "#{x},#{y}" }.join(" ") %>
                       <polyline fill="none"
                                 stroke="<%= row[:total_return_pct] >= 0 ? '#30d158' : '#ff453a' %>"
                                 stroke-width="1.5"
@@ -137,9 +134,9 @@
       </div>
     </div>
 
-    <%# ── Detail Panel (Right Side) ── %>
+    <%# ── Detail Panel (Right) ── %>
     <div class="lb-detail-panel" id="lb-detail-panel">
-      <div class="lb-detail-placeholder">
+      <div class="lb-detail-placeholder" id="lb-detail-placeholder">
         <span class="lb-detail-icon">◉</span>
         <p>Select a participant to view details</p>
       </div>
@@ -157,24 +154,30 @@
           <div class="lb-detail-stats">
             <div class="lb-detail-stat">
               <span class="lb-detail-stat-label">STARTING BALANCE</span>
-              <span class="lb-detail-stat-value"><%= number_to_currency(row[:starting_balance], precision: 2) %></span>
+              <span class="lb-detail-stat-value"><%= number_to_currency(row[:starting_balance], precision: 0) %></span>
             </div>
             <div class="lb-detail-stat">
               <span class="lb-detail-stat-label">CURRENT EQUITY</span>
-              <span class="lb-detail-stat-value"><%= number_to_currency(row[:current_equity], precision: 2) %></span>
+              <span class="lb-detail-stat-value"><%= number_to_currency(row[:current_equity], precision: 0) %></span>
             </div>
             <div class="lb-detail-stat">
               <span class="lb-detail-stat-label">CURRENT CASH</span>
-              <span class="lb-detail-stat-value"><%= number_to_currency(row[:current_cash], precision: 2) %></span>
+              <span class="lb-detail-stat-value"><%= number_to_currency(row[:current_cash], precision: 0) %></span>
             </div>
             <div class="lb-detail-stat">
               <span class="lb-detail-stat-label">PORTFOLIO VALUE</span>
-              <span class="lb-detail-stat-value"><%= number_to_currency(row[:portfolio_value], precision: 2) %></span>
+              <span class="lb-detail-stat-value"><%= number_to_currency(row[:portfolio_value], precision: 0) %></span>
             </div>
             <div class="lb-detail-stat">
               <span class="lb-detail-stat-label">TOTAL RETURN</span>
               <span class="lb-detail-stat-value <%= row[:total_return_pct] >= 0 ? 'terminal-text-up' : 'terminal-text-down' %>">
                 <%= sprintf("%+.2f%%", row[:total_return_pct]) %>
+              </span>
+            </div>
+            <div class="lb-detail-stat">
+              <span class="lb-detail-stat-label">DAILY CHANGE</span>
+              <span class="lb-detail-stat-value <%= row[:daily_change_pct] >= 0 ? 'terminal-text-up' : 'terminal-text-down' %>">
+                <%= sprintf("%+.2f%%", row[:daily_change_pct]) %>
               </span>
             </div>
             <div class="lb-detail-stat">
@@ -189,59 +192,52 @@
               <span class="lb-detail-stat-label">MAX DRAWDOWN</span>
               <span class="lb-detail-stat-value terminal-text-down"><%= sprintf("%.2f%%", row[:max_drawdown_pct]) %></span>
             </div>
+            <div class="lb-detail-stat">
+              <span class="lb-detail-stat-label">GAIN / LOSS</span>
+              <% gain = row[:portfolio_value] - row[:starting_balance] %>
+              <span class="lb-detail-stat-value <%= gain >= 0 ? 'terminal-text-up' : 'terminal-text-down' %>">
+                <%= number_to_currency(gain, precision: 0) %>
+              </span>
+            </div>
           </div>
 
+          <%# ── Equity Curve Chart ── %>
           <div class="lb-detail-chart-section">
-            <div class="lb-detail-chart-title">EQUITY CURVE (30-DAY HISTORY)</div>
+            <div class="lb-detail-chart-title">BALANCE HISTORY</div>
             <div class="lb-detail-chart-container">
-              <div class="lb-detail-chart-yaxis">
+              <%# Y-axis labels %>
+              <div class="lb-chart-yaxis">
                 <% vals = row[:trend]; mn = vals.min.to_f; mx = vals.max.to_f; rng = mx - mn; rng = 1 if rng < 1 %>
-                <% steps = 5 %>
-                <% (0..steps).each do |i| %>
-                  <span><%= number_to_currency(mx - (i * rng / steps), precision: 0) %></span>
-                <% end %>
+                <span><%= number_to_currency(mx, precision: 0) %></span>
+                <span><%= number_to_currency(mn + rng * 0.75, precision: 0) %></span>
+                <span><%= number_to_currency(mn + rng * 0.5, precision: 0) %></span>
+                <span><%= number_to_currency(mn + rng * 0.25, precision: 0) %></span>
+                <span><%= number_to_currency(mn, precision: 0) %></span>
               </div>
-              <div class="lb-detail-chart-main">
-                <div class="lb-detail-chart-wrap">
-                  <svg class="lb-detail-chart-svg" viewBox="0 0 400 120" preserveAspectRatio="none">
-                    <%# Grid lines %>
-                    <defs>
-                      <pattern id="grid-<%= row[:user_id] %>" width="40" height="20" patternUnits="userSpaceOnUse">
-                        <path d="M 40 0 L 0 0 0 20" fill="none" stroke="#3a3a3c" stroke-width="0.5" opacity="0.3"/>
-                      </pattern>
-                    </defs>
-                    <rect width="400" height="120" fill="url(#grid-<%= row[:user_id] %>)"/>
-                    
-                    <%# Area fill %>
-                    <% step_x = 400.0 / (vals.size - 1) %>
-                    <% area_pts = vals.each_with_index.map { |v, j| "#{(j * step_x).round(1)},#{(115 - (v - mn) / rng * 105).round(1)}" } %>
-                    <polygon fill="<%= row[:total_return_pct] >= 0 ? 'rgba(48,209,88,0.15)' : 'rgba(255,69,58,0.15)' %>"
-                             points="0,115 <%= area_pts.join(' ') %> 400,115" />
-                    
-                    <%# Line %>
+              <div class="lb-chart-main">
+                <div class="lb-chart-svg-wrap">
+                  <svg class="lb-detail-chart-svg" viewBox="0 0 280 100" preserveAspectRatio="none">
+                    <% step_x = 280.0 / (vals.size - 1) %>
+                    <% area_pts = vals.each_with_index.map { |v, j| "#{(j * step_x).round(1)},#{(95 - (v - mn) / rng * 85).round(1)}" } %>
+                    <polygon fill="<%= row[:total_return_pct] >= 0 ? 'rgba(48,209,88,0.12)' : 'rgba(255,69,58,0.12)' %>"
+                             points="0,95 <%= area_pts.join(' ') %> 280,95" />
                     <polyline fill="none"
                               stroke="<%= row[:total_return_pct] >= 0 ? '#30d158' : '#ff453a' %>"
-                              stroke-width="2.5"
+                              stroke-width="2"
                               points="<%= area_pts.join(' ') %>" />
-                    
-                    <%# Data points %>
                     <% vals.each_with_index do |v, j| %>
-                      <% if j % 3 == 0 || j == vals.size - 1 %>
-                        <% x = (j * step_x).round(1) %>
-                        <% y = (115 - (v - mn) / rng * 105).round(1) %>
-                        <circle cx="<%= x %>" cy="<%= y %>" r="3" 
-                                fill="<%= row[:total_return_pct] >= 0 ? '#30d158' : '#ff453a' %>"
-                                stroke="#1c1c1e" stroke-width="1.5"/>
-                      <% end %>
+                      <% x = (j * step_x).round(1); y = (95 - (v - mn) / rng * 85).round(1) %>
+                      <circle cx="<%= x %>" cy="<%= y %>" r="3"
+                              fill="<%= row[:total_return_pct] >= 0 ? '#30d158' : '#ff453a' %>"
+                              stroke="#1c1c1e" stroke-width="1"/>
                     <% end %>
                   </svg>
                 </div>
-                <div class="lb-detail-chart-xaxis">
+                <%# X-axis labels %>
+                <div class="lb-chart-xaxis">
                   <span>Day 1</span>
-                  <span>Day 8</span>
-                  <span>Day 15</span>
-                  <span>Day 22</span>
-                  <span>Day 30</span>
+                  <span>Day 4</span>
+                  <span>Day 7</span>
                 </div>
               </div>
             </div>
@@ -257,18 +253,21 @@
   </div>
 
   <%# ── Prizes Modal ── %>
-  <div class="lb-prizes-modal" id="lb-prizes-modal" onclick="if(event.target===this) this.style.display='none'">
-    <div class="lb-prizes-card">
-      <div class="lb-prizes-header">
-        <h2 class="lb-prizes-title">PRIZES</h2>
-        <button class="lb-prizes-close" onclick="document.getElementById('lb-prizes-modal').style.display='none'">✕</button>
+  <div class="lb-modal-overlay" id="lb-prizes-modal" onclick="if(event.target===this) this.style.display='none'">
+    <div class="lb-modal-card">
+      <div class="lb-modal-header">
+        <h2 class="lb-modal-title">PRIZES</h2>
+        <button class="lb-modal-close" type="button" onclick="document.getElementById('lb-prizes-modal').style.display='none'">✕</button>
       </div>
-      <div class="lb-prizes-body">
+      <div class="lb-modal-body">
         <% @prizes.each do |p| %>
-          <div class="lb-prizes-item">
-            <span class="lb-prizes-rank"><%= p[:rank] %></span>
-            <span class="lb-prizes-prize"><%= p[:prize] %></span>
+          <div class="lb-prize-row">
+            <span class="lb-prize-rank"><%= p[:rank] %></span>
+            <span class="lb-prize-desc"><%= p[:prize] %></span>
           </div>
+        <% end %>
+        <% if @prizes.empty? %>
+          <p class="lb-modal-empty">No prizes configured for this league.</p>
         <% end %>
       </div>
     </div>
@@ -276,75 +275,74 @@
 </div>
 
 <%= javascript_tag nonce: true do %>
-  (function() {
-    var activeUserId = null;
-    var stickyEl = document.getElementById('lb-sticky-self');
-    var scrollEl = document.getElementById('lb-table-scroll');
-    var countdownEl = document.getElementById('lb-countdown');
+(function() {
+  var activeUserId = null;
+  var stickyEl = document.getElementById('lb-sticky-self');
+  var scrollEl = document.getElementById('lb-table-scroll');
+  var countdownEl = document.getElementById('lb-countdown');
+  var pageEl = document.querySelector('.lb-page');
 
-    document.addEventListener('click', function(e) {
-      document.querySelectorAll('.lb-comp-dropdown.open').forEach(function(d) {
-        if (!d.contains(e.target)) d.classList.remove('open');
-      });
+  document.addEventListener('click', function(e) {
+    document.querySelectorAll('.lb-comp-dropdown.open').forEach(function(d) {
+      if (!d.contains(e.target)) d.classList.remove('open');
     });
+  });
 
-    if (countdownEl) {
-      var endTime = parseInt(countdownEl.dataset.end);
-      function updateCountdown() {
-        var now = Date.now();
-        var diff = endTime - now;
-        if (diff <= 0) {
-          countdownEl.textContent = 'ENDED';
-          return;
-        }
-        var days = Math.floor(diff / 86400000);
-        var hrs = Math.floor((diff % 86400000) / 3600000);
-        var mins = Math.floor((diff % 3600000) / 60000);
-        var secs = Math.floor((diff % 60000) / 1000);
-        countdownEl.textContent = days + 'D ' +
-          String(hrs).padStart(2,'0') + ':' +
-          String(mins).padStart(2,'0') + ':' +
-          String(secs).padStart(2,'0');
-      }
-      updateCountdown();
-      setInterval(updateCountdown, 1000);
-    }
-
-    window.lbSelectUser = function(userId) {
-      document.querySelectorAll('.lb-detail-card').forEach(function(c) { c.style.display = 'none'; });
-      document.querySelectorAll('.lb-row').forEach(function(r) { r.classList.remove('lb-row-selected'); });
-
-      var card = document.getElementById('lb-detail-' + userId);
-      var row = document.querySelector('[data-user-id="' + userId + '"]');
-      var placeholder = document.querySelector('.lb-detail-placeholder');
-
-      if (activeUserId === userId) {
-        activeUserId = null;
-        if (placeholder) placeholder.style.display = '';
+  if (countdownEl && pageEl.dataset.endTime) {
+    var endTime = parseInt(pageEl.dataset.endTime, 10);
+    function updateCountdown() {
+      var now = Date.now();
+      var diff = endTime - now;
+      if (diff <= 0) {
+        countdownEl.textContent = 'ENDED';
+        countdownEl.classList.add('lb-status-finished');
         return;
       }
-
-      activeUserId = userId;
-      if (card) card.style.display = '';
-      if (row) row.classList.add('lb-row-selected');
-      if (placeholder) placeholder.style.display = 'none';
-    };
-
-    if (stickyEl && scrollEl) {
-      var currentUserId = document.querySelector('.lb-page').dataset.currentUserId;
-      var selfRow = document.querySelector('.lb-row-self');
-
-      function checkStickyVisibility() {
-        if (!selfRow) return;
-        var scrollRect = scrollEl.getBoundingClientRect();
-        var rowRect = selfRow.getBoundingClientRect();
-        var isVisible = rowRect.top < scrollRect.bottom && rowRect.bottom > scrollRect.top;
-        stickyEl.classList.toggle('lb-sticky-hidden', isVisible);
-      }
-
-      scrollEl.addEventListener('scroll', checkStickyVisibility);
-      window.addEventListener('resize', checkStickyVisibility);
-      checkStickyVisibility();
+      var days = Math.floor(diff / 86400000);
+      var hrs = Math.floor((diff % 86400000) / 3600000);
+      var mins = Math.floor((diff % 3600000) / 60000);
+      var secs = Math.floor((diff % 60000) / 1000);
+      countdownEl.textContent = days + 'D ' +
+        String(hrs).padStart(2,'0') + ':' +
+        String(mins).padStart(2,'0') + ':' +
+        String(secs).padStart(2,'0');
     }
-  })();
+    updateCountdown();
+    setInterval(updateCountdown, 1000);
+  }
+
+  window.lbSelectUser = function(userId) {
+    document.querySelectorAll('.lb-detail-card').forEach(function(c) { c.style.display = 'none'; });
+    document.querySelectorAll('.lb-row').forEach(function(r) { r.classList.remove('lb-row-selected'); });
+
+    var card = document.getElementById('lb-detail-' + userId);
+    var row = document.querySelector('[data-user-id="' + userId + '"]');
+    var placeholder = document.getElementById('lb-detail-placeholder');
+
+    if (activeUserId === userId) {
+      activeUserId = null;
+      if (placeholder) placeholder.style.display = '';
+      return;
+    }
+
+    activeUserId = userId;
+    if (card) card.style.display = '';
+    if (row) row.classList.add('lb-row-selected');
+    if (placeholder) placeholder.style.display = 'none';
+  };
+
+  if (stickyEl && scrollEl) {
+    var selfRow = document.querySelector('.lb-row-self');
+    function checkStickyVisibility() {
+      if (!selfRow) return;
+      var scrollRect = scrollEl.getBoundingClientRect();
+      var rowRect = selfRow.getBoundingClientRect();
+      var isVisible = rowRect.top < scrollRect.bottom && rowRect.bottom > scrollRect.top;
+      stickyEl.classList.toggle('lb-sticky-hidden', isVisible);
+    }
+    scrollEl.addEventListener('scroll', checkStickyVisibility);
+    window.addEventListener('resize', checkStickyVisibility);
+    checkStickyVisibility();
+  }
+})();
 <% end %>
