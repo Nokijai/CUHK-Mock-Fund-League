@@ -1,0 +1,22 @@
+<header class="terminal-topbar">
+  <span class="terminal-brand">MOCK-FUND LEAGUE</span>
+  <%= link_to "DASHBOARD", root_path, class: (controller_name == "home" && action_name == "dashboard") ? "terminal-nav-active" : nil %>
+  <% p0 = @nav_portfolio || Portfolio.order(:id).first %>
+  <% if p0 %>
+    <%= link_to "TRADING", new_portfolio_trade_path(p0), class: controller_name == "trades" ? "terminal-nav-active" : nil %>
+    <%= link_to "PORTFOLIO", portfolio_path(p0), class: (controller_name == "portfolios" && action_name == "show") ? "terminal-nav-active" : nil %>
+  <% else %>
+    <%= link_to "TRADING", leagues_path %>
+    <%= link_to "PORTFOLIO", leagues_path %>
+  <% end %>
+  <% leagues_nav_active = controller_name == "leagues" && %w[index show edit update].include?(action_name) %>
+  <%= link_to "LEAGUES", leagues_path, class: leagues_nav_active ? "terminal-nav-active" : nil %>
+  <% lb_league = @nav_league || League.order(:id).first %>
+  <% if lb_league %>
+    <%= link_to "LEADERBOARD", league_leaderboard_path(lb_league), class: controller_name == "leaderboards" ? "terminal-nav-active" : nil %>
+  <% else %>
+    <%= link_to "LEADERBOARD", leagues_path %>
+  <% end %>
+  <%= link_to "CREATE LEAGUE", new_league_path, class: (controller_name == "leagues" && action_name == "new") ? "terminal-nav-active" : nil %>
+  <span class="terminal-market-live">MARKET: LIVE</span>
+</header>

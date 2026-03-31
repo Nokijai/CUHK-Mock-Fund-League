@@ -1,2 +1,8 @@
-<h1>Edit League</h1>
-<%= render "form", league: @league %>
+<% content_for :title, "Edit League — MOCK-FUND" %>
+<div class="terminal-page-head">
+  <h1 class="terminal-page-title">EDIT LEAGUE</h1>
+  <div class="terminal-page-meta"><%= @league.name %></div>
+</div>
+<div class="terminal-form-shell">
+  <%= render "form", league: @league %>
+</div>

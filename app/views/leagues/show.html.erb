@@ -1,4 +1,24 @@
-<h1><%= @league.name %></h1>
-<p><%= @league.description %></p>
-<%= link_to "Edit", edit_league_path(@league) %>
-<%= link_to "Leaderboard", league_leaderboard_path(@league) %>
+<% content_for :title, "#{@league.name} — MOCK-FUND" %>
+<div class="terminal-page-head">
+  <h1 class="terminal-page-title"><%= @league.name.upcase %></h1>
+  <div class="terminal-page-meta"><%= @league.description %></div>
+</div>
+<div class="terminal-stats-row terminal-stats-row--tight">
+  <div class="terminal-stat-card">
+    <div class="terminal-stat-label">STARTING CAPITAL</div>
+    <div class="terminal-stat-value"><%= number_to_currency(@league.starting_capital, precision: 0) %></div>
+  </div>
+  <div class="terminal-stat-card">
+    <div class="terminal-stat-label">START</div>
+    <div class="terminal-stat-value terminal-stat-small"><%= @league.start_date %></div>
+  </div>
+  <div class="terminal-stat-card">
+    <div class="terminal-stat-label">END</div>
+    <div class="terminal-stat-value terminal-stat-small"><%= @league.end_date %></div>
+  </div>
+</div>
+<div class="terminal-toolbar">
+  <%= link_to "LEADERBOARD", league_leaderboard_path(@league), class: "terminal-btn terminal-btn-primary" %>
+  <%= link_to "EDIT", edit_league_path(@league), class: "terminal-btn" %>
+  <%= link_to "ALL LEAGUES", leagues_path, class: "terminal-btn" %>
+</div>

@@ -1,2 +1,50 @@
-<h1>Portfolio</h1>
-<%= render "holdings", portfolio: @portfolio %>
+<% content_for :title, "Portfolio — MOCK-FUND" %>
+<div class="terminal-page-head">
+  <h1 class="terminal-page-title">PORTFOLIO</h1>
+  <div class="terminal-page-meta"><%= @portfolio.user&.name %> · <%= @portfolio.league&.name %></div>
+</div>
+<div class="terminal-stats-row terminal-stats-row--tight">
+  <div class="terminal-stat-card">
+    <div class="terminal-stat-label">TOTAL VALUE</div>
+    <div class="terminal-stat-value"><%= number_to_currency(@total_value, precision: 2) %></div>
+  </div>
+  <div class="terminal-stat-card">
+    <div class="terminal-stat-label">CASH</div>
+    <div class="terminal-stat-value"><%= number_to_currency(@portfolio.cash_balance, precision: 2) %></div>
+  </div>
+  <div class="terminal-stat-card">
+    <div class="terminal-stat-label">VS START</div>
+    <div class="terminal-stat-value <%= @pnl >= 0 ? "terminal-text-up" : "terminal-text-down" %>"><%= number_to_currency(@pnl, precision: 2) %></div>
+  </div>
+</div>
+<div class="terminal-window">
+  <div class="terminal-window-title">HOLDINGS</div>
+  <table class="terminal-table">
+    <thead>
+      <tr>
+        <th>TICKER</th>
+        <th class="num">QTY</th>
+        <th class="num">AVG COST</th>
+        <th class="num">LAST</th>
+        <th class="num">MKT VALUE</th>
+        <th class="num">P&amp;L %</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @rows.each do |r| %>
+        <tr>
+          <td><%= r[:symbol] %></td>
+          <td class="num"><%= r[:qty] %></td>
+          <td class="num"><%= number_to_currency(r[:avg], precision: 2) %></td>
+          <td class="num"><%= number_to_currency(r[:last], precision: 2) %></td>
+          <td class="num"><%= number_to_currency(r[:mkt], precision: 2) %></td>
+          <td class="num <%= r[:pnl] >= 0 ? "terminal-text-up" : "terminal-text-down" %>"><%= sprintf("%+.2f", r[:pnl_pct]) %>%</td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+  <div class="terminal-panel-actions">
+    <%= link_to "NEW TRADE", new_portfolio_trade_path(@portfolio), class: "terminal-btn terminal-btn-primary" %>
+    <%= link_to "ORDER HISTORY", portfolio_trades_path(@portfolio), class: "terminal-btn" %>
+  </div>
+</div>

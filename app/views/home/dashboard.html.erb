@@ -1,0 +1,135 @@
+<% content_for :title, "Dashboard — MOCK-FUND LEAGUE" %>
+<div class="terminal-dash-page">
+  <div class="terminal-dash-head">
+    <div>
+      <div class="terminal-dash-kicker">CUHK MOCK-FUND</div>
+      <h1 class="terminal-dash-title">DASHBOARD</h1>
+      <div class="terminal-dash-sub">Virtual trading · <%= @league&.name || "No league" %></div>
+    </div>
+    <% if @league %>
+      <div class="terminal-league-pill">
+        <span class="terminal-league-pill-label">CURRENT LEAGUE</span>
+        <span class="terminal-league-pill-name"><%= @league.name %></span>
+        <span class="terminal-badge-active">ACTIVE</span>
+      </div>
+    <% end %>
+  </div>
+
+  <div class="terminal-stats-row">
+    <div class="terminal-stat-card">
+      <div class="terminal-stat-label">TOTAL PORTFOLIO VALUE</div>
+      <div class="terminal-stat-value"><%= number_to_currency(@total_value, precision: 2) %></div>
+      <div class="terminal-stat-delta <%= @pnl >= 0 ? "up" : "down" %>">
+        <%= @pnl >= 0 ? "+" : "" %><%= number_to_currency(@pnl, precision: 2) %> (<%= sprintf("%+.2f", @pnl_pct) %>%)
+      </div>
+    </div>
+    <div class="terminal-stat-card">
+      <div class="terminal-stat-label">CASH BALANCE</div>
+      <div class="terminal-stat-value"><%= number_to_currency(@cash, precision: 2) %></div>
+    </div>
+    <div class="terminal-stat-card">
+      <div class="terminal-stat-label">TOTAL GAIN / LOSS</div>
+      <div class="terminal-stat-value <%= @pnl >= 0 ? "terminal-text-up" : "terminal-text-down" %>"><%= number_to_currency(@pnl, precision: 2) %></div>
+    </div>
+    <div class="terminal-stat-card">
+      <div class="terminal-stat-label">LEAGUE RANK</div>
+      <div class="terminal-stat-value">#<%= @rank.positive? ? @rank : "—" %> <span class="terminal-stat-of">of <%= @total_participants %></span></div>
+    </div>
+  </div>
+
+  <div class="terminal-window terminal-chart-window">
+    <div class="terminal-window-title">PORTFOLIO PERFORMANCE</div>
+    <div class="terminal-chart-wrap">
+      <% if @chart_points.any? %>
+        <% vals = @chart_points.map { |p| p[:value] } %>
+        <% max_v = vals.max %>
+        <% min_v = vals.min %>
+        <% range = (max_v - min_v).abs %>
+        <% range = 1.0 if range < 1e-6 %>
+        <% w = 1000.0 %>
+        <% h = 200.0 %>
+        <% pad = 24.0 %>
+        <% pts = @chart_points.each_with_index.map { |pt, i| x = pad + (i / 14.0) * (w - pad * 2); y = pad + h - pad * 2 - ((pt[:value] - min_v) / range) * (h - pad * 2); "#{x.round(1)},#{y.round(1)}" }.join(" ") %>
+        <svg class="terminal-chart-svg" viewBox="0 0 <%= w %> <%= h %>" preserveAspectRatio="xMidYMid meet">
+          <% (0..4).each do |g| %>
+            <% gy = pad + g * (h - pad * 2) / 4.0 %>
+            <line x1="<%= pad %>" y1="<%= gy %>" x2="<%= w - pad %>" y2="<%= gy %>" stroke="#3a3a3c" stroke-width="1"/>
+          <% end %>
+          <polyline fill="none" stroke="#ff9500" stroke-width="2.5" points="<%= pts %>"/>
+          <% @chart_points.each_with_index do |pt, i| %>
+            <% x = pad + (i / 14.0) * (w - pad * 2) %>
+            <% y = pad + h - pad * 2 - ((pt[:value] - min_v) / range) * (h - pad * 2) %>
+            <circle cx="<%= x %>" cy="<%= y %>" r="4" fill="#1c1c1e" stroke="#ff9500" stroke-width="2"/>
+          <% end %>
+        </svg>
+        <div class="terminal-chart-xaxis">
+          <% @chart_points.each_with_index do |pt, i| %>
+            <% if i % 3 == 0 || i == 14 %>
+              <span><%= pt[:label] %></span>
+            <% end %>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <div class="terminal-dash-bottom">
+    <div class="terminal-window terminal-subpanel">
+      <div class="terminal-window-title">TOP HOLDINGS</div>
+      <table class="terminal-table">
+        <thead>
+          <tr>
+            <th>TICKER</th>
+            <th class="num">QTY</th>
+            <th class="num">AVG</th>
+            <th class="num">LAST</th>
+            <th class="num">VALUE</th>
+            <th class="num">P&amp;L</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if @top_holdings.any? %>
+            <% @top_holdings.each do |r| %>
+              <tr>
+                <td><%= r[:symbol] %></td>
+                <td class="num"><%= r[:qty] %></td>
+                <td class="num"><%= number_to_currency(r[:avg], precision: 2) %></td>
+                <td class="num"><%= number_to_currency(r[:last], precision: 2) %></td>
+                <td class="num"><%= number_to_currency(r[:mkt], precision: 2) %></td>
+                <td class="num <%= r[:pnl] >= 0 ? "terminal-text-up" : "terminal-text-down" %>"><%= sprintf("%+.2f", r[:pnl_pct]) %>%</td>
+              </tr>
+            <% end %>
+          <% else %>
+            <tr><td colspan="6" class="terminal-muted-cell">No positions · <%= link_to "LEAGUES", leagues_path %></td></tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+    <div class="terminal-window terminal-subpanel">
+      <div class="terminal-window-title">MARKET MOVERS</div>
+      <table class="terminal-table">
+        <thead>
+          <tr>
+            <th>SYM</th>
+            <th>NAME</th>
+            <th class="num">PRICE</th>
+            <th class="num">CHG%</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @market_movers.each do |m| %>
+            <tr>
+              <td><%= m[:symbol] %></td>
+              <td class="terminal-ellipsis"><%= m[:name] %></td>
+              <td class="num"><%= number_to_currency(m[:price], precision: 2) %></td>
+              <td class="num <%= m[:chg] >= 0 ? "terminal-text-up" : "terminal-text-down" %>"><%= sprintf("%+.2f", m[:chg]) %>%</td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="terminal-disclaimer-bar">Virtual trading only. No real funds.</div>
+  <%= render "shared/disclaimer" %>
+</div>

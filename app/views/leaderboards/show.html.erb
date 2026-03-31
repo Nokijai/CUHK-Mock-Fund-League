@@ -1,19 +1,32 @@
-<h1>Leaderboard: <%= @league.name %></h1>
-<table>
-  <thead>
-    <tr>
-      <th>Rank</th>
-      <th>Participant</th>
-      <th>Portfolio Value</th>
-    </tr>
-  </thead>
-  <tbody>
-    <% @rankings.each_with_index do |ranking, index| %>
+<% content_for :title, "Leaderboard — #{@league.name}" %>
+<div class="terminal-page-head">
+  <h1 class="terminal-page-title">LEADERBOARD</h1>
+  <div class="terminal-page-meta"><%= @league.name.upcase %> · by portfolio value</div>
+</div>
+<div class="terminal-window">
+  <table class="terminal-table terminal-table-rank">
+    <thead>
       <tr>
-        <td><%= index + 1 %></td>
-        <td><%= ranking[:name] %></td>
-        <td><%= ranking[:value] %></td>
+        <th class="num">RANK</th>
+        <th>PARTICIPANT</th>
+        <th class="num">PORTFOLIO VALUE</th>
       </tr>
-    <% end %>
-  </tbody>
-</table>
+    </thead>
+    <tbody>
+      <% @rankings.each_with_index do |row, i| %>
+        <tr class="<%= i < 3 ? "terminal-rank-top" : nil %>">
+          <td class="num terminal-rank-cell">#<%= i + 1 %></td>
+          <td><%= row[:name] %></td>
+          <td class="num"><%= number_to_currency(row[:value], precision: 2) %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+  <% if @rankings.empty? %>
+    <p class="terminal-empty">No portfolios in this league yet.</p>
+  <% end %>
+  <div class="terminal-panel-actions">
+    <%= link_to "LEAGUE HOME", league_path(@league), class: "terminal-btn" %>
+    <%= link_to "ALL LEAGUES", leagues_path, class: "terminal-btn" %>
+  </div>
+</div>
