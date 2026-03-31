@@ -9,7 +9,7 @@ namespace :stock_prices do
   end
 
   desc "Fetch and add a new stock price"
-  task :add, [:symbol] => :environment do |_task, args|
+  task :add, [ :symbol ] => :environment do |_task, args|
     symbol = args[:symbol]&.upcase
     abort "Usage: rails stock_prices:add[AAPL]" if symbol.blank?
 

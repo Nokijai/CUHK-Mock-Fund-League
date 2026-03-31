@@ -1,5 +1,5 @@
 class Admin::LeaguesController < Admin::BaseController
-  before_action :set_league, only: [:edit, :update, :destroy]
+  before_action :set_league, only: [ :edit, :update, :destroy ]
 
   def index
     @leagues = League.search_and_paginate(

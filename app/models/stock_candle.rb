@@ -13,4 +13,3 @@ class StockCandle < ApplicationRecord
   # Oldest-first series for charting (paired with .last(n) on a recent window).
   scope :chronological, -> { order(candle_at: :asc) }
 end
-

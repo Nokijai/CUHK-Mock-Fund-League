@@ -2,6 +2,12 @@ require "rails_helper"
 
 RSpec.describe "Api::V1::Leagues", type: :request do
   let(:headers) { { "Content-Type" => "application/json", "Accept" => "application/json" } }
+  let(:current_user) { create(:user) }
+
+  before do
+    # API controllers inherit authentication from ApplicationController.
+    sign_in current_user
+  end
 
   # ─────────────────────────────────────────────────────────────
   # GET /api/v1/leagues
@@ -77,8 +83,9 @@ RSpec.describe "Api::V1::Leagues", type: :request do
           name:             "Spring Cup 2026",
           description:      "A fun league",
           starting_capital: 50_000,
-          start_date:       "2026-04-01",
-          end_date:         "2026-06-30"
+          # Keep request specs valid regardless of calendar date.
+          start_date:       1.day.from_now.to_date.iso8601,
+          end_date:         2.months.from_now.to_date.iso8601
         }
       }.to_json
     end

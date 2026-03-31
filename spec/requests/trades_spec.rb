@@ -5,6 +5,12 @@ RSpec.describe "Trades", type: :request do
   let(:user) { create(:user, name: "Demo Trader") }
   let(:league) { create(:league) }
   let(:portfolio) { create(:portfolio, user: user, league: league) }
+  let!(:membership) { create(:league_membership, user: user, league: league) }
+
+  before do
+    # Trading pages are protected by Devise.
+    sign_in user
+  end
 
   describe "GET /portfolios/:portfolio_id/trades/new" do
     before do

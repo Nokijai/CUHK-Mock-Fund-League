@@ -39,4 +39,3 @@ module MarketData
     end
   end
 end
-

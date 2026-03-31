@@ -20,14 +20,14 @@ class StocksController < ApplicationController
 
     # Fetch stock data from service
     payload = StockPriceService.new.get_price(sym)
-    
+
     # Handle not found cases
     unless payload
       respond_to do |format|
         format.json { render json: { error: "Stock not found" }, status: :not_found }
-        format.html { 
+        format.html {
           flash[:alert] = "Stock #{sym} not found"
-          redirect_to root_path 
+          redirect_to root_path
         }
       end
       return
@@ -61,7 +61,7 @@ class StocksController < ApplicationController
     # Respond to different formats
     respond_to do |format|
       format.json { render json: payload }
-      format.html { 
+      format.html {
         # Prepare data for HTML view
         @stock = sp_row
         @symbol = sym

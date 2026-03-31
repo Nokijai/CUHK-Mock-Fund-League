@@ -49,7 +49,7 @@ leagues = league_names.each_with_index.map do |name, index|
     description: "Sample league seeded for local development.",
     start_date: start_at,
     end_date: start_at + 90.days,
-    starting_capital: [10_000, 25_000, 50_000, 100_000].sample,
+    starting_capital: [ 10_000, 25_000, 50_000, 100_000 ].sample,
     rules: { "max_position_pct" => 25 }
   )
 end

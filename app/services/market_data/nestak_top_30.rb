@@ -44,7 +44,7 @@ module MarketData
       "FSLR" => "First Solar",
       "BLBD" => "Blue Bird Corp",
       "GRDN" => "Guardian Pharmacy",
-      "GLEN" => "Glencore",
+      "GLEN" => "Glencore"
     }.freeze
   end
 end

@@ -91,7 +91,7 @@ class Trade < ApplicationRecord
     # Validate placement-time constraints to match broker-like rejection behavior.
     unless executable_with_price?(price.to_d)
       # executable_with_price? sets detailed model errors.
-      return
+      nil
     end
   end
 

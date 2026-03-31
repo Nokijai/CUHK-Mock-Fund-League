@@ -1,5 +1,5 @@
 class Admin::UsersController < Admin::BaseController
-  before_action :set_user, only: [:edit, :update, :destroy]
+  before_action :set_user, only: [ :edit, :update, :destroy ]
 
   def index
     @users = User.search_and_paginate(
@@ -16,6 +16,7 @@ class Admin::UsersController < Admin::BaseController
 
   def create
     @user = User.new(user_params)
+    assign_role_from_params(@user)
     if @user.save
       redirect_to admin_users_path, notice: "User created successfully."
     else
@@ -33,7 +34,8 @@ class Admin::UsersController < Admin::BaseController
       update_params.delete(:password)
       update_params.delete(:password_confirmation)
     end
-    
+
+    assign_role_from_params(@user)
     if @user.update(update_params)
       redirect_to admin_users_path, notice: "User updated successfully."
     else
@@ -57,6 +59,15 @@ class Admin::UsersController < Admin::BaseController
   end
 
   def user_params
-    params.require(:user).permit(:name, :email, :password, :password_confirmation, :role)
+    params.require(:user).permit(:name, :email, :password, :password_confirmation)
+  end
+
+  def assign_role_from_params(user)
+    # Keep role assignment explicit to avoid broad mass-assignment surfaces.
+    requested_role = params.dig(:user, :role).to_s
+    return if requested_role.blank?
+    return unless User::ROLES.include?(requested_role)
+
+    user.role = requested_role
   end
 end
