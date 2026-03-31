@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_09_000007) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_30_000001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -47,7 +47,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_09_000007) do
     t.datetime "updated_at", null: false
   end
 
+  create_table "portfolio_snapshots", force: :cascade do |t|
+    t.decimal "cash_balance", precision: 15, scale: 2
+    t.datetime "created_at", null: false
+    t.decimal "holdings_value", precision: 15, scale: 2
+    t.bigint "portfolio_id", null: false
+    t.date "snapshot_date", null: false
+    t.decimal "total_value", precision: 15, scale: 2, null: false
+    t.datetime "updated_at", null: false
+    t.index ["portfolio_id", "snapshot_date"], name: "index_portfolio_snapshots_on_portfolio_id_and_snapshot_date", unique: true
+    t.index ["portfolio_id"], name: "index_portfolio_snapshots_on_portfolio_id"
+  end
+
   create_table "portfolios", force: :cascade do |t|
+    t.integer "best_rank"
     t.decimal "cash_balance", precision: 15, scale: 2, default: "0.0"
     t.datetime "created_at", null: false
     t.bigint "league_id", null: false
@@ -92,6 +105,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_09_000007) do
   add_foreign_key "holdings", "portfolios"
   add_foreign_key "league_memberships", "leagues"
   add_foreign_key "league_memberships", "users"
+  add_foreign_key "portfolio_snapshots", "portfolios"
   add_foreign_key "portfolios", "leagues"
   add_foreign_key "portfolios", "users"
   add_foreign_key "trades", "portfolios"
