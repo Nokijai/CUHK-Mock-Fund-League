@@ -46,9 +46,19 @@ class ApplicationController < ActionController::Base
     @nav_portfolio = nil
   end
 
-  # Keep pending signup users inside OTP verification flow until completion.
+  # Keep pending signup or login OTP users inside the verification flow until completion.
   def redirect_pending_otp_user
     return if user_signed_in?
+
+    if session[:pending_otp_user_id].present?
+      return if devise_controller? && (
+        controller_name == "sessions" && %w[new create verify_otp otp_authenticate cancel_otp_login resend_otp].include?(action_name)
+      )
+
+      redirect_to users_verify_otp_path, alert: "Please complete login verification before continuing."
+      return
+    end
+
     return unless session[:pending_signup].present?
     return if devise_controller? && (
       (controller_name == "registrations" && %w[new create verify_otp otp_authenticate cancel_otp_signup resend_otp].include?(action_name))

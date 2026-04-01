@@ -30,7 +30,7 @@
         </div>
 
         <div style="margin-top: 0.75rem;">
-          <%= form_with url: users_resend_otp_path, method: :post, local: true, html: { style: "display: inline-block;" } do %>
+          <%= form_with url: users_resend_login_otp_path, method: :post, local: true, html: { style: "display: inline-block;" } do %>
             <%= button_tag "Resend verification code",
                 type: "submit",
                 class: "terminal-btn",
