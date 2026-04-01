@@ -3,7 +3,7 @@
     <div class="terminal-window">
       <div class="terminal-window-title">LOGIN</div>
       <div style="padding: 1.5rem;">
-        <%= form_for(resource, as: resource_name, url: session_path(resource_name)) do |f| %>
+        <%= form_for(resource, as: resource_name, url: session_path(resource_name), html: { data: { login_form: true } }) do |f| %>
           <div style="margin-bottom: 1rem;">
             <%= f.label :email, "EMAIL", class: "terminal-label" %>
             <%= f.email_field :email, autofocus: true, autocomplete: "email", class: "terminal-input", placeholder: "user@example.com" %>
@@ -24,7 +24,10 @@
           <% end %>
 
           <div class="terminal-form-actions" style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--terminal-border);">
-            <%= f.submit "LOG IN", class: "terminal-btn terminal-btn-primary" %>
+            <%= f.button type: "submit", class: "terminal-btn terminal-btn-primary", data: { login_submit: true } do %>
+              <span data-login-label>LOG IN</span>
+              <span data-login-spinner style="display: none; width: 12px; height: 12px; margin-left: 0.5rem; border: 2px solid currentColor; border-top-color: transparent; border-radius: 50%; vertical-align: middle; animation: login-spinner-rotate 0.8s linear infinite;"></span>
+            <% end %>
           </div>
         <% end %>
 
@@ -33,3 +36,30 @@
     </div>
   </div>
 </div>
+
+<style>
+  @keyframes login-spinner-rotate {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+</style>
+
+<script>
+  (function() {
+    const form = document.querySelector("form[data-login-form='true']");
+    if (!form) return;
+
+    form.addEventListener("submit", function() {
+      const submitButton = form.querySelector("[data-login-submit='true']");
+      const spinner = form.querySelector("[data-login-spinner]");
+      const label = form.querySelector("[data-login-label]");
+      if (!submitButton || !spinner || !label) return;
+
+      submitButton.disabled = true;
+      label.textContent = "LOGGING IN";
+      spinner.style.display = "inline-block";
+      submitButton.setAttribute("aria-busy", "true");
+    });
+  })();
+</script>
