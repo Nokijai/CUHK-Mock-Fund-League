@@ -20,6 +20,8 @@ class Users::SessionsController < Devise::SessionsController
     code = user.generate_login_otp!
     UserMailer.login_otp_email(user, code).deliver_now
 
+    sign_out(resource_name) if user_signed_in?
+
     session[:pending_otp_user_id] = user.id
     session[:pending_otp_remember_me] = sign_in_params[:remember_me]
 
