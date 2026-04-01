@@ -5,9 +5,13 @@ RSpec.describe MarketData::YfinanceMarketDataService do
     it "uses configured python binary and parses payload" do
       service = described_class.new
       payload = {
-        symbol: "NVDA",
-        price: 123.45,
-        candles: { "1d" => [] }
+        symbols: [
+          {
+            symbol: "NVDA",
+            price: 123.45,
+            candles: { "1d" => [] }
+          }
+        ]
       }.to_json
 
       allow(ENV).to receive(:fetch).with("MARKET_DATA_PYTHON_BIN", "python").and_return("python-custom")
@@ -20,10 +24,14 @@ RSpec.describe MarketData::YfinanceMarketDataService do
       expect(Open3).to have_received(:capture3).with(
         "python-custom",
         Rails.root.join("scripts/yfinance_fetch.py").to_s,
-        "--symbol",
+        "--symbols",
         "NVDA",
         "--intervals",
-        "1d"
+        "1d",
+        "--timeout-seconds",
+        "20",
+        "--period-overrides",
+        "{}"
       )
     end
 
@@ -33,7 +41,7 @@ RSpec.describe MarketData::YfinanceMarketDataService do
 
       expect do
         service.fetch_symbol("NVDA", intervals: [ "1d" ])
-      end.to raise_error(/yfinance fetch failed/)
+      end.to raise_error(/yfinance batch fetch failed/)
     end
   end
 end
