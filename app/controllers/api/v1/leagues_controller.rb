@@ -123,7 +123,7 @@ module Api
           end_date:         league.end_date,
           rules:            league.rules,
           member_count:     league.league_memberships.count,
-          members:          league.users.map { |u| { id: u.id, name: u.name, email: u.email } }
+          members:          league.users.map { |u| { id: u.id, name: u.name } }
         }
       end
 
