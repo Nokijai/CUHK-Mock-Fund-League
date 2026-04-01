@@ -104,8 +104,10 @@
         </thead>
         <tbody>
           <% @candles.first(50).each do |candle| %>
+            <%# Parse candle timestamp once; show raw value if parsing ever fails. %>
+            <% parsed_candle_time = (Time.zone.parse(candle[:t].to_s) rescue nil) %>
             <tr>
-              <td><%= Time.parse(candle[:t]).strftime("%Y-%m-%d %H:%M") rescue candle[:t] %></td>
+              <td><%= parsed_candle_time ? user_local_time(parsed_candle_time) : candle[:t] %></td>
               <td class="num"><%= number_to_currency(candle[:o], precision: 2) if candle[:o] %></td>
               <td class="num"><%= number_to_currency(candle[:h], precision: 2) if candle[:h] %></td>
               <td class="num"><%= number_to_currency(candle[:l], precision: 2) if candle[:l] %></td>

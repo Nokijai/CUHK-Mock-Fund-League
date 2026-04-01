@@ -14,7 +14,7 @@ module MarketData
       ivs = Array(intervals).map(&:to_s)
 
       stdout, stderr, status = Open3.capture3(
-        "python3",
+        python_command,
         Rails.root.join("scripts/yfinance_fetch.py").to_s,
         "--symbol",
         sym,
@@ -27,6 +27,15 @@ module MarketData
       JSON.parse(stdout)
     rescue JSON::ParserError => e
       raise "yfinance fetch returned invalid JSON for #{sym}: #{e.message}"
+    end
+
+    private
+
+    # Use `python` by default because some Conda envs expose yfinance there while
+    # `python3` may still resolve to system/Homebrew Python on PATH.
+    # Allow override via env var for deployment/runtime flexibility.
+    def python_command
+      ENV.fetch("MARKET_DATA_PYTHON_BIN", "python")
     end
   end
 end

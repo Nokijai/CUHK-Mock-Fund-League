@@ -10,11 +10,8 @@ module MarketData
       CVX XOM JPM E SCHL WDC FSLR BLBD GRDN GLEN
     ].freeze
 
-    # Optional tickers traded in the app but outside the Nestak 30 (e.g. HK listings).
-    REFRESH_EXTRAS = %w[0700].freeze
-
-    # Full set enqueued by periodic refresh tasks (Nestak 30 + extras).
-    ALL_REFRESH_SYMBOLS = (SYMBOLS + REFRESH_EXTRAS).freeze
+    # Full set enqueued by periodic refresh tasks (Nestak 30).
+    ALL_REFRESH_SYMBOLS = SYMBOLS.freeze
 
     # Human-readable names for trading UI and dashboard market movers.
     DISPLAY_NAMES = {
@@ -48,7 +45,6 @@ module MarketData
       "BLBD" => "Blue Bird Corp",
       "GRDN" => "Guardian Pharmacy",
       "GLEN" => "Glencore",
-      "0700" => "Tencent Holdings"
     }.freeze
   end
 end

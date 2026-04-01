@@ -30,7 +30,8 @@
       </div>
       <% if @focus_stock&.updated_at %>
         <div class="terminal-quote-updated" data-trading-quote-target="updatedAt">
-          As of <%= @focus_stock.updated_at.in_time_zone.strftime("%Y-%m-%d %H:%M %Z") %>
+          <%# "As of" time is rendered in browser timezone; JS live updates already use local time. %>
+          As of <%= user_local_time(@focus_stock.updated_at, include_zone: true) %>
         </div>
       <% else %>
         <div class="terminal-quote-updated" data-trading-quote-target="updatedAt"></div>

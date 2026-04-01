@@ -29,13 +29,13 @@ league = League.create!(
 participants = [
   { name: "Alex Chen", cash: 900, holdings: { "NVDA" => [ 135, 800.0 ] } },
   { name: "Jordan Lee", cash: 200, holdings: { "MSFT" => [ 200, 360.0 ], "GOOGL" => [ 274, 135.0 ] } },
-  { name: "Demo Trader", cash: 61_331.50, holdings: { "0700" => [ 100, 312.50 ], "GOOGL" => [ 50, 135.0 ] } },
-  { name: "Sam Wong", cash: 10_000, holdings: { "META" => [ 60, 470.0 ], "0700" => [ 80, 315.0 ] } },
+  { name: "Demo Trader", cash: 61_331.50, holdings: { "TSLA" => [ 100, 200.0 ], "GOOGL" => [ 50, 135.0 ] } },
+  { name: "Sam Wong", cash: 10_000, holdings: { "META" => [ 60, 470.0 ], "TSLA" => [ 80, 200.0 ] } },
   { name: "Taylor Ho", cash: 30_000, holdings: { "GOOGL" => [ 450, 135.0 ] } },
   { name: "Riley Au", cash: 55_000, holdings: { "NVDA" => [ 100, 820.0 ] } },
   { name: "Casey Lam", cash: 40_000, holdings: { "MSFT" => [ 50, 365.0 ], "NVDA" => [ 10, 820.0 ] } },
   { name: "Morgan Yip", cash: 85_000, holdings: {} },
-  { name: "Jamie Ng", cash: 25_000, holdings: { "0700" => [ 170, 308.0 ] } },
+  { name: "Jamie Ng", cash: 25_000, holdings: { "TSLA" => [ 170, 200.0 ] } },
   { name: "Quinn Lau", cash: 35_000, holdings: { "NVDA" => [ 50, 820.0 ] } },
   { name: "Blake Cheung", cash: 70_000, holdings: { "TSLA" => [ 30, 200.0 ] } },
   { name: "Sky Mak", cash: 58_000, holdings: { "MSFT" => [ 40, 372.0 ] } }
@@ -66,9 +66,9 @@ LeagueMembership.create!(user: admin, league: league, joined_at: Time.current)
 demo_user = User.find_by(name: "Demo Trader")
 demo_p = demo_user.portfolios.first
 [
-  [ "0700", "buy", 100, 312.50 ],
+  [ "NVDA", "buy", 100, 820.0 ],
   [ "GOOGL", "buy", 50, 135.0 ],
-  [ "0700", "buy", 20, 305.00 ]
+  [ "TSLA", "buy", 30, 200.0 ]
 ].each do |sym, ttype, qty, pr|
   Trade.create!(
     portfolio: demo_p,

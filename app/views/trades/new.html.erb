@@ -151,7 +151,8 @@
                 <%# Show most recent 50 candles %>
                 <% candles.reverse.first(50).each do |candle| %>
                   <tr>
-                    <td><%= candle.candle_at.strftime("%Y-%m-%d %H:%M") %></td>
+                    <%# Candle time converted to viewer timezone for consistency with quote panel. %>
+                    <td><%= user_local_time(candle.candle_at) %></td>
                     <td class="num"><%= candle.open ? number_to_currency(candle.open, precision: 2) : "—" %></td>
                     <td class="num"><%= candle.high ? number_to_currency(candle.high, precision: 2) : "—" %></td>
                     <td class="num"><%= candle.low ? number_to_currency(candle.low, precision: 2) : "—" %></td>

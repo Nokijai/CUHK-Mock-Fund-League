@@ -19,7 +19,8 @@
     <tbody>
       <% @trades.order(executed_at: :desc, created_at: :desc).each do |t| %>
         <tr>
-          <td><%= (t.executed_at || t.created_at).strftime("%Y-%m-%d %H:%M") %></td>
+          <%# History timestamps respect browser-local timezone. %>
+          <td><%= user_local_time(t.executed_at || t.created_at) %></td>
           <td class="<%= t.trade_type == "buy" ? "terminal-text-up" : "terminal-text-down" %>"><%= t.trade_type.upcase %></td>
           <td><%= t.order_type.to_s.upcase %></td>
           <td class="<%= t.executed_at.present? ? "terminal-text-up" : "terminal-muted-cell" %>">

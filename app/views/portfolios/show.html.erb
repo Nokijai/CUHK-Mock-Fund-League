@@ -48,3 +48,81 @@
     <%= link_to "ORDER HISTORY", portfolio_trades_path(@portfolio), class: "terminal-btn" %>
   </div>
 </div>
+
+<%# Portfolio transaction statistics: quick snapshot of execution + order flow. %>
+<div class="terminal-stats-row terminal-stats-row--tight">
+  <div class="terminal-stat-card">
+    <div class="terminal-stat-label">TOTAL ORDERS</div>
+    <div class="terminal-stat-value"><%= @trade_stats[:total_orders] %></div>
+  </div>
+  <div class="terminal-stat-card">
+    <div class="terminal-stat-label">EXECUTED</div>
+    <div class="terminal-stat-value terminal-text-up"><%= @trade_stats[:executed_orders] %></div>
+  </div>
+  <div class="terminal-stat-card">
+    <div class="terminal-stat-label">PENDING LIMITS</div>
+    <div class="terminal-stat-value <%= @trade_stats[:pending_orders].positive? ? "terminal-text-down" : "" %>"><%= @trade_stats[:pending_orders] %></div>
+  </div>
+  <div class="terminal-stat-card">
+    <div class="terminal-stat-label">EXECUTED QTY</div>
+    <div class="terminal-stat-value"><%= @trade_stats[:executed_quantity] %></div>
+  </div>
+</div>
+
+<%# Full ledger: includes buy/sell, market/limit, pending/success, deal price, and quantity. %>
+<div class="terminal-window">
+  <div class="terminal-window-title">PORTFOLIO TRANSACTIONS</div>
+  <table class="terminal-table">
+    <thead>
+      <tr>
+        <th>SUBMITTED</th>
+        <th>DEAL TIME</th>
+        <th>SIDE</th>
+        <th>ORDER</th>
+        <th>STATUS</th>
+        <th>SYM</th>
+        <th class="num">QTY</th>
+        <th class="num">ORDER PRICE</th>
+        <th class="num">DEAL PRICE</th>
+        <th class="num">NOTIONAL</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% if @transactions.any? %>
+        <% @transactions.each do |transaction| %>
+          <%# Deal price only exists once the order is executed. %>
+          <% deal_price = transaction.executed_at.present? ? transaction.price : nil %>
+          <% order_price = transaction.pending? ? transaction.price : nil %>
+          <% notional = deal_price ? deal_price.to_d * transaction.quantity.to_i : nil %>
+          <tr>
+            <%# Submitted/deal timestamps are rendered in browser-local timezone. %>
+            <td><%= user_local_time(transaction.created_at) %></td>
+            <td><%= user_local_time(transaction.executed_at) %></td>
+            <td class="<%= transaction.trade_type == "buy" ? "terminal-text-up" : "terminal-text-down" %>">
+              <%= transaction.trade_type.upcase %>
+            </td>
+            <td><%= transaction.order_type.to_s.upcase %></td>
+            <td class="<%= transaction.executed_at.present? ? "terminal-text-up" : "terminal-muted-cell" %>">
+              <%= transaction.executed_at.present? ? "SUCCESS DEAL" : "PENDING" %>
+            </td>
+            <td><%= transaction.symbol %></td>
+            <td class="num"><%= transaction.quantity %></td>
+            <td class="num"><%= order_price ? number_to_currency(order_price, precision: 4) : "—" %></td>
+            <td class="num"><%= deal_price ? number_to_currency(deal_price, precision: 4) : "—" %></td>
+            <td class="num"><%= notional ? number_to_currency(notional, precision: 2) : "—" %></td>
+          </tr>
+        <% end %>
+      <% else %>
+        <tr>
+          <td colspan="10" class="terminal-muted-cell">No transactions yet. Submit your first order to build this ledger.</td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+  <div class="terminal-panel-actions">
+    <span class="terminal-muted-cell">BUY ORDERS: <strong><%= @trade_stats[:buy_orders] %></strong></span>
+    <span class="terminal-muted-cell">SELL ORDERS: <strong><%= @trade_stats[:sell_orders] %></strong></span>
+    <span class="terminal-muted-cell">EXECUTED BUY VALUE: <strong><%= number_to_currency(@trade_stats[:executed_buy_notional], precision: 2) %></strong></span>
+    <span class="terminal-muted-cell">EXECUTED SELL VALUE: <strong><%= number_to_currency(@trade_stats[:executed_sell_notional], precision: 2) %></strong></span>
+  </div>
+</div>
