@@ -4,7 +4,7 @@ class User < ApplicationRecord
   SIGNUP_OTP_RESEND_COOLDOWN = 60.seconds
   LOGIN_OTP_TTL = 10.minutes
   LOGIN_OTP_MAX_ATTEMPTS = 5
-  # Cooldown before the user can request another login OTP email (matches signup resend UX).
+  # Cooldown before the user can request another login OTP email (aligned with signup OTP resend).
   LOGIN_OTP_RESEND_COOLDOWN = 60.seconds
   ROLES = %w[user admin].freeze
 
