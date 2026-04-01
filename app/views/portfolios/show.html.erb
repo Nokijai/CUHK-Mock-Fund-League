@@ -1,4 +1,5 @@
 <% content_for :title, "Portfolio — MOCK-FUND" %>
+<%= render "shared/league_selector", page_type: :portfolio %>
 <div class="terminal-page-head">
   <h1 class="terminal-page-title">PORTFOLIO</h1>
   <div class="terminal-page-meta"><%= @portfolio.user&.name %> · <%= @portfolio.league&.name %></div>
@@ -44,8 +45,8 @@
     </tbody>
   </table>
   <div class="terminal-panel-actions">
-    <%= link_to "NEW TRADE", new_portfolio_trade_path(@portfolio), class: "terminal-btn terminal-btn-primary" %>
-    <%= link_to "ORDER HISTORY", portfolio_trades_path(@portfolio), class: "terminal-btn" %>
+    <%= link_to "NEW TRADE", new_portfolio_trade_path(@portfolio, league_id: @portfolio.league_id), class: "terminal-btn terminal-btn-primary" %>
+    <%= link_to "ORDER HISTORY", portfolio_trades_path(@portfolio, league_id: @portfolio.league_id), class: "terminal-btn" %>
   </div>
 </div>
 

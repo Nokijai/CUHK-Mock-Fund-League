@@ -1,7 +1,7 @@
 class HomeController < ApplicationController
   def dashboard
-    @portfolio = demo_focus_portfolio
-    @league = @portfolio&.league || League.order(:id).first
+    @portfolio = current_user_focus_portfolio
+    @league = @portfolio&.league || @selected_league
     valuator = PortfolioValuationService.new
     @total_value = @portfolio ? valuator.total_value(@portfolio).to_f : 0.0
     @cash = @portfolio&.cash_balance.to_f
@@ -24,9 +24,9 @@ class HomeController < ApplicationController
   # Handles GET /trading (nav link, bookmarks, SW). Resolves portfolio on the server so
   # the header does not need a separate nav_p check that could disagree with the DB.
   def trading_redirect
-    portfolio = demo_focus_portfolio
+    portfolio = current_user_focus_portfolio
     if portfolio
-      redirect_to new_portfolio_trade_path(portfolio), status: :see_other
+      redirect_to new_portfolio_trade_path(portfolio, league_id: portfolio.league_id), status: :see_other
     else
       redirect_to leagues_path, status: :see_other
     end
@@ -34,10 +34,12 @@ class HomeController < ApplicationController
 
   private
 
-  def demo_focus_portfolio
-    u = User.find_by(name: "Demo Trader")
-    p = u&.portfolios&.first
-    p || Portfolio.order(:id).first
+  # Resolves the current user's portfolio in the selected league (fallback = first owned portfolio).
+  def current_user_focus_portfolio
+    return nil unless current_user
+    return @league_portfolio_map[@selected_league.id] if @selected_league
+
+    current_user.portfolios.first
   end
 
   def chart_points(end_value)

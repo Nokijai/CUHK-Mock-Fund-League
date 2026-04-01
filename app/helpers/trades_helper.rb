@@ -50,6 +50,8 @@ module TradesHelper
   def trading_quote_link_params(interval)
     c = controller.params
     {
+      # Keep league context stable while switching timeframe tabs.
+      league_id: c[:league_id].presence,
       quote_interval: interval,
       q: c[:q].presence,
       prefill_symbol: c[:prefill_symbol].presence,

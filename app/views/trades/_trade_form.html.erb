@@ -5,6 +5,8 @@
     controller: "order-form",
     order_form_market_price_value: latest_market_price&.to_f
   } do |f| %>
+  <%# Keep selected league context in URL after submit/re-render. %>
+  <%= hidden_field_tag :league_id, portfolio.league_id %>
   <%# Keep ticker search filter after a failed submit (matches assign_available_stocks). %>
   <%= hidden_field_tag :q, params[:q] if params[:q].present? %>
   <%# Preserve selected chart interval when re-rendering after validation errors. %>
@@ -43,6 +45,6 @@
   </div>
   <div class="terminal-form-actions">
     <%= f.submit "SUBMIT ORDER", class: "terminal-btn terminal-btn-primary" %>
-    <%= link_to "BACK TO PORTFOLIO", portfolio_path(portfolio), class: "terminal-btn" %>
+    <%= link_to "BACK TO PORTFOLIO", portfolio_path(portfolio, league_id: portfolio.league_id), class: "terminal-btn" %>
   </div>
 <% end %>

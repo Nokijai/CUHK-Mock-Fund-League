@@ -2,10 +2,14 @@ class LeaguesController < ApplicationController
   before_action :set_league, only: [ :show, :edit, :update, :destroy ]
 
   def index
-    @leagues = League.all
+    @leagues = League.includes(:league_memberships).order(start_date: :asc, id: :asc)
+    # Build quick lookup maps for current user membership/action rendering on index cards.
+    @membership_by_league_id = current_user.league_memberships.where(league_id: @leagues.map(&:id)).index_by(&:league_id)
   end
 
   def show
+    # League details/actions now live on /leagues expandable cards to reduce context switching.
+    redirect_to leagues_path(anchor: "league-#{@league.id}")
   end
 
   def new

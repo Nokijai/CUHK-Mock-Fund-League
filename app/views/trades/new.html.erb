@@ -1,4 +1,5 @@
 <% content_for :title, "Trading — MOCK-FUND" %>
+<%= render "shared/league_selector", page_type: :trading %>
 <div class="terminal-page-head">
   <h1 class="terminal-page-title">NEW TRADE</h1>
   <div class="terminal-page-meta"><%= @portfolio.user&.name %> · <%= @portfolio.league&.name %> · Cash <%= number_to_currency(@portfolio.cash_balance, precision: 2) %></div>
@@ -19,6 +20,7 @@
       <p class="terminal-stocks-hint">Click stock symbol/name to view chart + history · USE fills order · real-time search as you type · 1H / 4H / 1D to switch timeframe</p>
       <%# Real-time search form with debounced input %>
       <%= form_with url: new_portfolio_trade_path(@portfolio), method: :get, local: true, class: "terminal-toolbar", data: { turbo: false } do %>
+        <%= hidden_field_tag :league_id, @portfolio.league_id %>
         <%= hidden_field_tag :quote_interval, params[:quote_interval] if params[:quote_interval].present? %>
         <%= label_tag :q, "SEARCH TICKERS", class: "terminal-label" %>
         <%= text_field_tag :q, params[:q], 
@@ -30,7 +32,7 @@
               action: "input->stock-search#onInput"
             } %>
         <% if params[:q].present? %>
-          <%= link_to "CLEAR", new_portfolio_trade_path(@portfolio), 
+          <%= link_to "CLEAR", new_portfolio_trade_path(@portfolio, league_id: @portfolio.league_id), 
               class: "terminal-btn",
               data: { action: "click->stock-search#clear" } %>
         <% end %>
@@ -51,10 +53,11 @@
             <% if @available_stocks.any? %>
               <% @available_stocks.each do |sp| %>
                 <% use_params = { prefill_symbol: sp.symbol, prefill_price: sp.price } %>
+                <% use_params[:league_id] = @portfolio.league_id %>
                 <% use_params[:q] = params[:q] if params[:q].present? %>
                 <% use_params[:quote_interval] = params[:quote_interval] if params[:quote_interval].present? %>
                 <%# Stock detail params - clicking symbol/name shows quote panel + chart + history %>
-                <% detail_params = { q: sp.symbol } %>
+                <% detail_params = { q: sp.symbol, league_id: @portfolio.league_id } %>
                 <% detail_params[:quote_interval] = params[:quote_interval] if params[:quote_interval].present? %>
                 <%# Clickable row with hover effect - click to view stock details on trading page %>
                 <tr class="terminal-stock-row" data-stock-symbol="<%= sp.symbol %>">
@@ -76,7 +79,7 @@
               <tr>
                 <td colspan="4" class="terminal-muted-cell">
                   No tickers match &ldquo;<%= h params[:q] %>&rdquo;.
-                  <%= link_to "Clear search", new_portfolio_trade_path(@portfolio), class: "terminal-dash-link", data: { action: "click->stock-search#clear" } %>
+                  <%= link_to "Clear search", new_portfolio_trade_path(@portfolio, league_id: @portfolio.league_id), class: "terminal-dash-link", data: { action: "click->stock-search#clear" } %>
                 </td>
               </tr>
             <% else %>

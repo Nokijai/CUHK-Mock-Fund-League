@@ -518,6 +518,21 @@ body.terminal-shell .disclaimer {
   border-top: 1px solid var(--terminal-border);
 }
 
+.terminal-league-selector {
+  margin-bottom: 1rem;
+}
+
+/* Compact league switcher used on Trading and Portfolio pages. */
+.terminal-league-selector-toolbar {
+  border-top: 0;
+  align-items: flex-end;
+}
+
+.terminal-league-selector-input {
+  min-width: 260px;
+  max-width: 420px;
+}
+
 .terminal-table-actions {
   white-space: nowrap;
 }
@@ -1199,4 +1214,64 @@ body.terminal-shell #error_explanation ul {
   .terminal-position-grid {
     grid-template-columns: 1fr;
   }
+}
+
+/* League index accordion: click summary to reveal a top-down details box per league. */
+.terminal-league-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.terminal-league-card {
+  overflow: hidden;
+}
+
+.terminal-league-card-summary {
+  list-style: none;
+  cursor: pointer;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem 1.25rem;
+  padding: 0.9rem 1rem;
+  border-bottom: 1px solid var(--terminal-border);
+}
+
+.terminal-league-card-summary::-webkit-details-marker {
+  display: none;
+}
+
+.terminal-league-summary-main {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 14px;
+}
+
+.terminal-league-summary-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem 1rem;
+  font-size: 12px;
+  color: var(--terminal-muted);
+}
+
+.terminal-league-card-body {
+  padding: 0.85rem 1rem 1rem;
+}
+
+.terminal-league-details {
+  margin-top: 0.9rem;
+  padding: 0.8rem;
+  border: 1px solid var(--terminal-border);
+  border-radius: 2px;
+  background: rgba(44, 44, 46, 0.45);
+}
+
+.terminal-btn-disabled {
+  opacity: 0.7;
+  cursor: default;
+  pointer-events: none;
 }
