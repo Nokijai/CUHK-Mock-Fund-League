@@ -1,0 +1,74 @@
+<% content_for :title, "Manage Users — Admin" %>
+
+<%= render "admin/shared/delete_modal", delete_message: "Delete user" %>
+
+<div class="terminal-page-head terminal-page-head--row">
+  <div>
+    <h1 class="terminal-page-title">MANAGE USERS</h1>
+    <div class="terminal-page-meta"><%= @users.total_count %> users total</div>
+  </div>
+  <%= link_to "CREATE USER", new_admin_user_path, class: "terminal-btn terminal-btn-primary", style: "color: var(--terminal-bg);" %>
+</div>
+
+<%= render "admin/shared/search_box", search_placeholder: "Search by name or email...", search_endpoint: admin_users_path %>
+
+<!-- User Table -->
+
+<div class="terminal-window">
+  <table class="terminal-table">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>NAME</th>
+        <th>EMAIL</th>
+        <th>ROLE</th>
+        <th>JOINED</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @users.each do |user| %>
+        <tr>
+          <td class="terminal-muted-cell">#<%= user.id %></td>
+          <td><%= user.name || "—" %></td>
+          <td><%= user.email %></td>
+          <td><span class="<%= user.admin? ? 'terminal-up' : '' %>"><%= user.role.upcase %></span></td>
+          <td class="terminal-muted-cell"><%= user.created_at.strftime("%Y-%m-%d") %></td>
+          <td class="terminal-table-actions">
+            <%= link_to "EDIT", edit_admin_user_path(user) %>
+            <%= button_to "DELETE", admin_user_path(user), method: :delete, form: { onsubmit: "showDeleteModal('#{user.email}', this); return false;" }, style: "background: none; border: none; color: var(--terminal-down); cursor: pointer; padding: 0; font: inherit;" %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+  
+  <% if @users.empty? %>
+    <div style="text-align: center; padding: 2rem; color: var(--terminal-muted);">
+      <% if params[:search].present? %>
+        No users found matching "<%= params[:search] %>"
+      <% else %>
+        No users found.
+      <% end %>
+    </div>
+  <% end %>
+</div>
+
+<!-- Pagination -->
+<% if @users.total_pages > 1 %>
+  <div style="display: flex; justify-content: center; align-items: center; gap: 0.5rem; margin-top: 1rem;">
+    <% if @users.prev_page %>
+      <%= link_to "← PREV", admin_users_path(page: @users.prev_page, search: params[:search]), class: "terminal-btn" %>
+    <% else %>
+      <span class="terminal-btn" style="opacity: 0.3; cursor: not-allowed;">← PREV</span>
+    <% end %>
+    
+    <span style="color: var(--terminal-muted);">Page <%= @users.current_page %> of <%= @users.total_pages %></span>
+    
+    <% if @users.next_page %>
+      <%= link_to "NEXT →", admin_users_path(page: @users.next_page, search: params[:search]), class: "terminal-btn" %>
+    <% else %>
+      <span class="terminal-btn" style="opacity: 0.3; cursor: not-allowed;">NEXT →</span>
+    <% end %>
+  </div>
+<% end %>

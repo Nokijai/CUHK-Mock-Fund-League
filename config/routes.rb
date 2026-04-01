@@ -5,6 +5,13 @@ Rails.application.routes.draw do
 
   root "home#dashboard"
 
+  # Admin namespace
+  namespace :admin do
+    root "users#index"
+    resources :users
+    resources :leagues
+  end
+
   resources :leagues do
     get "leaderboard", to: "leaderboards#show", as: :leaderboard
   end

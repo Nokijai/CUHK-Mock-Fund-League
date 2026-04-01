@@ -73,6 +73,27 @@ body.terminal-shell {
   pointer-events: none;
 }
 
+/* Admin management tabs - distinct styling */
+.terminal-topbar a.terminal-admin-tab {
+  border: 1px solid var(--terminal-border);
+  background: rgba(255, 149, 0, 0.05);
+  color: var(--terminal-accent);
+  font-weight: 600;
+  padding: 0.3rem 0.5rem;
+}
+
+.terminal-topbar a.terminal-admin-tab:hover {
+  background: rgba(255, 149, 0, 0.1);
+  border-color: var(--terminal-accent);
+}
+
+.terminal-topbar a.terminal-admin-tab.terminal-nav-active {
+  background: var(--terminal-accent);
+  color: var(--terminal-bg);
+  border-color: var(--terminal-accent);
+  box-shadow: 0 0 8px rgba(255, 149, 0, 0.3);
+}
+
 .terminal-market-live {
   font-size: 11px;
   color: var(--terminal-accent);

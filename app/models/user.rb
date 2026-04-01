@@ -1,4 +1,6 @@
 class User < ApplicationRecord
+  include Searchable
+  
   # Include default devise modules. Others available are:
   # :confirmable, :lockable, :timeoutable, :trackable and :omniauthable
   devise :database_authenticatable, :registerable,
@@ -8,9 +10,26 @@ class User < ApplicationRecord
   has_many :leagues, through: :league_memberships
   has_many :portfolios, dependent: :destroy
 
+  ROLES = %w[user admin].freeze
+
+  validates :role, inclusion: { in: ROLES, message: "%{value} is not a valid role" }
   validate :password_complexity
 
+  after_initialize :set_default_role, if: :new_record?
+
+  def admin?
+    role == "admin"
+  end
+
+  def user?
+    role == "user"
+  end
+
   private
+
+  def set_default_role
+    self.role ||= "user"
+  end
 
   def password_complexity
     return if password.blank?

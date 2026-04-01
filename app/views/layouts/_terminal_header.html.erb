@@ -9,7 +9,7 @@
     <%= link_to "TRADING", leagues_path %>
     <%= link_to "PORTFOLIO", leagues_path %>
   <% end %>
-  <% leagues_nav_active = controller_name == "leagues" && %w[index show edit update].include?(action_name) %>
+  <% leagues_nav_active = controller_name == "leagues" && %w[index show edit update].include?(action_name) && !request.path.start_with?("/admin") %>
   <%= link_to "LEAGUES", leagues_path, class: leagues_nav_active ? "terminal-nav-active" : nil %>
   <% lb_league = @nav_league || League.order(:id).first %>
   <% if lb_league %>
@@ -17,7 +17,12 @@
   <% else %>
     <%= link_to "LEADERBOARD", leagues_path %>
   <% end %>
-  <%= link_to "CREATE LEAGUE", new_league_path, class: (controller_name == "leagues" && action_name == "new") ? "terminal-nav-active" : nil %>
+  <% if user_signed_in? && current_user.admin? %>
+    <% users_active = request.path.start_with?("/admin/users") || (request.path == "/admin" || request.path == "/admin/") %>
+    <% leagues_active = request.path.start_with?("/admin/leagues") %>
+    <%= link_to "MANAGE USERS", admin_users_path, class: "terminal-admin-tab #{users_active ? 'terminal-nav-active' : ''}" %>
+    <%= link_to "MANAGE LEAGUES", admin_leagues_path, class: "terminal-admin-tab #{leagues_active ? 'terminal-nav-active' : ''}" %>
+  <% end %>
 
   <% if user_signed_in? %>
     <span style="margin-left: auto; font-size: 11px; color: var(--terminal-muted); letter-spacing: 0.06em;">
