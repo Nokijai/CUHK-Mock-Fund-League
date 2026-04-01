@@ -30,7 +30,7 @@ gem "action_text-trix", ">= 2.1.17"
 gem "kaminari"
 
 # Load environment variables from .env
-gem "dotenv", require: false, group: [ :development, :test ]
+gem "dotenv", require: false, group: :development
 
 # Testing
 gem "rspec-rails", "~> 7.0", group: [ :development, :test ]
