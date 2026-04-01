@@ -30,12 +30,8 @@ gem "action_text-trix", ">= 2.1.18"
 gem "kaminari"
 
 # Load environment variables from .env
-<<<<<<< HEAD
 # Keep dotenv in test too so local test runs can load .env values when needed.
 gem "dotenv", require: false, group: [ :development, :test ]
-=======
-gem "dotenv", require: false, group: :development
->>>>>>> c155228 (Update Gemfile)
 
 # Testing
 gem "rspec-rails", "~> 7.0", group: [ :development, :test ]
