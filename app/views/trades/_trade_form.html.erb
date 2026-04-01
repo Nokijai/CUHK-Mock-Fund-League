@@ -1,4 +1,10 @@
-<%= form_with model: [ portfolio, trade ], class: "terminal-form" do |f| %>
+<% latest_market_price = @focus_stock&.price&.to_d || trade.price&.to_d %>
+<%= form_with model: [ portfolio, trade ],
+  class: "terminal-form",
+  data: {
+    controller: "order-form",
+    order_form_market_price_value: latest_market_price&.to_f
+  } do |f| %>
   <%# Keep ticker search filter after a failed submit (matches assign_available_stocks). %>
   <%= hidden_field_tag :q, params[:q] if params[:q].present? %>
   <%# Preserve selected chart interval when re-rendering after validation errors. %>
@@ -14,12 +20,25 @@
       <%= f.select :trade_type, %w[buy sell], {}, class: "terminal-input terminal-select" %>
     </div>
     <div class="terminal-field">
+      <%= f.label :order_type, "ORDER TYPE", class: "terminal-label" %>
+      <%= f.select :order_type,
+        [["Market", "market"], ["Limit", "limit"]],
+        {},
+        class: "terminal-input terminal-select",
+        data: { order_form_target: "orderType", action: "change->order-form#onOrderTypeChange" } %>
+    </div>
+    <div class="terminal-field">
       <%= f.label :quantity, "QUANTITY", class: "terminal-label" %>
       <%= f.number_field :quantity, class: "terminal-input", min: 1, required: true %>
     </div>
     <div class="terminal-field">
-      <%= f.label :price, "LIMIT / EXEC PRICE", class: "terminal-label" %>
-      <%= f.number_field :price, class: "terminal-input", step: 0.01, min: 0, required: true %>
+      <%= f.label :price, "PRICE", class: "terminal-label" %>
+      <%= f.number_field :price,
+        class: "terminal-input",
+        step: 0.01,
+        min: 0.01,
+        required: true,
+        data: { order_form_target: "price" } %>
     </div>
   </div>
   <div class="terminal-form-actions">

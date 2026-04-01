@@ -10,10 +10,11 @@ class TradesController < ApplicationController
   end
 
   def new
+    Trade.process_pending_limits!
     sym = params[:prefill_symbol].to_s.upcase.presence
     pr = params[:prefill_price]
     price = pr.present? ? BigDecimal(pr.to_s) : nil
-    @trade = Trade.new(portfolio: @portfolio, symbol: sym, price: price)
+    @trade = Trade.new(portfolio: @portfolio, symbol: sym, price: price, order_type: "market")
     assign_available_stocks
     assign_focus_quote
   end
@@ -21,7 +22,9 @@ class TradesController < ApplicationController
   def create
     @trade = Trade.new(trade_params.merge(portfolio: @portfolio))
     if @trade.save
-      redirect_to @portfolio, notice: "Trade was successfully executed."
+      Trade.process_pending_limits!(symbols: @trade.symbol)
+      msg = @trade.executed_at.present? ? "Order executed successfully." : "Limit order placed and pending execution."
+      redirect_to new_portfolio_trade_path(@portfolio, q: @trade.symbol, quote_interval: params[:quote_interval]), notice: msg
     else
       assign_available_stocks
       assign_focus_quote
@@ -47,8 +50,13 @@ class TradesController < ApplicationController
     @focus_symbol = resolve_focus_symbol
     return if @focus_symbol.blank?
 
+    # Evaluate pending limits for the focused symbol using latest stored price.
+    Trade.process_pending_limits!(symbols: @focus_symbol)
+
     @focus_stock = StockPrice.find_by(symbol: @focus_symbol)
     @focus_name = MarketData::NestakTop30::DISPLAY_NAMES[@focus_symbol] || @focus_symbol
+    @focus_holding = @portfolio.holdings.find_by(symbol: @focus_symbol)
+    @focus_cash_balance = @portfolio.cash_balance.to_d
 
     @candles_by_interval = StockCandle::INTERVALS.index_with do |interval|
       StockCandle
@@ -129,6 +137,6 @@ class TradesController < ApplicationController
   end
 
   def trade_params
-    params.require(:trade).permit(:symbol, :trade_type, :quantity, :price)
+    params.require(:trade).permit(:symbol, :trade_type, :order_type, :quantity, :price)
   end
 end

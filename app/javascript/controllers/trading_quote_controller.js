@@ -239,26 +239,31 @@ export default class extends Controller {
     ctx.fillStyle = "#1c1c1e"
     ctx.fillRect(padL, padT, plotW, plotH)
 
+    // Draw price grid lines with enhanced visibility
     if (this._showGrid) {
       ctx.lineWidth = 1
       const gridN = 5
+      // Draw horizontal price lines
       for (let i = 0; i <= gridN; i++) {
         const y = padT + (plotH * i) / gridN
-        ctx.strokeStyle = "rgba(160, 160, 168, 0.55)"
+        // Enhanced grid line visibility with brighter color
+        ctx.strokeStyle = "rgba(228, 228, 235, 0.75)"
         ctx.beginPath()
         ctx.moveTo(padL, y)
         ctx.lineTo(padL + plotW, y)
         ctx.stroke()
+        // Draw price labels with better contrast
         const price = maxP - (rng * i) / gridN
-        ctx.fillStyle = "#8e8e93"
+        ctx.fillStyle = "#b0b0b5"
         ctx.font = "10px ui-monospace, monospace"
         ctx.textAlign = "right"
         ctx.fillText(price.toFixed(2), padL - 4, y + 3)
       }
+      // Draw vertical time lines with enhanced visibility
       const vLines = Math.min(8, vis.length)
       for (let i = 0; i <= vLines; i++) {
         const x = padL + (plotW * i) / vLines
-        ctx.strokeStyle = "rgba(120, 120, 125, 0.4)"
+        ctx.strokeStyle = "rgba(140, 140, 148, 0.6)"
         ctx.beginPath()
         ctx.moveTo(x, padT)
         ctx.lineTo(x, padT + plotH)
@@ -320,12 +325,23 @@ export default class extends Controller {
     }
   }
 
+  // Format candle tooltip with enhanced broker-style display
   formatCandleTooltip (c) {
     const fmt = (n) =>
       n != null && Number.isFinite(Number(n)) ? Number(n).toFixed(2) : "—"
-    const t = c.t ? new Date(c.t).toLocaleString() : "—"
-    const vol = c.v != null && Number.isFinite(Number(c.v)) ? Number(c.v).toLocaleString() : "—"
-    return `${t}\nO ${fmt(c.o)}  H ${fmt(c.h)}\nL ${fmt(c.l)}  C ${fmt(c.c)}\nVol ${vol}`
+    // Format date/time in a clear, readable format
+    const t = c.t ? new Date(c.t).toLocaleString(undefined, {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    }) : "—"
+    // Format volume with thousands separators for readability
+    const vol = c.v != null && Number.isFinite(Number(c.v)) ? Number(c.v).toLocaleString(undefined, { maximumFractionDigits: 0 }) : "—"
+    
+    // Professional broker-style tooltip with clear labels and organized layout
+    return `${t}\n\nOpen:   ${fmt(c.o)}\nHigh:   ${fmt(c.h)}\nLow:    ${fmt(c.l)}\nClose:  ${fmt(c.c)}\n\nVolume: ${vol}`
   }
 
   updateCandleHover (clientX, clientY) {

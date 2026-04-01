@@ -1,0 +1,122 @@
+<% content_for :title, "#{@symbol} — Stock Info" %>
+
+<div class="terminal-page-head">
+  <h1 class="terminal-page-title"><%= @symbol %> STOCK INFORMATION</h1>
+  <div class="terminal-page-meta">
+    <%= stock_name_for(@symbol) %>
+    <% if @stock&.updated_at %>
+      · Updated <%= time_ago_in_words(@stock.updated_at) %> ago
+    <% end %>
+  </div>
+</div>
+
+<div class="terminal-stock-info-grid">
+  <%# Current Price Card %>
+  <div class="terminal-window">
+    <div class="terminal-window-title">CURRENT PRICE</div>
+    <div class="terminal-stock-price-display">
+      <div class="terminal-stock-current-price">
+        <%= number_to_currency(@price_data[:price], precision: 2) %>
+      </div>
+      <% if @price_data[:change_percent] %>
+        <div class="terminal-stock-change <%= @price_data[:change_percent] >= 0 ? 'terminal-text-up' : 'terminal-text-down' %>">
+          <%= sprintf("%+.2f%%", @price_data[:change_percent]) %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <%# Stock Details Card %>
+  <div class="terminal-window">
+    <div class="terminal-window-title">DETAILS</div>
+    <table class="terminal-table terminal-table-compact">
+      <tbody>
+        <tr>
+          <td><strong>Symbol</strong></td>
+          <td><%= @symbol %></td>
+        </tr>
+        <tr>
+          <td><strong>Name</strong></td>
+          <td><%= stock_name_for(@symbol) %></td>
+        </tr>
+        <% if @price_data[:open] %>
+          <tr>
+            <td><strong>Open</strong></td>
+            <td><%= number_to_currency(@price_data[:open], precision: 2) %></td>
+          </tr>
+        <% end %>
+        <% if @price_data[:high] %>
+          <tr>
+            <td><strong>High</strong></td>
+            <td><%= number_to_currency(@price_data[:high], precision: 2) %></td>
+          </tr>
+        <% end %>
+        <% if @price_data[:low] %>
+          <tr>
+            <td><strong>Low</strong></td>
+            <td><%= number_to_currency(@price_data[:low], precision: 2) %></td>
+          </tr>
+        <% end %>
+        <% if @price_data[:volume] %>
+          <tr>
+            <td><strong>Volume</strong></td>
+            <td><%= number_with_delimiter(@price_data[:volume].to_i) %></td>
+          </tr>
+        <% end %>
+        <% if @candles.any? %>
+          <tr>
+            <td><strong>Data Points</strong></td>
+            <td><%= @candles.length %> candles (<%= @interval %>)</td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<%# Action Buttons %>
+<div class="terminal-actions">
+  <% if current_portfolio = Portfolio.first %>
+    <%= link_to "TRADE THIS STOCK", 
+        new_portfolio_trade_path(current_portfolio, prefill_symbol: @symbol, prefill_price: @price_data[:price]), 
+        class: "terminal-btn terminal-btn--primary" %>
+  <% end %>
+  <%= link_to "← BACK TO TRADING", 
+      (current_portfolio ? new_portfolio_trade_path(current_portfolio) : trading_path), 
+      class: "terminal-btn" %>
+</div>
+
+<%# Chart Data Display (if candles exist) %>
+<% if @candles.any? %>
+  <div class="terminal-window" style="margin-top: 1.5rem;">
+    <div class="terminal-window-title">RECENT CANDLES (<%= @interval.upcase %>)</div>
+    <div class="terminal-stocks-scroll" style="max-height: 400px;">
+      <table class="terminal-table terminal-table-compact">
+        <thead>
+          <tr>
+            <th>TIME</th>
+            <th class="num">OPEN</th>
+            <th class="num">HIGH</th>
+            <th class="num">LOW</th>
+            <th class="num">CLOSE</th>
+            <th class="num">VOLUME</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @candles.first(50).each do |candle| %>
+            <tr>
+              <td><%= Time.parse(candle[:t]).strftime("%Y-%m-%d %H:%M") rescue candle[:t] %></td>
+              <td class="num"><%= number_to_currency(candle[:o], precision: 2) if candle[:o] %></td>
+              <td class="num"><%= number_to_currency(candle[:h], precision: 2) if candle[:h] %></td>
+              <td class="num"><%= number_to_currency(candle[:l], precision: 2) if candle[:l] %></td>
+              <td class="num <%= candle[:c] && candle[:o] ? (candle[:c] >= candle[:o] ? 'terminal-text-up' : 'terminal-text-down') : '' %>">
+                <%= number_to_currency(candle[:c], precision: 2) if candle[:c] %>
+              </td>
+              <td class="num"><%= number_with_delimiter(candle[:v].to_i) if candle[:v] %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+<% end %>

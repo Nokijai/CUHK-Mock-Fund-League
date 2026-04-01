@@ -8,7 +8,9 @@
     <thead>
       <tr>
         <th>TIME</th>
-        <th>TYPE</th>
+        <th>SIDE</th>
+        <th>ORDER</th>
+        <th>STATUS</th>
         <th>SYM</th>
         <th class="num">QTY</th>
         <th class="num">PRICE</th>
@@ -19,6 +21,10 @@
         <tr>
           <td><%= (t.executed_at || t.created_at).strftime("%Y-%m-%d %H:%M") %></td>
           <td class="<%= t.trade_type == "buy" ? "terminal-text-up" : "terminal-text-down" %>"><%= t.trade_type.upcase %></td>
+          <td><%= t.order_type.to_s.upcase %></td>
+          <td class="<%= t.executed_at.present? ? "terminal-text-up" : "terminal-muted-cell" %>">
+            <%= t.executed_at.present? ? "EXECUTED" : "PENDING" %>
+          </td>
           <td><%= t.symbol %></td>
           <td class="num"><%= t.quantity %></td>
           <td class="num"><%= number_to_currency(t.price, precision: 4) %></td>
