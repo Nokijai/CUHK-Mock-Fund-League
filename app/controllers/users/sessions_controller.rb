@@ -15,6 +15,17 @@ class Users::SessionsController < Devise::SessionsController
       return
     end
 
+    if user.role.to_s == "admin"
+      session.delete(:pending_otp_user_id)
+      session.delete(:pending_otp_remember_me)
+
+      sign_in(resource_name, user)
+      remember_me(user) if ActiveModel::Type::Boolean.new.cast(sign_in_params[:remember_me]) && devise_mapping.rememberable?
+
+      redirect_to after_sign_in_path_for(user), notice: "Logged in successfully."
+      return
+    end
+
     code = user.generate_login_otp!
     UserMailer.login_otp_email(user, code).deliver_now
 
