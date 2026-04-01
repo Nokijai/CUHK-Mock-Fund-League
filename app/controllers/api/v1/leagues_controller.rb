@@ -40,10 +40,11 @@ module Api
       end
 
       # POST /api/v1/leagues/:id/join
-      # Uses the authenticated user from the request context
+      # Body: { user_id: 1 }
       def join
-        user = current_user
-        return render json: { errors: [ "Unauthorized" ] }, status: :unauthorized unless user
+        user_id = params[:user_id].to_i
+        user = User.find_by(id: user_id)
+        return render json: { errors: [ "User not found" ] }, status: :not_found unless user
 
         membership = LeagueMembership.new(user: user, league: @league)
         begin
@@ -123,7 +124,7 @@ module Api
           end_date:         league.end_date,
           rules:            league.rules,
           member_count:     league.league_memberships.count,
-          members:          league.users.map { |u| { id: u.id, name: u.name } }
+          members:          league.users.map { |u| { id: u.id, name: u.name, email: u.email } }
         }
       end
 
