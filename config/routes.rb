@@ -29,6 +29,14 @@ Rails.application.routes.draw do
 
   namespace :api do
     namespace :v1 do
+      # League API endpoints used by frontend/API clients.
+      resources :leagues, only: [ :index, :show, :create, :update, :destroy ] do
+        member do
+          post :join
+          delete :leave
+          get :leaderboard
+        end
+      end
       resources :trades, only: [ :create ]
       get "stock_prices/:symbol", to: "stock_prices#show", as: :stock_price
     end

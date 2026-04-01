@@ -29,6 +29,9 @@ gem "action_text-trix", ">= 2.1.17"
 # Pagination
 gem "kaminari"
 
+# Load environment variables from .env
+gem "dotenv", require: false
+
 # Testing
 gem "rspec-rails", "~> 7.0", group: [ :development, :test ]
 gem "factory_bot_rails", group: [ :development, :test ]

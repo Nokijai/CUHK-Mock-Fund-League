@@ -5,6 +5,7 @@ class League < ApplicationRecord
   has_many :users, through: :league_memberships
   has_many :portfolios, dependent: :destroy
 
+  # Keep league names unique and enforce valid competition windows/capital.
   validates :name, presence: true, uniqueness: { case_sensitive: true, message: "already exists" }
   validates :start_date, presence: true
   validates :end_date, presence: true
