@@ -24,7 +24,7 @@ class ApplicationController < ActionController::Base
   def redirect_pending_otp_user
     return if user_signed_in?
     return unless session[:pending_otp_user_id].present?
-    return if devise_controller? && %w[sessions].include?(controller_name) && %w[verify_otp otp_authenticate cancel_otp_login].include?(action_name)
+    return if devise_controller? && %w[sessions].include?(controller_name) && %w[verify_otp otp_authenticate cancel_otp_login resend_otp].include?(action_name)
 
     redirect_to users_verify_otp_path, alert: "Please complete email verification before continuing."
   end

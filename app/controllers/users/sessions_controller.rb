@@ -1,6 +1,6 @@
 class Users::SessionsController < Devise::SessionsController
-  skip_before_action :authenticate_user!, only: %i[new create verify_otp otp_authenticate cancel_otp_login]
-  before_action :ensure_pending_otp_user!, only: %i[verify_otp otp_authenticate]
+  skip_before_action :authenticate_user!, only: %i[new create verify_otp otp_authenticate cancel_otp_login resend_otp]
+  before_action :ensure_pending_otp_user!, only: %i[verify_otp otp_authenticate resend_otp]
 
   def create
     email = sign_in_params[:email].to_s.strip.downcase
@@ -59,6 +59,18 @@ class Users::SessionsController < Devise::SessionsController
     self.resource = resource_class.new
     clean_up_passwords(resource)
     render :new, status: :ok
+  end
+
+  def resend_otp
+    unless @pending_user.login_otp_resend_available?
+      redirect_to users_verify_otp_path, alert: "Please wait a few seconds before requesting a new code."
+      return
+    end
+
+    code = @pending_user.generate_login_otp!
+    UserMailer.login_otp_email(@pending_user, code).deliver_now
+
+    redirect_to users_verify_otp_path, notice: "A new verification code was sent to your email."
   end
 
   private

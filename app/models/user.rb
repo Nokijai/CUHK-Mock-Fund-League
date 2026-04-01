@@ -1,6 +1,7 @@
 class User < ApplicationRecord
   LOGIN_OTP_TTL = 10.minutes
   LOGIN_OTP_MAX_ATTEMPTS = 5
+  LOGIN_OTP_RESEND_COOLDOWN = 30.seconds
 
   # Include default devise modules. Others available are:
   # :confirmable, :lockable, :timeoutable, :trackable and :omniauthable
@@ -46,6 +47,16 @@ class User < ApplicationRecord
 
   def login_otp_locked?
     login_otp_locked_until.present? && login_otp_locked_until.future?
+  end
+
+  def login_otp_resend_available?
+    login_otp_sent_at.blank? || login_otp_sent_at <= LOGIN_OTP_RESEND_COOLDOWN.ago
+  end
+
+  def login_otp_resend_wait_seconds
+    return 0 if login_otp_resend_available?
+
+    [(login_otp_sent_at + LOGIN_OTP_RESEND_COOLDOWN - Time.current).ceil, 0].max
   end
 
   def clear_login_otp!
