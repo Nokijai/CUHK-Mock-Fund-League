@@ -1,0 +1,58 @@
+<!-- Shared Search Box with Live Search -->
+<div class="terminal-window" style="margin-bottom: 1rem; padding: 1rem;">
+  <div style="position: relative;">
+    <%= text_field_tag :search, params[:search], 
+        class: "terminal-input", 
+        placeholder: search_placeholder, 
+        id: "searchInput",
+        style: "padding-right: 2.5rem;",
+        oninput: "performSearch(this.value)" %>
+    
+    <button onclick="clearSearch()" 
+            id="clearBtn" 
+            style="position: absolute; right: 0.5rem; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--terminal-muted); cursor: pointer; font-size: 1.2rem; padding: 0.25rem; display: <%= params[:search].present? ? 'block' : 'none' %>;">
+      ×
+    </button>
+  </div>
+</div>
+
+<script>
+  let searchTimeout;
+  const searchEndpoint = '<%= search_endpoint %>';
+
+  function performSearch(query) {
+    const clearBtn = document.getElementById('clearBtn');
+    clearBtn.style.display = query ? 'block' : 'none';
+    
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+      fetch(searchEndpoint + '?search=' + encodeURIComponent(query), {
+        headers: {
+          'Accept': 'text/html',
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      })
+      .then(response => response.text())
+      .then(html => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const newTable = doc.querySelector('.terminal-window table').parentElement;
+        const oldTable = document.querySelector('.terminal-window table').parentElement;
+        if (newTable && oldTable) {
+          oldTable.innerHTML = newTable.innerHTML;
+        }
+        const newMeta = doc.querySelector('.terminal-page-meta');
+        const oldMeta = document.querySelector('.terminal-page-meta');
+        if (newMeta && oldMeta) {
+          oldMeta.textContent = newMeta.textContent;
+        }
+      });
+    }, 100);
+  }
+
+  function clearSearch() {
+    document.getElementById('searchInput').value = '';
+    document.getElementById('clearBtn').style.display = 'none';
+    performSearch('');
+  }
+</script>

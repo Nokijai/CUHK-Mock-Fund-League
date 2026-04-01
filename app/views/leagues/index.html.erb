@@ -4,7 +4,9 @@
     <h1 class="terminal-page-title">LEAGUES</h1>
     <div class="terminal-page-meta">Select a competition</div>
   </div>
-  <%= link_to "CREATE LEAGUE", new_league_path, class: "terminal-btn terminal-btn-primary" %>
+  <% if current_user.admin? %>
+    <%= link_to "CREATE LEAGUE", new_league_path, class: "terminal-btn terminal-btn-primary" %>
+  <% end %>
 </div>
 <div class="terminal-window">
   <table class="terminal-table">
@@ -21,7 +23,7 @@
         <tr>
           <td><strong><%= league.name %></strong></td>
           <td class="num"><%= number_to_currency(league.starting_capital, precision: 0) %></td>
-          <td class="terminal-muted-cell"><%= league.start_date %> → <%= league.end_date %></td>
+          <td class="terminal-muted-cell"><%= format_datetime(league.start_date, format: :short) %> → <%= format_datetime(league.end_date, format: :short) %></td>
           <td class="terminal-table-actions">
             <%= link_to "OPEN", league_path(league) %>
             <%= link_to "RANK", league_leaderboard_path(league) %>
@@ -31,6 +33,10 @@
     </tbody>
   </table>
   <% if @leagues.empty? %>
-    <p class="terminal-empty">No leagues. <%= link_to "Create one", new_league_path %>.</p>
+    <% if current_user.admin? %>
+      <p class="terminal-empty">No leagues. <%= link_to "Create one", new_league_path %>.</p>
+    <% else %>
+      <p class="terminal-empty">No leagues available.</p>
+    <% end %>
   <% end %>
 </div>

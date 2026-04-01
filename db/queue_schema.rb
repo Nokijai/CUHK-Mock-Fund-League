@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_01_180000) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_01_210934) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -23,6 +23,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_01_180000) do
     t.datetime "updated_at", null: false
     t.index ["portfolio_id", "symbol"], name: "index_holdings_on_portfolio_id_and_symbol", unique: true
     t.index ["portfolio_id"], name: "index_holdings_on_portfolio_id"
+    t.index ["symbol"], name: "index_holdings_on_symbol"
   end
 
   create_table "league_memberships", force: :cascade do |t|
@@ -39,12 +40,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_01_180000) do
   create_table "leagues", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.text "description"
-    t.date "end_date"
+    t.datetime "end_date"
     t.string "name", null: false
     t.jsonb "rules", default: {}
-    t.date "start_date"
+    t.datetime "start_date"
     t.decimal "starting_capital", precision: 15, scale: 2, default: "0.0"
     t.datetime "updated_at", null: false
+    t.index ["name"], name: "index_leagues_on_name", unique: true
   end
 
   create_table "portfolios", force: :cascade do |t|
@@ -216,16 +218,22 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_01_180000) do
     t.index ["order_type", "executed_at"], name: "index_trades_on_order_type_and_executed_at"
     t.index ["portfolio_id", "executed_at"], name: "index_trades_on_portfolio_id_and_executed_at"
     t.index ["portfolio_id"], name: "index_trades_on_portfolio_id"
+    t.index ["symbol"], name: "index_trades_on_symbol"
   end
 
   create_table "users", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "email", null: false
+    t.string "encrypted_password", default: "", null: false
     t.string "name"
-    t.string "password_digest"
-    t.string "role"
+    t.datetime "remember_created_at"
+    t.datetime "reset_password_sent_at"
+    t.string "reset_password_token"
+    t.string "role", default: "user"
     t.datetime "updated_at", null: false
     t.index ["email"], name: "index_users_on_email", unique: true
+    t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
+    t.index ["role"], name: "index_users_on_role"
   end
 
   add_foreign_key "holdings", "portfolios"

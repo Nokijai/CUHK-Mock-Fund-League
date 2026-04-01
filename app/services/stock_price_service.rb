@@ -1,4 +1,8 @@
 class StockPriceService
+  def initialize
+    @client = ApiClients::YahooFinanceClient.new
+  end
+
   def search(query)
     q = query.to_s.strip
     return [] if q.blank?
@@ -15,9 +19,7 @@ class StockPriceService
     sp = StockPrice.find_by(symbol: sym)
     candle = latest_candle_for(sym)
 
-    # Prefer stock_prices for fresh values, but fall back to the newest candle close when
-    # the row is missing/stale/seed-placeholder. This keeps quote strips usable right after
-    # seeding or partial refreshes where candles are newer than stock_prices.
+    # Prefer stock_prices for fresh values, but fall back to newest candle close.
     effective_price =
       if should_fallback_to_candle?(sp, candle)
         candle&.close
@@ -32,6 +34,35 @@ class StockPriceService
       price: effective_price.to_f,
       updated_at: effective_timestamp(sp, candle)&.iso8601
     }
+  end
+
+  # Direct Yahoo quote access for consumers that still need raw provider payload.
+  def get_quote(symbol)
+    @client.quote(symbol)
+  end
+
+  # Direct Yahoo history access used by simpler chart consumers.
+  def get_history(symbol, range: "1mo")
+    @client.history(symbol, range: range)
+  end
+
+  # Batch refreshes tracked symbols; stores latest quote into stock_prices.
+  def update_all_prices
+    updated = []
+    failed = []
+
+    StockPrice.find_each do |stock|
+      quote = @client.quote(stock.symbol)
+      if quote && quote[:price]
+        stock.update!(price: quote[:price], updated_at: quote[:updated_at] || Time.current)
+        updated << stock.symbol
+      else
+        failed << stock.symbol
+      end
+      sleep(0.5) # Basic rate limiting for upstream API.
+    end
+
+    { updated: updated, failed: failed }
   end
 
   private
@@ -52,13 +83,13 @@ class StockPriceService
     return true if stock_price_row.nil? || stock_price_row.price.nil?
     return true if placeholder_seed_price?(stock_price_row.price)
 
-    # Candle data is the fresher source if its bar timestamp is newer than stock row update.
     stock_updated_at = stock_price_row.updated_at
     stock_updated_at.nil? || candle.candle_at > stock_updated_at
   end
 
   def effective_timestamp(stock_price_row, candle)
     return candle&.candle_at if should_fallback_to_candle?(stock_price_row, candle)
+
     stock_price_row&.updated_at
   end
 

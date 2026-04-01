@@ -1,4 +1,4 @@
- # Solid Queue recurring schedule (scheduler runs inside bin/jobs or Puma plugin).
+# Solid Queue recurring schedule (scheduler runs inside bin/jobs or Puma plugin).
 # See: https://github.com/rails/solid_queue#recurring-tasks
 
 development:

@@ -107,7 +107,7 @@ class TradesController < ApplicationController
     prev_c = candles.size >= 2 ? candles[-2] : nil
     close = last_c.close&.to_f
     prev_close = prev_c&.close&.to_f
-    chg_pct = if prev_close.present? && prev_close.nonzero?
+    chg_pct = if close.present? && prev_close.present? && prev_close.nonzero?
       ((close - prev_close) / prev_close) * 100.0
     end
 

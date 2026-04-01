@@ -14,12 +14,12 @@
       <%= f.number_field :starting_capital, class: "terminal-input", value: league.starting_capital.presence || 100_000, min: 1, step: 1000 %>
     </div>
     <div class="terminal-field">
-      <%= f.label :start_date, "START DATE", class: "terminal-label" %>
-      <%= f.date_field :start_date, class: "terminal-input" %>
+      <%= f.label :start_date, "START DATE & TIME", class: "terminal-label" %>
+      <%= f.datetime_local_field :start_date, class: "terminal-input" %>
     </div>
     <div class="terminal-field">
-      <%= f.label :end_date, "END DATE", class: "terminal-label" %>
-      <%= f.date_field :end_date, class: "terminal-input" %>
+      <%= f.label :end_date, "END DATE & TIME", class: "terminal-label" %>
+      <%= f.datetime_local_field :end_date, class: "terminal-input" %>
     </div>
   </div>
   <div class="terminal-form-actions">

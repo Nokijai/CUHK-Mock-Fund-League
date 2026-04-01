@@ -10,11 +10,11 @@
   </div>
   <div class="terminal-stat-card">
     <div class="terminal-stat-label">START</div>
-    <div class="terminal-stat-value terminal-stat-small"><%= @league.start_date %></div>
+    <div class="terminal-stat-value terminal-stat-small"><%= format_datetime(@league.start_date) %></div>
   </div>
   <div class="terminal-stat-card">
     <div class="terminal-stat-label">END</div>
-    <div class="terminal-stat-value terminal-stat-small"><%= @league.end_date %></div>
+    <div class="terminal-stat-value terminal-stat-small"><%= format_datetime(@league.end_date) %></div>
   </div>
 </div>
 <div class="terminal-toolbar">
