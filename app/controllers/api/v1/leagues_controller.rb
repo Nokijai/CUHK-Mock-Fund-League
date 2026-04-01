@@ -98,7 +98,7 @@ module Api
       def set_league
         @league = League.find(params[:id])
       rescue ActiveRecord::RecordNotFound
-        render json: { errors: [ "League not found" ] }, status: :not_found
+        render json: { errors: [ "League not found" ] }, status: :not_found and return
       end
 
       def league_summary(league)
@@ -133,4 +133,3 @@ module Api
     end
   end
 end
-
