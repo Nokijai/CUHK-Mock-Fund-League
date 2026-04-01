@@ -1,22 +1,41 @@
 <header class="terminal-topbar">
   <span class="terminal-brand">MOCK-FUND LEAGUE</span>
+  <% selected_league_id = @selected_league&.id %>
+  <% league_params = selected_league_id ? { league_id: selected_league_id } : {} %>
   <%= link_to "DASHBOARD", root_path, class: (controller_name == "home" && action_name == "dashboard") ? "terminal-nav-active" : nil %>
-  <% p0 = @nav_portfolio || Portfolio.order(:id).first %>
-  <% if p0 %>
-    <%= link_to "TRADING", new_portfolio_trade_path(p0), class: controller_name == "trades" ? "terminal-nav-active" : nil %>
-    <%= link_to "PORTFOLIO", portfolio_path(p0), class: (controller_name == "portfolios" && action_name == "show") ? "terminal-nav-active" : nil %>
+  <%# Portfolio link needs an id; TRADING uses /trading → HomeController#trading_redirect (same resolution as seeds). %>
+  <% nav_p = @nav_portfolio %>
+  <% trading_active = controller_name == "trades" || (controller_name == "home" && action_name == "trading_redirect") %>
+  <%= link_to "TRADING", trading_path(league_params), class: trading_active ? "terminal-nav-active" : nil %>
+  <% if nav_p %>
+    <%= link_to "PORTFOLIO", portfolio_path(nav_p, league_params), class: (controller_name == "portfolios" && action_name == "show") ? "terminal-nav-active" : nil %>
   <% else %>
-    <%= link_to "TRADING", leagues_path %>
     <%= link_to "PORTFOLIO", leagues_path %>
   <% end %>
-  <% leagues_nav_active = controller_name == "leagues" && %w[index show edit update].include?(action_name) %>
+  <% leagues_nav_active = controller_name == "leagues" && %w[index show edit update].include?(action_name) && !request.path.start_with?("/admin") %>
   <%= link_to "LEAGUES", leagues_path, class: leagues_nav_active ? "terminal-nav-active" : nil %>
   <% lb_league = @nav_league || League.order(:id).first %>
   <% if lb_league %>
-    <%= link_to "LEADERBOARD", league_leaderboard_path(lb_league), class: controller_name == "leaderboards" ? "terminal-nav-active" : nil %>
+    <%= link_to "LEADERBOARD", league_leaderboard_path(lb_league, league_params), class: controller_name == "leaderboards" ? "terminal-nav-active" : nil %>
   <% else %>
     <%= link_to "LEADERBOARD", leagues_path %>
   <% end %>
-  <%= link_to "CREATE LEAGUE", new_league_path, class: (controller_name == "leagues" && action_name == "new") ? "terminal-nav-active" : nil %>
-  <span class="terminal-market-live">MARKET: LIVE</span>
+  <% if user_signed_in? && current_user.admin? %>
+    <% users_active = request.path.start_with?("/admin/users") || (request.path == "/admin" || request.path == "/admin/") %>
+    <% leagues_active = request.path.start_with?("/admin/leagues") %>
+    <%= link_to "MANAGE USERS", admin_users_path, class: "terminal-admin-tab #{users_active ? 'terminal-nav-active' : ''}" %>
+    <%= link_to "MANAGE LEAGUES", admin_leagues_path, class: "terminal-admin-tab #{leagues_active ? 'terminal-nav-active' : ''}" %>
+  <% end %>
+
+  <% if user_signed_in? %>
+    <span style="margin-left: auto; font-size: 11px; color: var(--terminal-muted); letter-spacing: 0.06em;">
+      <%= current_user.name || current_user.email %>
+    </span>
+    <%= button_to "LOGOUT", destroy_user_session_path, method: :delete, style: "background: none; border: 1px solid var(--terminal-border); padding: 0.25rem 0.5rem; font-size: 11px; color: var(--terminal-text); cursor: pointer; font-family: inherit; font-weight: 600; letter-spacing: 0.06em; border-radius: 2px; margin-left: 0.5rem;", onmouseover: "this.style.color='var(--terminal-down)'; this.style.borderColor='var(--terminal-down)'", onmouseout: "this.style.color='var(--terminal-text)'; this.style.borderColor='var(--terminal-border)'" %>
+  <% else %>
+    <%= link_to "LOGIN", new_user_session_path, style: "margin-left: auto; font-size: 11px; font-weight: 600; color: var(--terminal-accent); text-decoration: none; text-transform: uppercase; letter-spacing: 0.06em; padding: 0.25rem 0.5rem; border: 1px solid var(--terminal-border); border-radius: 2px;" %>
+    <%= link_to "SIGN UP", new_user_registration_path, style: "font-size: 11px; font-weight: 600; color: var(--terminal-bg); background: var(--terminal-accent); text-decoration: none; text-transform: uppercase; letter-spacing: 0.06em; padding: 0.25rem 0.5rem; border: 1px solid var(--terminal-accent); border-radius: 2px;" %>
+  <% end %>
+
+  <span class="terminal-market-live" style="margin-left: 0.5rem;">MARKET: LIVE</span>
 </header>

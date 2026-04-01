@@ -1,7 +1,19 @@
 Rails.application.routes.draw do
+  devise_for :users
+
   get "up" => "rails/health#show", as: :rails_health_check
 
   root "home#dashboard"
+
+  # Bookmark / cache may still request /trading; redirect to real nested trade URL.
+  get "trading", to: "home#trading_redirect", as: :trading
+
+  # Admin namespace
+  namespace :admin do
+    root "users#index"
+    resources :users
+    resources :leagues
+  end
 
   resources :leagues do
     get "leaderboard", to: "leaderboards#show", as: :leaderboard

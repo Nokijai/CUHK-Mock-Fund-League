@@ -26,6 +26,9 @@ gem "rack", ">= 3.2.5"
 gem "nokogiri", ">= 1.19.1"
 gem "action_text-trix", ">= 2.1.17"
 
+# Pagination
+gem "kaminari"
+
 # Testing
 gem "rspec-rails", "~> 7.0", group: [ :development, :test ]
 gem "factory_bot_rails", group: [ :development, :test ]
