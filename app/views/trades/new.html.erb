@@ -1,2 +1,185 @@
-<h1>New Trade</h1>
-<%= render "trade_form", trade: @trade, portfolio: @portfolio %>
+<% content_for :title, "Trading — MOCK-FUND" %>
+<%= render "shared/league_selector", page_type: :trading %>
+<div class="terminal-page-head">
+  <h1 class="terminal-page-title">NEW TRADE</h1>
+  <div class="terminal-page-meta"><%= @portfolio.user&.name %> · <%= @portfolio.league&.name %> · Cash <%= number_to_currency(@portfolio.cash_balance, precision: 2) %></div>
+</div>
+
+<%# Main layout container: LEFT = trading grid, RIGHT = stock info %>
+<div class="terminal-trading-layout">
+  <%# LEFT SIDE: Trade form + Available stocks list %>
+  <div class="terminal-trading-grid">
+  
+    <%# Real-time search with Stimulus controller %>
+    <div class="terminal-window terminal-available-stocks" 
+        data-controller="stock-search"
+        data-stock-search-portfolio-id-value="<%= @portfolio.id %>"
+        data-stock-search-query-value="<%= params[:q] || '' %>"
+        data-stock-search-quote-interval-value="<%= params[:quote_interval] || '' %>">
+      <div class="terminal-window-title">AVAILABLE STOCKS</div>
+      <p class="terminal-stocks-hint">Click stock symbol/name to view chart + history · USE fills order · real-time search as you type · 1H / 4H / 1D to switch timeframe</p>
+      <%# Real-time search form with debounced input %>
+      <%= form_with url: new_portfolio_trade_path(@portfolio), method: :get, local: true, class: "terminal-toolbar", data: { turbo: false } do %>
+        <%= hidden_field_tag :league_id, @portfolio.league_id %>
+        <%= hidden_field_tag :quote_interval, params[:quote_interval] if params[:quote_interval].present? %>
+        <%= label_tag :q, "SEARCH TICKERS", class: "terminal-label" %>
+        <%= text_field_tag :q, params[:q], 
+            class: "terminal-input", 
+            placeholder: "Symbol or name…", 
+            autocomplete: "off",
+            data: { 
+              stock_search_target: "input",
+              action: "input->stock-search#onInput"
+            } %>
+        <% if params[:q].present? %>
+          <%= link_to "CLEAR", new_portfolio_trade_path(@portfolio, league_id: @portfolio.league_id), 
+              class: "terminal-btn",
+              data: { action: "click->stock-search#clear" } %>
+        <% end %>
+      <% end %>
+
+      
+      <div class="terminal-stocks-scroll">
+        <table class="terminal-table terminal-table-compact">
+          <thead>
+            <tr>
+              <th>SYM</th>
+              <th>NAME</th>
+              <th class="num">LAST</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody data-stock-search-target="results">
+            <% if @available_stocks.any? %>
+              <% @available_stocks.each do |sp| %>
+                <% use_params = { prefill_symbol: sp.symbol, prefill_price: sp.price } %>
+                <% use_params[:league_id] = @portfolio.league_id %>
+                <% use_params[:q] = params[:q] if params[:q].present? %>
+                <% use_params[:quote_interval] = params[:quote_interval] if params[:quote_interval].present? %>
+                <%# Stock detail params - clicking symbol/name shows quote panel + chart + history %>
+                <% detail_params = { q: sp.symbol, league_id: @portfolio.league_id } %>
+                <% detail_params[:quote_interval] = params[:quote_interval] if params[:quote_interval].present? %>
+                <%# Clickable row with hover effect - click to view stock details on trading page %>
+                <tr class="terminal-stock-row" data-stock-symbol="<%= sp.symbol %>">
+                  <td>
+                    <%= link_to new_portfolio_trade_path(@portfolio, detail_params), class: "terminal-stock-link" do %>
+                      <strong><%= sp.symbol %></strong>
+                    <% end %>
+                  </td>
+                  <td class="terminal-ellipsis terminal-stock-name">
+                    <%= link_to stock_name_for(sp.symbol), new_portfolio_trade_path(@portfolio, detail_params), class: "terminal-stock-name-link" %>
+                  </td>
+                  <td class="num"><%= number_to_currency(sp.price, precision: 2) %></td>
+                  <td class="terminal-stock-use">
+                    <%= link_to "USE", new_portfolio_trade_path(@portfolio, use_params), class: "terminal-link-use" %>
+                  </td>
+                </tr>
+              <% end %>
+            <% elsif params[:q].present? %>
+              <tr>
+                <td colspan="4" class="terminal-muted-cell">
+                  No tickers match &ldquo;<%= h params[:q] %>&rdquo;.
+                  <%= link_to "Clear search", new_portfolio_trade_path(@portfolio, league_id: @portfolio.league_id), class: "terminal-dash-link", data: { action: "click->stock-search#clear" } %>
+                </td>
+              </tr>
+            <% else %>
+              <tr>
+                <td colspan="4" class="terminal-muted-cell">No quotes loaded. Run <code>bin/rails db:seed</code>.</td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    
+    <div class="terminal-form-shell terminal-form-shell--narrow">
+    <%= render "trade_form", trade: @trade, portfolio: @portfolio %>
+    </div>
+  </div>
+
+  
+  <%# END LEFT SIDE %>
+
+  <%# RIGHT SIDE: Stock info (quote panel + historical prices) %>
+  <div class="terminal-stock-info-section">
+    <%# Full quote strip when a ticker is focused: USE link, single search hit, or form symbol after validation. %>
+    <% if @focus_symbol.present? %>
+      <%# Portfolio position summary for currently selected symbol. %>
+      <div class="terminal-window terminal-position-summary">
+        <div class="terminal-window-title">POSITION SUMMARY — <%= @focus_symbol %></div>
+        <div class="terminal-position-grid">
+          <div class="terminal-position-item">
+            <span class="terminal-position-label">HOLDING QTY</span>
+            <span class="terminal-position-value"><%= @focus_holding&.quantity.to_i %></span>
+          </div>
+          <div class="terminal-position-item">
+            <span class="terminal-position-label">AVG COST</span>
+            <span class="terminal-position-value">
+              <%= @focus_holding&.quantity.to_i.positive? ? number_to_currency(@focus_holding.average_cost, precision: 4) : "—" %>
+            </span>
+          </div>
+          <div class="terminal-position-item">
+            <span class="terminal-position-label">LATEST PRICE</span>
+            <span class="terminal-position-value">
+              <%= @focus_stock&.price ? number_to_currency(@focus_stock.price, precision: 4) : "—" %>
+            </span>
+          </div>
+          <div class="terminal-position-item">
+            <span class="terminal-position-label">CASH BALANCE</span>
+            <span class="terminal-position-value"><%= number_to_currency(@focus_cash_balance, precision: 2) %></span>
+          </div>
+        </div>
+      </div>
+
+      <%= render "trading_quote_panel" %>
+      
+      <%# Historical price list below the chart %>
+      <% candles = @candles_by_interval[@quote_interval] %>
+      <% if candles.present? && candles.any? %>
+        <div class="terminal-window terminal-historical-prices">
+          <div class="terminal-window-title">HISTORICAL PRICES (<%= @quote_interval.upcase %>) — <%= @focus_symbol %></div>
+          <div class="terminal-stocks-scroll" style="max-height: 400px;">
+            <table class="terminal-table terminal-table-compact">
+              <thead>
+                <tr>
+                  <th>TIME</th>
+                  <th class="num">OPEN</th>
+                  <th class="num">HIGH</th>
+                  <th class="num">LOW</th>
+                  <th class="num">CLOSE</th>
+                  <th class="num">VOLUME</th>
+                </tr>
+              </thead>
+              <tbody>
+                <%# Show most recent 50 candles %>
+                <% candles.reverse.first(50).each do |candle| %>
+                  <tr>
+                    <%# Candle time converted to viewer timezone for consistency with quote panel. %>
+                    <td><%= user_local_time(candle.candle_at) %></td>
+                    <td class="num"><%= candle.open ? number_to_currency(candle.open, precision: 2) : "—" %></td>
+                    <td class="num"><%= candle.high ? number_to_currency(candle.high, precision: 2) : "—" %></td>
+                    <td class="num"><%= candle.low ? number_to_currency(candle.low, precision: 2) : "—" %></td>
+                    <td class="num <%= candle.close && candle.open ? (candle.close >= candle.open ? 'terminal-text-up' : 'terminal-text-down') : '' %>">
+                      <%= candle.close ? number_to_currency(candle.close, precision: 2) : "—" %>
+                    </td>
+                    <td class="num"><%= candle.volume ? number_with_delimiter(candle.volume.to_i) : "—" %></td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      <% end %>
+    <% else %>
+      <%# Empty state hint when no stock is selected %>
+      <div class="terminal-window terminal-stock-info-empty">
+        <div class="terminal-window-title">STOCK DETAILS</div>
+        <div style="padding: 2rem; text-align: center; color: var(--terminal-muted);">
+          <p>Click a stock symbol or name from the list to view chart and historical prices.</p>
+        </div>
+      </div>
+    <% end %>
+  </div>
+  <%# END RIGHT SIDE %>
+</div>
+<%# END terminal-trading-layout %>

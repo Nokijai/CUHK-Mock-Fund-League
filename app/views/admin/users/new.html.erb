@@ -1,0 +1,53 @@
+<% content_for :title, "Create User — Admin" %>
+<div class="terminal-page-head">
+  <h1 class="terminal-page-title">CREATE USER</h1>
+  <div class="terminal-page-meta">Admin panel</div>
+</div>
+
+<% if @user.errors.any? %>
+  <div class="terminal-window" style="max-width: 600px; background: rgba(255, 50, 50, 0.1); border-left: 4px solid var(--terminal-down);">
+    <div style="color: var(--terminal-down); font-weight: bold; margin-bottom: 0.5rem;">
+      ⚠️ <%= pluralize(@user.errors.count, "error") %> prevented this user from being saved:
+    </div>
+    <ul style="margin: 0.5rem 0 0 1.5rem; line-height: 1.8; color: var(--terminal-text);">
+      <% @user.errors.full_messages.each do |message| %>
+        <li><%= message %></li>
+      <% end %>
+    </ul>
+  </div>
+<% end %>
+
+<div class="terminal-window" style="max-width: 600px;">
+  <%= form_with model: @user, url: admin_users_path, class: "terminal-form" do |f| %>
+
+    <div class="terminal-form-field">
+      <%= f.label :name, "NAME" %>
+      <%= f.text_field :name, class: "terminal-input" %>
+    </div>
+
+    <div class="terminal-form-field">
+      <%= f.label :email, "EMAIL" %>
+      <%= f.email_field :email, class: "terminal-input", required: true %>
+    </div>
+
+    <div class="terminal-form-field">
+      <%= f.label :password, "PASSWORD" %>
+      <%= f.password_field :password, class: "terminal-input", required: true %>
+    </div>
+
+    <div class="terminal-form-field">
+      <%= f.label :password_confirmation, "CONFIRM PASSWORD" %>
+      <%= f.password_field :password_confirmation, class: "terminal-input", required: true %>
+    </div>
+
+    <div class="terminal-form-field">
+      <%= f.label :role, "ROLE" %>
+      <%= f.select :role, User::ROLES.map { |r| [r.titleize, r] }, {}, class: "terminal-input" %>
+    </div>
+
+    <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+      <%= f.submit "CREATE USER", class: "terminal-btn terminal-btn-primary", style: "color: var(--terminal-bg);" %>
+      <%= link_to "CANCEL", admin_users_path, class: "terminal-btn" %>
+    </div>
+  <% end %>
+</div>

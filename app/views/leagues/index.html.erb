@@ -1,7 +1,81 @@
-<h1>Leagues</h1>
-<%= link_to "New League", new_league_path %>
-<ul>
+<% content_for :title, "Leagues — MOCK-FUND" %>
+<div class="terminal-page-head terminal-page-head--row">
+  <div>
+    <h1 class="terminal-page-title">LEAGUES</h1>
+    <div class="terminal-page-meta">Click a league to expand details, then join from the same page.</div>
+  </div>
+  <%# CREATE LEAGUE action intentionally disabled on /leagues page; use admin manage pages instead. %>
+</div>
+
+<div class="terminal-league-cards">
   <% @leagues.each do |league| %>
-    <li><%= link_to league.name, league_path(league) %></li>
+    <% membership = @membership_by_league_id[league.id] %>
+    <% member_count = league.league_memberships.size %>
+    <details class="terminal-window terminal-league-card" id="league-<%= league.id %>">
+      <summary class="terminal-league-card-summary">
+        <div class="terminal-league-summary-main">
+          <strong><%= league.name %></strong>
+          <% if membership %>
+            <span class="terminal-badge-active">JOINED</span>
+          <% end %>
+        </div>
+        <div class="terminal-league-summary-meta">
+          <span><%= number_to_currency(league.starting_capital, precision: 0) %></span>
+          <span><%= format_datetime(league.start_date, format: :short) %> → <%= format_datetime(league.end_date, format: :short) %></span>
+        </div>
+      </summary>
+
+      <%# Expanded top-down info panel for each league; replaces the old show-page detail view. %>
+      <div class="terminal-league-card-body">
+        <div class="terminal-stats-row terminal-stats-row--tight">
+          <div class="terminal-stat-card">
+            <div class="terminal-stat-label">STARTING CAPITAL</div>
+            <div class="terminal-stat-value"><%= number_to_currency(league.starting_capital, precision: 0) %></div>
+          </div>
+          <div class="terminal-stat-card">
+            <div class="terminal-stat-label">SCHEDULE</div>
+            <div class="terminal-stat-value terminal-stat-small"><%= format_datetime(league.start_date, format: :short) %> → <%= format_datetime(league.end_date, format: :short) %></div>
+          </div>
+          <div class="terminal-stat-card">
+            <div class="terminal-stat-label">MEMBERS</div>
+            <div class="terminal-stat-value terminal-stat-small"><%= member_count %></div>
+          </div>
+        </div>
+
+        <div class="terminal-league-details">
+          <div class="terminal-stat-label">DESCRIPTION</div>
+          <p class="terminal-page-meta"><%= league.description.presence || "No description provided." %></p>
+          <% if league.rules.present? %>
+            <div class="terminal-stat-label">RULES</div>
+            <p class="terminal-page-meta"><%= league.rules.is_a?(Hash) ? league.rules.to_json : league.rules %></p>
+          <% end %>
+        </div>
+
+        <div class="terminal-toolbar">
+          <% if membership %>
+            <span class="terminal-btn terminal-btn-disabled">ALREADY JOINED</span>
+            <%# LEAVE LEAGUE action intentionally removed from /leagues page. %>
+          <% else %>
+            <%# Join action lives on /leagues so users do not need a separate show page. %>
+            <%= button_to "JOIN LEAGUE",
+              league_memberships_path(league_membership: { league_id: league.id }),
+              method: :post,
+              class: "terminal-btn terminal-btn-primary" %>
+          <% end %>
+          <%= link_to "LEADERBOARD", league_leaderboard_path(league), class: "terminal-btn terminal-btn-primary" %>
+          <%# EDIT action intentionally disabled on /leagues page; use admin manage pages instead. %>
+        </div>
+      </div>
+    </details>
   <% end %>
-</ul>
+</div>
+
+<div class="terminal-window">
+  <% if @leagues.empty? %>
+    <% if current_user.admin? %>
+      <p class="terminal-empty">No leagues. <%= link_to "Create one", new_league_path %>.</p>
+    <% else %>
+      <p class="terminal-empty">No leagues available.</p>
+    <% end %>
+  <% end %>
+</div>

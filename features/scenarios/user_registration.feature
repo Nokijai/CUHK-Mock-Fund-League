@@ -5,4 +5,4 @@ Feature: User Registration
 
   Scenario: View home page
     Given I am on the home page
-    Then I should see "CUHK Mock-Fund League"
+    Then I should see "MOCK-FUND"

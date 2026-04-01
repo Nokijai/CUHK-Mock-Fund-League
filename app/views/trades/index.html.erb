@@ -1,6 +1,39 @@
-<h1>Trade History</h1>
-<ul>
-  <% @trades.each do |trade| %>
-    <li><%= trade.symbol %> - <%= trade.trade_type %> - <%= trade.quantity %> @ <%= trade.price %></li>
-  <% end %>
-</ul>
+<% content_for :title, "Orders — MOCK-FUND" %>
+<div class="terminal-page-head">
+  <h1 class="terminal-page-title">TRADE HISTORY</h1>
+  <div class="terminal-page-meta">Portfolio #<%= @portfolio.id %></div>
+</div>
+<div class="terminal-window">
+  <table class="terminal-table">
+    <thead>
+      <tr>
+        <th>TIME</th>
+        <th>SIDE</th>
+        <th>ORDER</th>
+        <th>STATUS</th>
+        <th>SYM</th>
+        <th class="num">QTY</th>
+        <th class="num">PRICE</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @trades.order(executed_at: :desc, created_at: :desc).each do |t| %>
+        <tr>
+          <%# History timestamps respect browser-local timezone. %>
+          <td><%= user_local_time(t.executed_at || t.created_at) %></td>
+          <td class="<%= t.trade_type == "buy" ? "terminal-text-up" : "terminal-text-down" %>"><%= t.trade_type.upcase %></td>
+          <td><%= t.order_type.to_s.upcase %></td>
+          <td class="<%= t.executed_at.present? ? "terminal-text-up" : "terminal-muted-cell" %>">
+            <%= t.executed_at.present? ? "EXECUTED" : "PENDING" %>
+          </td>
+          <td><%= t.symbol %></td>
+          <td class="num"><%= t.quantity %></td>
+          <td class="num"><%= number_to_currency(t.price, precision: 4) %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+  <div class="terminal-panel-actions">
+    <%= link_to "NEW TRADE", new_portfolio_trade_path(@portfolio, league_id: @portfolio.league_id), class: "terminal-btn terminal-btn-primary" %>
+  </div>
+</div>

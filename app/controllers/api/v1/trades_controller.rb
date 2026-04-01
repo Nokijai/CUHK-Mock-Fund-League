@@ -13,7 +13,7 @@ module Api
       private
 
       def trade_params
-        params.require(:trade).permit(:portfolio_id, :symbol, :trade_type, :quantity, :price)
+        params.require(:trade).permit(:portfolio_id, :symbol, :trade_type, :order_type, :quantity, :price)
       end
     end
   end

@@ -3,4 +3,5 @@ class Portfolio < ApplicationRecord
   belongs_to :league
   has_many :holdings, dependent: :destroy
   has_many :trades, dependent: :destroy
+  has_many :portfolio_snapshots, dependent: :destroy
 end

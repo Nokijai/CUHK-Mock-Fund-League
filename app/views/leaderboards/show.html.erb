@@ -1,19 +1,348 @@
-<h1>Leaderboard: <%= @league.name %></h1>
-<table>
-  <thead>
-    <tr>
-      <th>Rank</th>
-      <th>Participant</th>
-      <th>Portfolio Value</th>
-    </tr>
-  </thead>
-  <tbody>
-    <% @rankings.each_with_index do |ranking, index| %>
-      <tr>
-        <td><%= index + 1 %></td>
-        <td><%= ranking[:name] %></td>
-        <td><%= ranking[:value] %></td>
-      </tr>
-    <% end %>
-  </tbody>
-</table>
+<% content_for :title, "Leaderboard — #{@league.name}" %>
+
+<div class="lb-page" data-current-user-id="<%= @current_user_id %>"
+     data-end-time="<%= @league.end_date&.to_time&.end_of_day&.to_i&.*(1000) %>">
+
+  <%# ── League Selector Bar ── %>
+  <div class="lb-comp-bar">
+    <div class="lb-comp-selector">
+      <span class="lb-comp-label">LEAGUE</span>
+      <div class="lb-comp-dropdown">
+        <button class="lb-comp-current" type="button" onclick="this.parentElement.classList.toggle('open')">
+          <%= @league.name.upcase %>
+          <span class="lb-comp-arrow">▾</span>
+        </button>
+        <ul class="lb-comp-list">
+          <% @leagues.each do |lg| %>
+            <li>
+              <%= link_to lg.name.upcase, league_leaderboard_path(lg),
+                    class: lg.id == @league.id ? "active" : nil %>
+            </li>
+          <% end %>
+        </ul>
+      </div>
+    </div>
+    <div class="lb-comp-actions">
+      <button class="terminal-btn" type="button" onclick="document.getElementById('lb-prizes-modal').style.display='flex'">PRIZES</button>
+      <%= link_to "RULES", league_path(@league), class: "terminal-btn" %>
+      <%= link_to "BACK", league_path(@league), class: "terminal-btn" %>
+    </div>
+  </div>
+
+  <%# ── Status Strip ── %>
+  <div class="lb-status-strip">
+    <div class="lb-status-item">
+      <span class="lb-status-label">STATUS</span>
+      <% if @league.end_date && @league.end_date < Date.current %>
+        <span class="lb-status-value lb-status-finished">FINISHED</span>
+      <% else %>
+        <span class="lb-status-value lb-status-live">LIVE</span>
+      <% end %>
+    </div>
+    <div class="lb-status-item lb-status-timer">
+      <span class="lb-status-label">TIME REMAINING</span>
+      <% if @league.end_date && @league.end_date >= Date.current %>
+        <span class="lb-status-value lb-countdown" id="lb-countdown">--D --:--:--</span>
+      <% elsif @league.end_date %>
+        <span class="lb-status-value lb-status-finished">ENDED</span>
+      <% else %>
+        <span class="lb-status-value">ONGOING</span>
+      <% end %>
+    </div>
+    <div class="lb-status-item">
+      <span class="lb-status-label">CONTESTANTS</span>
+      <span class="lb-status-value"><%= @rankings.size %></span>
+    </div>
+    <div class="lb-status-item">
+      <span class="lb-status-label"><%= @league.end_date && @league.end_date < Date.current ? "FINAL" : "CURRENT" %> LEADER</span>
+      <span class="lb-status-value lb-status-leader"><%= @rankings.first&.dig(:name) || "—" %></span>
+    </div>
+    <div class="lb-status-item lb-status-update">
+      <span class="lb-status-label">UPDATES EVERY</span>
+      <span class="lb-status-value"><%= @update_interval_minutes %> MIN</span>
+      <span class="lb-status-sub">Last: <%= @last_updated_at.strftime("%H:%M:%S") %></span>
+    </div>
+  </div>
+
+  <%# ── Main Content: Table + Detail Panel ── %>
+  <div class="lb-content">
+
+    <%# ── Leaderboard Table (Left) ── %>
+    <div class="lb-table-wrap">
+      <div class="terminal-window lb-table-window">
+        <div class="terminal-window-title">RANKINGS</div>
+        <div class="lb-table-scroll" id="lb-table-scroll">
+          <table class="terminal-table lb-table">
+            <thead>
+              <tr>
+                <th class="num lb-col-rank">RANK</th>
+                <th class="lb-col-name">NAME</th>
+                <th class="num lb-col-return">RETURN %</th>
+                <th class="num lb-col-value">PORTFOLIO VALUE</th>
+                <th class="lb-col-trend">TREND</th>
+              </tr>
+            </thead>
+            <tbody id="lb-table-body">
+              <% @rankings.each do |row| %>
+                <tr class="lb-row <%= 'lb-row-top3' if row[:rank] <= 3 %> <%= 'lb-row-self' if row[:user_id] == @current_user_id %>"
+                    data-user-id="<%= row[:user_id] %>"
+                    onclick="window.lbSelectUser(<%= row[:user_id] %>)">
+                  <td class="num lb-rank-cell">
+                    <% if row[:rank] <= 3 %>
+                      <span class="lb-medal lb-medal-<%= row[:rank] %>">#<%= row[:rank] %></span>
+                    <% else %>
+                      #<%= row[:rank] %>
+                    <% end %>
+                  </td>
+                  <td class="lb-name-cell"><%= row[:name] %></td>
+                  <td class="num <%= row[:total_return_pct] >= 0 ? 'terminal-text-up' : 'terminal-text-down' %>">
+                    <%= sprintf("%+.2f%%", row[:total_return_pct]) %>
+                  </td>
+                  <td class="num"><%= number_to_currency(row[:portfolio_value], precision: 2) %></td>
+                  <td class="lb-trend-cell">
+                    <svg class="lb-sparkline" viewBox="0 0 70 20" preserveAspectRatio="none">
+                      <% vals = row[:trend] %>
+                      <% mn = vals.min.to_f; mx = vals.max.to_f; rng = mx - mn; rng = 1 if rng < 1 %>
+                      <% pts = vals.each_with_index.map { |v, j| x = (j.to_f / (vals.size - 1) * 68 + 1).round(1); y = (18 - (v - mn) / rng * 16).round(1); "#{x},#{y}" }.join(" ") %>
+                      <polyline fill="none"
+                                stroke="<%= row[:total_return_pct] >= 0 ? '#30d158' : '#ff453a' %>"
+                                stroke-width="1.5"
+                                points="<%= pts %>" />
+                    </svg>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+
+        <%# ── Sticky Self Row ── %>
+        <% self_row = @rankings.find { |r| r[:user_id] == @current_user_id } %>
+        <% if self_row %>
+          <div class="lb-sticky-self" id="lb-sticky-self">
+            <div class="lb-sticky-self-inner">
+              <span class="lb-sticky-label">YOUR POSITION</span>
+              <span class="lb-sticky-rank">#<%= self_row[:rank] %></span>
+              <span class="lb-sticky-name"><%= self_row[:name] %></span>
+              <span class="lb-sticky-return <%= self_row[:total_return_pct] >= 0 ? 'terminal-text-up' : 'terminal-text-down' %>">
+                <%= sprintf("%+.2f%%", self_row[:total_return_pct]) %>
+              </span>
+              <span class="lb-sticky-value"><%= number_to_currency(self_row[:portfolio_value], precision: 2) %></span>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    </div>
+
+    <%# ── Detail Panel (Right) ── %>
+    <div class="lb-detail-panel" id="lb-detail-panel">
+      <div class="lb-detail-placeholder" id="lb-detail-placeholder">
+        <span class="lb-detail-icon">◉</span>
+        <p>Select a participant to view details</p>
+      </div>
+
+      <% @rankings.each do |row| %>
+        <div class="lb-detail-card" id="lb-detail-<%= row[:user_id] %>" style="display:none">
+          <div class="lb-detail-header">
+            <div class="lb-detail-rank-badge">#<%= row[:rank] %></div>
+            <div>
+              <div class="lb-detail-name"><%= row[:name] %></div>
+              <div class="lb-detail-sub">Highest rank: #<%= row[:highest_rank] %></div>
+            </div>
+          </div>
+
+          <div class="lb-detail-stats">
+            <div class="lb-detail-stat">
+              <span class="lb-detail-stat-label">STARTING BALANCE</span>
+              <span class="lb-detail-stat-value"><%= number_to_currency(row[:starting_balance], precision: 0) %></span>
+            </div>
+            <div class="lb-detail-stat">
+              <span class="lb-detail-stat-label">CURRENT EQUITY</span>
+              <span class="lb-detail-stat-value"><%= number_to_currency(row[:current_equity], precision: 0) %></span>
+            </div>
+            <div class="lb-detail-stat">
+              <span class="lb-detail-stat-label">CURRENT CASH</span>
+              <span class="lb-detail-stat-value"><%= number_to_currency(row[:current_cash], precision: 0) %></span>
+            </div>
+            <div class="lb-detail-stat">
+              <span class="lb-detail-stat-label">PORTFOLIO VALUE</span>
+              <span class="lb-detail-stat-value"><%= number_to_currency(row[:portfolio_value], precision: 0) %></span>
+            </div>
+            <div class="lb-detail-stat">
+              <span class="lb-detail-stat-label">TOTAL RETURN</span>
+              <span class="lb-detail-stat-value <%= row[:total_return_pct] >= 0 ? 'terminal-text-up' : 'terminal-text-down' %>">
+                <%= sprintf("%+.2f%%", row[:total_return_pct]) %>
+              </span>
+            </div>
+            <div class="lb-detail-stat">
+              <span class="lb-detail-stat-label">DAILY CHANGE</span>
+              <span class="lb-detail-stat-value <%= row[:daily_change_pct] >= 0 ? 'terminal-text-up' : 'terminal-text-down' %>">
+                <%= sprintf("%+.2f%%", row[:daily_change_pct]) %>
+              </span>
+            </div>
+            <div class="lb-detail-stat">
+              <span class="lb-detail-stat-label">WIN RATE</span>
+              <span class="lb-detail-stat-value"><%= sprintf("%.1f%%", row[:win_rate]) %></span>
+            </div>
+            <div class="lb-detail-stat">
+              <span class="lb-detail-stat-label">TRADES</span>
+              <span class="lb-detail-stat-value"><%= row[:trade_count] %></span>
+            </div>
+            <div class="lb-detail-stat">
+              <span class="lb-detail-stat-label">MAX DRAWDOWN</span>
+              <span class="lb-detail-stat-value terminal-text-down"><%= sprintf("%.2f%%", row[:max_drawdown_pct]) %></span>
+            </div>
+            <div class="lb-detail-stat">
+              <span class="lb-detail-stat-label">GAIN / LOSS</span>
+              <% gain = row[:portfolio_value] - row[:starting_balance] %>
+              <span class="lb-detail-stat-value <%= gain >= 0 ? 'terminal-text-up' : 'terminal-text-down' %>">
+                <%= number_to_currency(gain, precision: 0) %>
+              </span>
+            </div>
+          </div>
+
+          <%# ── Equity Curve Chart ── %>
+          <div class="lb-detail-chart-section">
+            <div class="lb-detail-chart-title">BALANCE HISTORY</div>
+            <div class="lb-detail-chart-container">
+              <%# Y-axis labels %>
+              <div class="lb-chart-yaxis">
+                <% vals = row[:trend]; mn = vals.min.to_f; mx = vals.max.to_f; rng = mx - mn; rng = 1 if rng < 1 %>
+                <span><%= number_to_currency(mx, precision: 0) %></span>
+                <span><%= number_to_currency(mn + rng * 0.75, precision: 0) %></span>
+                <span><%= number_to_currency(mn + rng * 0.5, precision: 0) %></span>
+                <span><%= number_to_currency(mn + rng * 0.25, precision: 0) %></span>
+                <span><%= number_to_currency(mn, precision: 0) %></span>
+              </div>
+              <div class="lb-chart-main">
+                <div class="lb-chart-svg-wrap">
+                  <svg class="lb-detail-chart-svg" viewBox="0 0 280 100" preserveAspectRatio="none">
+                    <% step_x = 280.0 / (vals.size - 1) %>
+                    <% area_pts = vals.each_with_index.map { |v, j| "#{(j * step_x).round(1)},#{(95 - (v - mn) / rng * 85).round(1)}" } %>
+                    <polygon fill="<%= row[:total_return_pct] >= 0 ? 'rgba(48,209,88,0.12)' : 'rgba(255,69,58,0.12)' %>"
+                             points="0,95 <%= area_pts.join(' ') %> 280,95" />
+                    <polyline fill="none"
+                              stroke="<%= row[:total_return_pct] >= 0 ? '#30d158' : '#ff453a' %>"
+                              stroke-width="2"
+                              points="<%= area_pts.join(' ') %>" />
+                    <% vals.each_with_index do |v, j| %>
+                      <% x = (j * step_x).round(1); y = (95 - (v - mn) / rng * 85).round(1) %>
+                      <circle cx="<%= x %>" cy="<%= y %>" r="3"
+                              fill="<%= row[:total_return_pct] >= 0 ? '#30d158' : '#ff453a' %>"
+                              stroke="#1c1c1e" stroke-width="1"/>
+                    <% end %>
+                  </svg>
+                </div>
+                <%# X-axis labels %>
+                <div class="lb-chart-xaxis">
+                  <span>Day 1</span>
+                  <span>Day 4</span>
+                  <span>Day 7</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+
+  </div>
+
+  <div class="terminal-disclaimer-bar">
+    Virtual trading only · Rankings update every <%= @update_interval_minutes %> minutes · No real funds involved
+  </div>
+
+  <%# ── Prizes Modal ── %>
+  <div class="lb-modal-overlay" id="lb-prizes-modal" onclick="if(event.target===this) this.style.display='none'">
+    <div class="lb-modal-card">
+      <div class="lb-modal-header">
+        <h2 class="lb-modal-title">PRIZES</h2>
+        <button class="lb-modal-close" type="button" onclick="document.getElementById('lb-prizes-modal').style.display='none'">✕</button>
+      </div>
+      <div class="lb-modal-body">
+        <% @prizes.each do |p| %>
+          <div class="lb-prize-row">
+            <span class="lb-prize-rank"><%= p[:rank] %></span>
+            <span class="lb-prize-desc"><%= p[:prize] %></span>
+          </div>
+        <% end %>
+        <% if @prizes.empty? %>
+          <p class="lb-modal-empty">No prizes configured for this league.</p>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%= javascript_tag nonce: true do %>
+(function() {
+  var activeUserId = null;
+  var stickyEl = document.getElementById('lb-sticky-self');
+  var scrollEl = document.getElementById('lb-table-scroll');
+  var countdownEl = document.getElementById('lb-countdown');
+  var pageEl = document.querySelector('.lb-page');
+
+  document.addEventListener('click', function(e) {
+    document.querySelectorAll('.lb-comp-dropdown.open').forEach(function(d) {
+      if (!d.contains(e.target)) d.classList.remove('open');
+    });
+  });
+
+  if (countdownEl && pageEl.dataset.endTime) {
+    var endTime = parseInt(pageEl.dataset.endTime, 10);
+    function updateCountdown() {
+      var now = Date.now();
+      var diff = endTime - now;
+      if (diff <= 0) {
+        countdownEl.textContent = 'ENDED';
+        countdownEl.classList.add('lb-status-finished');
+        return;
+      }
+      var days = Math.floor(diff / 86400000);
+      var hrs = Math.floor((diff % 86400000) / 3600000);
+      var mins = Math.floor((diff % 3600000) / 60000);
+      var secs = Math.floor((diff % 60000) / 1000);
+      countdownEl.textContent = days + 'D ' +
+        String(hrs).padStart(2,'0') + ':' +
+        String(mins).padStart(2,'0') + ':' +
+        String(secs).padStart(2,'0');
+    }
+    updateCountdown();
+    setInterval(updateCountdown, 1000);
+  }
+
+  window.lbSelectUser = function(userId) {
+    document.querySelectorAll('.lb-detail-card').forEach(function(c) { c.style.display = 'none'; });
+    document.querySelectorAll('.lb-row').forEach(function(r) { r.classList.remove('lb-row-selected'); });
+
+    var card = document.getElementById('lb-detail-' + userId);
+    var row = document.querySelector('[data-user-id="' + userId + '"]');
+    var placeholder = document.getElementById('lb-detail-placeholder');
+
+    if (activeUserId === userId) {
+      activeUserId = null;
+      if (placeholder) placeholder.style.display = '';
+      return;
+    }
+
+    activeUserId = userId;
+    if (card) card.style.display = '';
+    if (row) row.classList.add('lb-row-selected');
+    if (placeholder) placeholder.style.display = 'none';
+  };
+
+  if (stickyEl && scrollEl) {
+    var selfRow = document.querySelector('.lb-row-self');
+    function checkStickyVisibility() {
+      if (!selfRow) return;
+      var scrollRect = scrollEl.getBoundingClientRect();
+      var rowRect = selfRow.getBoundingClientRect();
+      var isVisible = rowRect.top < scrollRect.bottom && rowRect.bottom > scrollRect.top;
+      stickyEl.classList.toggle('lb-sticky-hidden', isVisible);
+    }
+    scrollEl.addEventListener('scroll', checkStickyVisibility);
+    window.addEventListener('resize', checkStickyVisibility);
+    checkStickyVisibility();
+  }
+})();
+<% end %>

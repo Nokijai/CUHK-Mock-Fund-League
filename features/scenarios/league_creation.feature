@@ -6,4 +6,4 @@ Feature: League Creation
   Scenario: View leagues list
     Given I am on the home page
     When I visit the leagues page
-    Then I should see "Leagues"
+    Then I should see "LEAGUES"

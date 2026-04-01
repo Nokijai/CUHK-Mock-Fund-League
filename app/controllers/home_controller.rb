@@ -1,4 +1,93 @@
 class HomeController < ApplicationController
-  def index
+  def dashboard
+    @portfolio = current_user_focus_portfolio
+    @league = @portfolio&.league || @selected_league
+    valuator = PortfolioValuationService.new
+    @total_value = @portfolio ? valuator.total_value(@portfolio).to_f : 0.0
+    @cash = @portfolio&.cash_balance.to_f
+    @starting = @league&.starting_capital.to_f.nonzero? || 100_000.0
+    @pnl = @portfolio ? (@total_value - @starting) : 0.0
+    @pnl_pct = @starting.positive? ? (@pnl / @starting * 100.0) : 0.0
+    @rank = 0
+    @total_participants = 0
+    if @league && @portfolio
+      rankings = LeaderboardService.new(@league).compute
+      @total_participants = rankings.size
+      idx = rankings.index { |r| r[:user_id] == @portfolio.user_id }
+      @rank = idx ? idx + 1 : 0
+    end
+    @chart_points = chart_points(@total_value)
+    @top_holdings = top_holdings_for(@portfolio, valuator)
+    @market_movers = market_movers_rows
+  end
+
+  # Handles GET /trading (nav link, bookmarks, SW). Resolves portfolio on the server so
+  # the header does not need a separate nav_p check that could disagree with the DB.
+  def trading_redirect
+    portfolio = current_user_focus_portfolio
+    if portfolio
+      redirect_to new_portfolio_trade_path(portfolio, league_id: portfolio.league_id), status: :see_other
+    else
+      redirect_to leagues_path, status: :see_other
+    end
+  end
+
+  private
+
+  # Resolves the current user's portfolio in the selected league (fallback = first owned portfolio).
+  def current_user_focus_portfolio
+    return nil unless current_user
+    return @league_portfolio_map[@selected_league.id] if @selected_league
+
+    current_user.portfolios.first
+  end
+
+  def chart_points(end_value)
+    return default_chart_points(100_000) unless end_value.positive?
+    start_v = end_value * 0.93
+    (0..14).map do |i|
+      t = i / 14.0
+      v = start_v + (end_value - start_v) * t + Math.sin(i * 0.7) * 800 + (i % 4) * 120
+      { label: (Date.current - 14 + i).strftime("%b %-d"), value: v.round(2) }
+    end
+  end
+
+  def default_chart_points(base)
+    (0..14).map { |i| { label: (Date.current - 14 + i).strftime("%b %-d"), value: (base * (0.95 + i * 0.004)).round(2) } }
+  end
+
+  def top_holdings_for(portfolio, valuator)
+    return [] unless portfolio
+    portfolio.holdings.map do |h|
+      last = valuator.price_for_symbol(h.symbol).to_f
+      avg = h.average_cost.to_f
+      mkt = last * h.quantity
+      cost = avg * h.quantity
+      pnl = mkt - cost
+      pnl_pct = cost.positive? ? (pnl / cost * 100.0) : 0.0
+      {
+        symbol: h.symbol,
+        qty: h.quantity,
+        avg: avg,
+        last: last,
+        mkt: mkt,
+        pnl: pnl,
+        pnl_pct: pnl_pct
+      }
+    end.sort_by { |r| -r[:mkt] }.first(4)
+  end
+
+  def market_movers_rows
+    # Surface a slice of the Nestak watchlist; prices come from DB (refreshed by jobs).
+    MarketData::NestakTop30::SYMBOLS.first(6).filter_map do |sym|
+      sp = StockPrice.find_by(symbol: sym)
+      next unless sp
+      {
+        symbol: sym,
+        name: MarketData::NestakTop30::DISPLAY_NAMES[sym] || sym,
+        price: sp.price.to_f,
+        chg: 0.0
+      }
+    end
   end
 end

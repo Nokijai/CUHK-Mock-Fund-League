@@ -1,4 +1,6 @@
-# Pin npm packages by running bin/importmap pin <package>
-# https://github.com/rails/importmap-rails
-#
-# No npm packages pinned yet; add pins as needed for JS dependencies.
+# JavaScript modules (Hotwired) — vendor copies from stimulus-rails / turbo-rails gems.
+pin "application", preload: true
+pin "@hotwired/turbo-rails", to: "turbo.min.js", preload: true
+pin "@hotwired/stimulus", to: "stimulus.min.js", preload: true
+pin "@hotwired/stimulus-loading", to: "stimulus-loading.js"
+pin_all_from "app/javascript/controllers", under: "controllers"
