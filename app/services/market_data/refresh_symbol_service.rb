@@ -8,6 +8,11 @@ module MarketData
 
     def call(symbol, intervals: MarketData::YfinanceMarketDataService::DEFAULT_INTERVALS)
       payload = @client.fetch_symbol(symbol, intervals:)
+      call_payload(payload)
+    end
+
+    # Allows batch jobs to reuse the same persistence path after one shared fetch.
+    def call_payload(payload)
       sym = payload.fetch("symbol").to_s.upcase
 
       ActiveRecord::Base.transaction do
