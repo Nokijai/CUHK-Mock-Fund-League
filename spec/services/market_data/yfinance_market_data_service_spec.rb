@@ -14,7 +14,7 @@ RSpec.describe MarketData::YfinanceMarketDataService do
         ]
       }.to_json
 
-      allow(ENV).to receive(:fetch).with("MARKET_DATA_PYTHON_BIN", "python").and_return("python-custom")
+      allow(ENV).to receive(:fetch).with("MARKET_DATA_PYTHON_BIN", "python3").and_return("python-custom")
       allow(Open3).to receive(:capture3).and_return([ payload, "", instance_double(Process::Status, success?: true) ])
 
       result = service.fetch_symbol("nvda", intervals: [ "1d" ])

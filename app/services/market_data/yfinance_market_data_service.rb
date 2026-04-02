@@ -60,11 +60,10 @@ module MarketData
 
     private
 
-    # Use `python` by default because some Conda envs expose yfinance there while
-    # `python3` may still resolve to system/Homebrew Python on PATH.
+    # Prefer python3 for platforms like Heroku where `python` may be absent.
     # Allow override via env var for deployment/runtime flexibility.
     def python_command
-      ENV.fetch("MARKET_DATA_PYTHON_BIN", "python")
+      ENV.fetch("MARKET_DATA_PYTHON_BIN", "python3")
     end
   end
 end
