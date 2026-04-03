@@ -67,17 +67,6 @@ class ApplicationController < ActionController::Base
     redirect_to users_verify_signup_otp_path, alert: "Please complete email verification before continuing."
   end
 
-  def redirect_pending_otp_user
-    return if user_signed_in?
-    return unless session[:pending_otp_user_id].present?
-    return if devise_controller? && (
-      (controller_name == "sessions" && %w[new create verify_otp otp_authenticate cancel_otp_login resend_otp].include?(action_name)) ||
-      (controller_name == "registrations" && %w[new create].include?(action_name))
-    )
-
-    redirect_to users_verify_otp_path, alert: "Please complete email verification before continuing."
-  end
-
   def show_admin_league_actions?
     return false unless current_user
     current_user.role.to_s == "admin"
