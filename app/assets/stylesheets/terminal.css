@@ -1477,3 +1477,49 @@ body.terminal-shell #error_explanation ul {
   cursor: default;
   pointer-events: none;
 }
+
+/* Trading confirmation modal: blocks background interactions until user confirms/cancels. */
+body.terminal-shell.terminal-modal-open {
+  overflow: hidden;
+}
+
+.terminal-trade-confirm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 15000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.72);
+}
+
+/* Respect hidden attribute so modal does not flash on initial render. */
+.terminal-trade-confirm-overlay[hidden] {
+  display: none;
+}
+
+.terminal-trade-confirm-modal {
+  width: min(560px, 95vw);
+}
+
+.terminal-trade-confirm-body {
+  padding: 0.85rem 1rem 0.7rem;
+}
+
+.terminal-trade-confirm-grid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.4rem 0.9rem;
+  margin: 0.8rem 0;
+  font-size: 12px;
+}
+
+.terminal-trade-confirm-label {
+  color: var(--terminal-muted);
+  letter-spacing: 0.06em;
+}
+
+.terminal-trade-confirm-actions {
+  justify-content: flex-end;
+}

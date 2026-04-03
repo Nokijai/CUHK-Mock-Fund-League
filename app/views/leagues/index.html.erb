@@ -48,7 +48,25 @@
           <p class="terminal-page-meta"><%= league.description.presence || "No description provided." %></p>
           <% if league.rules.present? %>
             <div class="terminal-stat-label">RULES</div>
-            <p class="terminal-page-meta"><%= league.rules.is_a?(Hash) ? league.rules.to_json : league.rules %></p>
+            <%# Show admin-configured rule fields with labels instead of raw JSON. %>
+            <p class="terminal-page-meta">
+              <% rendered_rule_line = false %>
+              <% if league.max_participants.present? %>
+                Max participants: <%= league.max_participants %><br>
+                <% rendered_rule_line = true %>
+              <% end %>
+              <% if league.handling_fee_proportion.positive? %>
+                Handling fee: <%= number_to_percentage(league.handling_fee_proportion * 100, precision: 2) %><br>
+                <% rendered_rule_line = true %>
+              <% end %>
+              <% if league.minimum_final_balance.present? %>
+                Minimum final balance: <%= number_to_currency(league.minimum_final_balance) %>
+                <% rendered_rule_line = true %>
+              <% end %>
+              <% unless rendered_rule_line %>
+                <%= league.rules.is_a?(Hash) ? league.rules.to_json : league.rules %>
+              <% end %>
+            </p>
           <% end %>
         </div>
 
@@ -56,6 +74,14 @@
           <% if membership %>
             <span class="terminal-btn terminal-btn-disabled">ALREADY JOINED</span>
             <%# LEAVE LEAGUE action intentionally removed from /leagues page. %>
+          <% elsif !league.join_open_now? %>
+            <%# Mirror backend join window rules directly in list action states. %>
+            <span class="terminal-btn terminal-btn-disabled">
+              <%= league.join_block_reason == :not_opened ? "NOT OPEN YET" : "EXPIRED" %>
+            </span>
+          <% elsif league.full_for_new_members? %>
+            <%# Show capacity lock state so users understand why join is unavailable. %>
+            <span class="terminal-btn terminal-btn-disabled">LEAGUE FULL</span>
           <% else %>
             <%# Join action lives on /leagues so users do not need a separate show page. %>
             <%= button_to "JOIN LEAGUE",
