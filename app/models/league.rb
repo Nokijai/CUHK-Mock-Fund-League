@@ -4,6 +4,8 @@ class League < ApplicationRecord
   has_many :league_memberships, dependent: :destroy
   has_many :users, through: :league_memberships
   has_many :portfolios, dependent: :destroy
+  # Real-time fan-out: every newly created league pushes a UI notification to all subscribers.
+  after_create_commit :broadcast_created_notification
 
   # Keep league names unique and enforce valid competition windows/capital.
   validates :name, presence: true, uniqueness: { case_sensitive: true, message: "already exists" }
@@ -25,5 +27,19 @@ class League < ApplicationRecord
     if start_date.present? && end_date.present? && end_date <= start_date
       errors.add(:end_date, "must be after start date")
     end
+  end
+
+  def broadcast_created_notification
+    # Broadcast into a shared stream that logged-in clients subscribe to from the layout.
+    broadcast_prepend_to(
+      "league_notifications",
+      target: "realtime-notifications",
+      partial: "leagues/realtime_notification",
+      locals: {
+        title: "New league created",
+        body: name,
+        league: self
+      }
+    )
   end
 end
