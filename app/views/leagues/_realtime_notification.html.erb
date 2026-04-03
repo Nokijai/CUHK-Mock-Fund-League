@@ -1,0 +1,7 @@
+<%# Lightweight card inserted via Turbo Stream for league live notifications. %>
+<article class="terminal-realtime-notice" role="status">
+  <%# Reusable title/body lets create + expiry reminders share one partial. %>
+  <strong class="terminal-realtime-notice-title"><%= title.presence || "League notice" %>:</strong>
+  <span class="terminal-realtime-notice-body"><%= body.presence || league.name %></span>
+  <%= link_to "View", leagues_path(anchor: "league-#{league.id}"), class: "terminal-realtime-notice-link" %>
+</article>

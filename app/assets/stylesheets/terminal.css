@@ -207,6 +207,42 @@ body.terminal-shell .alert {
   border-color: var(--terminal-down);
 }
 
+/* Shared live-notification rail for Turbo Stream inserts (league-created events). */
+.terminal-realtime-notifications {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin: 0.5rem 1rem 0;
+}
+
+.terminal-realtime-notice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 12px;
+  border: 1px solid var(--terminal-border);
+  border-left: 3px solid var(--terminal-accent);
+  border-radius: 2px;
+  color: var(--terminal-text);
+  background: var(--terminal-panel);
+}
+
+.terminal-realtime-notice-title {
+  color: var(--terminal-accent);
+  font-weight: 700;
+}
+
+body.terminal-shell main a.terminal-realtime-notice-link {
+  color: var(--terminal-up);
+  text-decoration: none;
+}
+
+body.terminal-shell main a.terminal-realtime-notice-link:hover {
+  color: var(--terminal-text);
+}
+
 body.terminal-shell .disclaimer {
   margin-top: 0.75rem;
   font-size: 11px;
