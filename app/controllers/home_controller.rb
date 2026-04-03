@@ -24,7 +24,7 @@ class HomeController < ApplicationController
   private
 
   def demo_focus_portfolio
-    u = User.find_by(name: "Demo Trader")
+    u = User.find_by(username: "Demo Trader")
     p = u&.portfolios&.first
     p || Portfolio.order(:id).first
   end

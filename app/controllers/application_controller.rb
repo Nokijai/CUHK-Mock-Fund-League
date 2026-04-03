@@ -12,8 +12,8 @@ class ApplicationController < ActionController::Base
   private
 
   def configure_permitted_parameters
-    devise_parameter_sanitizer.permit(:sign_up, keys: [:name])
-    devise_parameter_sanitizer.permit(:account_update, keys: [:name])
+    devise_parameter_sanitizer.permit(:sign_up, keys: [:username])
+    devise_parameter_sanitizer.permit(:account_update, keys: [:username])
   end
 
   def set_terminal_nav_context
@@ -23,13 +23,12 @@ class ApplicationController < ActionController::Base
 
   def redirect_pending_otp_user
     return if user_signed_in?
-    return unless session[:pending_otp_user_id].present?
+    return unless session[:pending_signup].present?
     return if devise_controller? && (
-      (controller_name == "sessions" && %w[new create verify_otp otp_authenticate cancel_otp_login resend_otp].include?(action_name)) ||
-      (controller_name == "registrations" && %w[new create].include?(action_name))
+      (controller_name == "registrations" && %w[new create verify_otp otp_authenticate cancel_otp_signup resend_otp].include?(action_name))
     )
 
-    redirect_to users_verify_otp_path, alert: "Please complete email verification before continuing."
+    redirect_to users_verify_signup_otp_path, alert: "Please complete email verification before continuing."
   end
 
   def show_admin_league_actions?

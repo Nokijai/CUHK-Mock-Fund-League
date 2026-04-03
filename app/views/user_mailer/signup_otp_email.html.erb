@@ -1,0 +1,11 @@
+<p>Hi <%= @user.username.presence || @user.email %>,</p>
+
+<p>Thank you for signing up for Mock-Fund League!</p>
+
+<p>Your signup verification code is:</p>
+
+<p style="font-size: 24px; font-weight: bold; letter-spacing: 4px;"><%= @code %></p>
+
+<p>This code expires in <%= @expires_in_minutes %> minutes.</p>
+
+<p>If you did not create an account, you can ignore this email.</p>

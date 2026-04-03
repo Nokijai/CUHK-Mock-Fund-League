@@ -21,7 +21,7 @@
 
   <% if user_signed_in? %>
     <span style="margin-left: auto; font-size: 11px; color: var(--terminal-muted); letter-spacing: 0.06em;">
-      <%= current_user.name || current_user.email %>
+      <%= current_user.username || current_user.email %>
     </span>
     <%= button_to "LOGOUT", destroy_user_session_path, method: :delete, style: "background: none; border: 1px solid var(--terminal-border); padding: 0.25rem 0.5rem; font-size: 11px; color: var(--terminal-text); cursor: pointer; font-family: inherit; font-weight: 600; letter-spacing: 0.06em; border-radius: 2px; margin-left: 0.5rem;", onmouseover: "this.style.color='var(--terminal-down)'; this.style.borderColor='var(--terminal-down)'", onmouseout: "this.style.color='var(--terminal-text)'; this.style.borderColor='var(--terminal-border)'" %>
   <% else %>
