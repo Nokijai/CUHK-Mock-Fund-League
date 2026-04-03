@@ -19,8 +19,8 @@ class Users::SessionsController < Devise::SessionsController
       session.delete(:pending_otp_user_id)
       session.delete(:pending_otp_remember_me)
 
+      user.remember_me = true if ActiveModel::Type::Boolean.new.cast(sign_in_params[:remember_me]) && devise_mapping.rememberable?
       sign_in(resource_name, user)
-      remember_me(user) if ActiveModel::Type::Boolean.new.cast(sign_in_params[:remember_me]) && devise_mapping.rememberable?
 
       redirect_to after_sign_in_path_for(user), notice: "Logged in successfully."
       return
@@ -52,8 +52,8 @@ class Users::SessionsController < Devise::SessionsController
       remember_requested = ActiveModel::Type::Boolean.new.cast(session.delete(:pending_otp_remember_me))
       session.delete(:pending_otp_user_id)
 
+      @pending_user.remember_me = true if remember_requested && devise_mapping.rememberable?
       sign_in(resource_name, @pending_user)
-      remember_me(@pending_user) if remember_requested && devise_mapping.rememberable?
 
       redirect_to after_sign_in_path_for(@pending_user), notice: "Logged in successfully."
     else
