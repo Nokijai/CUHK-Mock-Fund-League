@@ -160,15 +160,15 @@ RSpec.describe "Api::V1::Leagues", type: :request do
   end
 
   # ─────────────────────────────────────────────────────────────
-  # POST /api/v1/leagues/:id/join
+  # POST /api/v1/leagues/:league_id/memberships
   # ─────────────────────────────────────────────────────────────
-  describe "POST /api/v1/leagues/:id/join" do
+  describe "POST /api/v1/leagues/:league_id/memberships" do
     let!(:league) { create(:league, starting_capital: 100_000) }
     let!(:user)   { create(:user) }
 
     it "creates a membership and a portfolio, returns 201" do
       expect {
-        post "/api/v1/leagues/#{league.id}/join",
+        post "/api/v1/leagues/#{league.id}/memberships",
              params: { user_id: user.id }.to_json,
              headers: headers
       }.to change(LeagueMembership, :count).by(1)
@@ -180,11 +180,11 @@ RSpec.describe "Api::V1::Leagues", type: :request do
     end
 
     it "does not create a duplicate membership" do
-      post "/api/v1/leagues/#{league.id}/join",
+      post "/api/v1/leagues/#{league.id}/memberships",
            params: { user_id: user.id }.to_json,
            headers: headers
       expect {
-        post "/api/v1/leagues/#{league.id}/join",
+        post "/api/v1/leagues/#{league.id}/memberships",
              params: { user_id: user.id }.to_json,
              headers: headers
       }.not_to change(LeagueMembership, :count)
@@ -192,14 +192,14 @@ RSpec.describe "Api::V1::Leagues", type: :request do
     end
 
     it "returns 404 when user does not exist" do
-      post "/api/v1/leagues/#{league.id}/join",
+      post "/api/v1/leagues/#{league.id}/memberships",
            params: { user_id: 0 }.to_json,
            headers: headers
       expect(response).to have_http_status(:not_found)
     end
 
     it "returns 404 when league does not exist" do
-      post "/api/v1/leagues/0/join",
+      post "/api/v1/leagues/0/memberships",
            params: { user_id: user.id }.to_json,
            headers: headers
       expect(response).to have_http_status(:not_found)
@@ -207,18 +207,16 @@ RSpec.describe "Api::V1::Leagues", type: :request do
   end
 
   # ─────────────────────────────────────────────────────────────
-  # DELETE /api/v1/leagues/:id/leave
+  # DELETE /api/v1/leagues/:league_id/memberships/:user_id
   # ─────────────────────────────────────────────────────────────
-  describe "DELETE /api/v1/leagues/:id/leave" do
+  describe "DELETE /api/v1/leagues/:league_id/memberships/:user_id" do
     let!(:league)     { create(:league) }
     let!(:user)       { create(:user) }
     let!(:membership) { create(:league_membership, user: user, league: league) }
 
     it "removes the membership and returns 200" do
       expect {
-        delete "/api/v1/leagues/#{league.id}/leave",
-               params: { user_id: user.id }.to_json,
-               headers: headers
+        delete "/api/v1/leagues/#{league.id}/memberships/#{user.id}", headers: headers
       }.to change(LeagueMembership, :count).by(-1)
       expect(response).to have_http_status(:ok)
       expect(JSON.parse(response.body)["message"]).to eq("Left league")
@@ -226,24 +224,20 @@ RSpec.describe "Api::V1::Leagues", type: :request do
 
     it "returns 404 when user is not a member" do
       other = create(:user)
-      delete "/api/v1/leagues/#{league.id}/leave",
-             params: { user_id: other.id }.to_json,
-             headers: headers
+      delete "/api/v1/leagues/#{league.id}/memberships/#{other.id}", headers: headers
       expect(response).to have_http_status(:not_found)
     end
 
     it "returns 404 when league does not exist" do
-      delete "/api/v1/leagues/0/leave",
-             params: { user_id: user.id }.to_json,
-             headers: headers
+      delete "/api/v1/leagues/0/memberships/#{user.id}", headers: headers
       expect(response).to have_http_status(:not_found)
     end
   end
 
   # ─────────────────────────────────────────────────────────────
-  # GET /api/v1/leagues/:id/leaderboard
+  # GET /api/v1/leagues/:league_id/leaderboard
   # ─────────────────────────────────────────────────────────────
-  describe "GET /api/v1/leagues/:id/leaderboard" do
+  describe "GET /api/v1/leagues/:league_id/leaderboard" do
     let!(:league) { create(:league) }
     let!(:user1)  { create(:user, name: "Alice") }
     let!(:user2)  { create(:user, name: "Bob") }

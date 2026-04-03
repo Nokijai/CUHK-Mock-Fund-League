@@ -29,16 +29,22 @@ Rails.application.routes.draw do
 
   namespace :api do
     namespace :v1 do
-      # League API endpoints used by frontend/API clients.
+      # League endpoints use REST resources; no verb-like custom member actions.
       resources :leagues, only: [ :index, :show, :create, :update, :destroy ] do
-        member do
-          post :join
-          delete :leave
-          get :leaderboard
-        end
+        # POST /api/v1/leagues/:league_id/memberships
+        # DELETE /api/v1/leagues/:league_id/memberships/:user_id
+        resources :memberships, controller: "league_memberships", only: [ :create, :destroy ], param: :user_id
+        # GET /api/v1/leagues/:league_id/leaderboard
+        resource :leaderboard, controller: "leaderboards", only: [ :show ]
       end
-      resources :trades, only: [ :create ]
-      get "stock_prices/:symbol", to: "stock_prices#show", as: :stock_price
+
+      # Trades are nested under portfolios so ownership is path-addressable.
+      resources :portfolios, only: [] do
+        resources :trades, only: [ :create ]
+      end
+
+      # Stock quote/candle read endpoint uses the stock symbol as resource id.
+      resources :stocks, only: [ :show ], param: :symbol
     end
   end
 end
