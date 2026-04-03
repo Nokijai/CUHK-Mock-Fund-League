@@ -19,9 +19,10 @@ class Trade < ApplicationRecord
   validate :validate_creation_constraints, on: :create
 
   # Attempts to execute pending limit orders against latest DB prices.
-  # Called from read/write paths so pending orders eventually settle.
-  def self.process_pending_limits!(symbols: nil)
+  # Accepts optional portfolio: and symbols: scopes to avoid scanning global pending orders.
+  def self.process_pending_limits!(symbols: nil, portfolio: nil)
     relation = pending_limits.order(:created_at)
+    relation = relation.where(portfolio_id: portfolio.id) if portfolio.present?
     relation = relation.where(symbol: Array(symbols).map(&:to_s).map(&:upcase)) if symbols.present?
 
     relation.find_each do |trade|

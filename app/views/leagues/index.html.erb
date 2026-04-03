@@ -10,7 +10,8 @@
 <div class="terminal-league-cards">
   <% @leagues.each do |league| %>
     <% membership = @membership_by_league_id[league.id] %>
-    <% member_count = league.league_memberships.size %>
+    <%# Use SQL-counted value from controller to avoid loading membership rows. %>
+    <% member_count = league.respond_to?(:memberships_count) ? league.memberships_count : league.league_memberships.size %>
     <details class="terminal-window terminal-league-card" id="league-<%= league.id %>">
       <summary class="terminal-league-card-summary">
         <div class="terminal-league-summary-main">

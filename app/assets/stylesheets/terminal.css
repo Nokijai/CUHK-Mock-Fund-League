@@ -366,6 +366,172 @@ body.terminal-shell .disclaimer {
   margin-top: 0.25rem;
 }
 
+/* Dashboard marquees: two stacked bars (stocks bar, then leagues bar). */
+.terminal-marquee-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin-bottom: 0.25rem;
+}
+
+.terminal-marquee-window .terminal-window-title {
+  font-size: 12px;
+}
+
+/* Fixed-height strip: content never grows the dashboard layout; long text clips inside chips. */
+.terminal-marquee-viewport {
+  /* Single knob if you want a taller/shorter ticker strip (cards stay inside this box). */
+  --terminal-marquee-bar-height: 82px;
+  height: var(--terminal-marquee-bar-height);
+  min-height: var(--terminal-marquee-bar-height);
+  max-height: var(--terminal-marquee-bar-height);
+  overflow: hidden;
+  border-top: 1px solid var(--terminal-border);
+  background: var(--terminal-bg);
+  display: flex;
+  align-items: center;
+}
+
+/* Outer strip: two segments in one row; -50% shift equals exactly one segment width. */
+.terminal-marquee-roll {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  width: max-content;
+  animation: terminal-marquee-slide 50s linear infinite;
+  will-change: transform;
+}
+
+/* Slightly slower league strip so the two bars do not scroll in perfect lockstep. */
+.terminal-marquee-roll--leagues {
+  animation-duration: 58s;
+}
+
+/* One copy of the ticker items as a non-wrapping horizontal flex row. */
+.terminal-marquee-segment {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  flex: 0 0 auto;
+  gap: 0.65rem;
+  /* Horizontal padding only so vertical space is fully controlled by the viewport height. */
+  padding: 0 0.65rem;
+}
+
+/* Pause on hover only for precise desktop pointers; avoid accidental freeze elsewhere. */
+@media (hover: hover) and (pointer: fine) {
+  .terminal-marquee-viewport:hover .terminal-marquee-roll {
+    animation-play-state: paused;
+  }
+}
+
+.terminal-marquee-card {
+  flex: 0 0 auto;
+  min-width: 210px;
+  max-width: 260px;
+  /* Lock chip height so league/stock names cannot stretch the marquee bar. */
+  height: 64px;
+  min-height: 64px;
+  max-height: 64px;
+  box-sizing: border-box;
+  border: 1px solid var(--terminal-border);
+  border-radius: 2px;
+  background: var(--terminal-panel);
+  padding: 0.35rem 0.55rem;
+  text-decoration: none;
+  color: var(--terminal-text);
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  justify-content: center;
+  overflow: hidden;
+}
+
+/* Beat main link accent so the card reads as a panel, not a wall of orange links. */
+body.terminal-shell main a.terminal-marquee-card {
+  color: var(--terminal-text);
+}
+
+/* Ellipsis inside marquee cards (avoid global .terminal-ellipsis max-width fighting flex). */
+.terminal-marquee-ellipsis-soft {
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.terminal-marquee-card .terminal-marquee-main,
+.terminal-marquee-card .terminal-marquee-meta {
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.terminal-marquee-card .terminal-marquee-pill {
+  flex-shrink: 0;
+}
+
+.terminal-marquee-card .terminal-marquee-price {
+  flex-shrink: 0;
+  margin-top: 0;
+  line-height: 1.2;
+}
+
+.terminal-marquee-card:hover {
+  border-color: var(--terminal-accent);
+  color: var(--terminal-text);
+}
+
+.terminal-marquee-pill {
+  width: fit-content;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  padding: 0.12rem 0.35rem;
+  border: 1px solid var(--terminal-border);
+  border-radius: 2px;
+}
+
+.terminal-marquee-pill-stock {
+  color: var(--terminal-up);
+}
+
+.terminal-marquee-pill-league {
+  color: var(--terminal-accent);
+}
+
+.terminal-marquee-main {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.terminal-marquee-meta {
+  font-size: 10px;
+  color: var(--terminal-muted);
+}
+
+.terminal-marquee-price {
+  margin-top: 0.1rem;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--terminal-accent);
+}
+
+@keyframes terminal-marquee-slide {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    /* Two identical segments: moving half the total width loops seamlessly. */
+    transform: translateX(-50%);
+  }
+}
+
 .terminal-chart-wrap {
   padding: 0.75rem 1rem 0.5rem;
   background: var(--terminal-bg);
