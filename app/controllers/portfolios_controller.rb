@@ -2,10 +2,12 @@ class PortfoliosController < ApplicationController
   before_action :set_portfolio, only: [ :show ]
 
   def show
-    # Keep portfolio views fresh: pending limits may become executable as prices move.
-    Trade.process_pending_limits!
+    # Only process limits for this portfolio — not the entire system.
+    Trade.process_pending_limits!(portfolio: @portfolio)
 
     @valuator = PortfolioValuationService.new
+    # Preload all holding symbols in one query instead of N find_by calls.
+    @valuator.preload_symbols(@portfolio.holdings.map(&:symbol))
     @total_value = @valuator.total_value(@portfolio).to_f
     @starting = @portfolio.league.starting_capital.to_f
     @pnl = @total_value - @starting
@@ -47,32 +49,23 @@ class PortfoliosController < ApplicationController
   end
 
   def set_portfolio
-    # If user has not joined any league, portfolio page should route to leagues.
-    if current_user.league_memberships.none?
+    # Reuse preloaded nav context from ApplicationController to avoid repeat queries.
+    if @joined_leagues.blank?
       redirect_to leagues_path, alert: "Please join a league first."
       return
     end
 
-    # Schema-driven resolution: league_id => league => current user's portfolio for that league.
     if params[:league_id].present?
-      # Resolve league strictly via the logged-in user's membership row in DB.
-      membership = current_user.league_memberships.find_by(league_id: params[:league_id])
-      unless membership
+      @portfolio = @league_portfolio_map[params[:league_id].to_i]
+      unless @portfolio
         redirect_to leagues_path, alert: "Please select a league you joined."
         return
       end
-
-      @portfolio = current_user.portfolios.find_by(league_id: membership.league_id)
-      unless @portfolio
-        redirect_to leagues_path, alert: "No portfolio found for that league."
-        return
-      end
     else
-      # Fallback for legacy links without league_id.
-      @portfolio = current_user.portfolios.find(params[:id])
+      @portfolio = @league_portfolio_map.values.find { |p| p.id == params[:id].to_i } ||
+                   current_user.portfolios.find(params[:id])
     end
 
-    # Keep nav/UI context synced with the portfolio's league.
     @selected_league = @portfolio.league
     @nav_league = @selected_league
     @nav_portfolio = @portfolio

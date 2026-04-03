@@ -17,20 +17,32 @@ class ApplicationController < ActionController::Base
 
   def set_terminal_nav_context
     # Load joined leagues from membership rows so selection is always membership-backed.
-    joined_memberships = current_user ? current_user.league_memberships.includes(:league).order(:joined_at) : []
+    return set_guest_nav_context unless current_user
+
+    joined_memberships = current_user.league_memberships.includes(:league).order(:joined_at).to_a
     @joined_leagues = joined_memberships.map(&:league).compact
-    @league_portfolio_map = current_user ? current_user.portfolios.index_by(&:league_id) : {}
+    # Load once and reuse instead of querying current_user.portfolios multiple times.
+    user_portfolios = current_user.portfolios.to_a
+    @league_portfolio_map = user_portfolios.index_by(&:league_id)
 
     requested_league_id = params[:league_id].presence
-    selected_membership = if requested_league_id.present? && current_user
-      # Validate league_id against DB membership for current user.
-      current_user.league_memberships.includes(:league).find_by(league_id: requested_league_id)
+    selected_membership = if requested_league_id.present?
+      # Reuse preloaded memberships to avoid an extra query per request.
+      joined_memberships.find { |membership| membership.league_id == requested_league_id.to_i }
     end
     @selected_league = selected_membership&.league || @joined_leagues.first
 
     # Keep top-nav links consistent with the user's selected league context.
     @nav_league = @selected_league
-    @nav_portfolio = @league_portfolio_map[@selected_league&.id] || current_user&.portfolios&.first
+    @nav_portfolio = @league_portfolio_map[@selected_league&.id] || user_portfolios.first
+  end
+
+  def set_guest_nav_context
+    @joined_leagues = []
+    @league_portfolio_map = {}
+    @selected_league = nil
+    @nav_league = nil
+    @nav_portfolio = nil
   end
 
   def show_admin_league_actions?

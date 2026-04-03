@@ -10,7 +10,8 @@ class TradesController < ApplicationController
   end
 
   def new
-    Trade.process_pending_limits!
+    # Only process limits for this portfolio — not the entire system.
+    Trade.process_pending_limits!(portfolio: @portfolio)
     sym = params[:prefill_symbol].to_s.upcase.presence
     pr = params[:prefill_price]
     price = pr.present? ? BigDecimal(pr.to_s) : nil
@@ -22,7 +23,7 @@ class TradesController < ApplicationController
   def create
     @trade = Trade.new(trade_params.merge(portfolio: @portfolio))
     if @trade.save
-      Trade.process_pending_limits!(symbols: @trade.symbol)
+      Trade.process_pending_limits!(portfolio: @portfolio, symbols: @trade.symbol)
       msg = @trade.executed_at.present? ? "Order executed successfully." : "Limit order placed and pending execution."
       redirect_to new_portfolio_trade_path(
         @portfolio,
@@ -45,7 +46,8 @@ class TradesController < ApplicationController
     @available_stocks = if q.present?
       StockPrice.matching_query(q).order(:symbol)
     else
-      StockPrice.order(:symbol)
+      # Only load tracked symbols by default to avoid a full table scan.
+      StockPrice.where(symbol: MarketData::NestakTop30::ALL_REFRESH_SYMBOLS).order(:symbol)
     end
   end
 
@@ -55,8 +57,8 @@ class TradesController < ApplicationController
     @focus_symbol = resolve_focus_symbol
     return if @focus_symbol.blank?
 
-    # Evaluate pending limits for the focused symbol using latest stored price.
-    Trade.process_pending_limits!(symbols: @focus_symbol)
+    # Evaluate pending limits for the focused symbol in this portfolio only.
+    Trade.process_pending_limits!(portfolio: @portfolio, symbols: @focus_symbol)
 
     @focus_stock = StockPrice.find_by(symbol: @focus_symbol)
     @focus_name = MarketData::NestakTop30::DISPLAY_NAMES[@focus_symbol] || @focus_symbol
@@ -138,32 +140,24 @@ class TradesController < ApplicationController
   end
 
   def set_portfolio
-    # If user has not joined any league, trading cannot be opened.
-    if current_user.league_memberships.none?
+    # Reuse preloaded nav context from ApplicationController to avoid repeat queries.
+    if @joined_leagues.blank?
       redirect_to leagues_path, alert: "Please join a league first."
       return
     end
 
-    # Schema-driven resolution: league_id => league => current user's portfolio for that league.
     if params[:league_id].present?
-      # Resolve league strictly via the logged-in user's membership row in DB.
-      membership = current_user.league_memberships.find_by(league_id: params[:league_id])
-      unless membership
+      # Membership already loaded by set_terminal_nav_context; look up in-memory.
+      @portfolio = @league_portfolio_map[params[:league_id].to_i]
+      unless @portfolio
         redirect_to leagues_path, alert: "Please select a league you joined."
         return
       end
-
-      @portfolio = current_user.portfolios.find_by(league_id: membership.league_id)
-      unless @portfolio
-        redirect_to leagues_path, alert: "No portfolio found for that league."
-        return
-      end
     else
-      # Fallback for legacy links without league_id.
-      @portfolio = current_user.portfolios.find(params[:portfolio_id])
+      @portfolio = @league_portfolio_map.values.find { |p| p.id == params[:portfolio_id].to_i } ||
+                   current_user.portfolios.find(params[:portfolio_id])
     end
 
-    # Keep nav/UI context synced with the portfolio's league.
     @selected_league = @portfolio.league
     @nav_league = @selected_league
     @nav_portfolio = @portfolio

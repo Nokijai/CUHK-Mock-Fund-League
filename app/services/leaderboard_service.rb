@@ -8,6 +8,8 @@ class LeaderboardService
   def compute
     portfolios = @league.portfolios
       .includes(:user, :holdings, :trades, :portfolio_snapshots)
+    # Preload all symbols once to prevent per-holding quote lookups per portfolio.
+    @valuator.preload_symbols(portfolios.flat_map { |p| p.holdings.map(&:symbol) })
 
     entries = portfolios.map { |p| build_entry(p) }
     entries.sort_by! { |e| -e[:portfolio_value] }
@@ -24,8 +26,9 @@ class LeaderboardService
   private
 
   def build_entry(portfolio)
-    total_value = @valuator.total_value(portfolio).to_f
+    # Compute holdings value once; total value derives from cash + holdings.
     holdings_value = @valuator.holdings_market_value(portfolio).to_f
+    total_value = portfolio.cash_balance.to_f + holdings_value
     cash = portfolio.cash_balance.to_f
     return_pct = @starting_capital.positive? ? ((total_value - @starting_capital) / @starting_capital * 100.0) : 0.0
     trades = portfolio.trades.to_a

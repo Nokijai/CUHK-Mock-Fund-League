@@ -1,8 +1,25 @@
 class PortfolioValuationService
+  def initialize
+    # Request-local quote cache to avoid repeated StockPrice queries.
+    @price_cache = {}
+  end
+
+  # Optional preloader so callers can batch-fetch quote rows in one query.
+  def preload_symbols(symbols)
+    normalized = Array(symbols).map { |s| s.to_s.upcase }.uniq
+    return if normalized.empty?
+
+    StockPrice.where(symbol: normalized).pluck(:symbol, :price).each do |sym, price|
+      @price_cache[sym] = price.to_d
+    end
+  end
+
   def price_for_symbol(symbol)
-    sp = StockPrice.find_by(symbol: symbol.to_s.upcase)
-    return sp.price.to_d if sp
-    0.to_d
+    sym = symbol.to_s.upcase
+    return @price_cache[sym] if @price_cache.key?(sym)
+
+    sp = StockPrice.find_by(symbol: sym)
+    @price_cache[sym] = sp ? sp.price.to_d : 0.to_d
   end
 
   def holdings_market_value(portfolio)
