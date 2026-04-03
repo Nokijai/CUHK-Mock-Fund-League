@@ -48,39 +48,43 @@ class TradesController < ApplicationController
     else
       # Only load tracked symbols by default to avoid a full table scan.
       StockPrice.where(symbol: MarketData::NestakTop30::ALL_REFRESH_SYMBOLS).order(:symbol)
-    end
+    end.to_a
   end
 
   # Loads DB-backed candles per interval for the focused ticker (broker-style quote strip).
   # Focus = explicit prefill, single search hit, or the order form symbol after validation errors.
   def assign_focus_quote
+    # Which timeframe tab is shown (buttons + optional hidden field on POST).
+    @quote_interval = normalize_quote_interval(params[:quote_interval])
     @focus_symbol = resolve_focus_symbol
     return if @focus_symbol.blank?
 
     # Evaluate pending limits for the focused symbol in this portfolio only.
-    Trade.process_pending_limits!(portfolio: @portfolio, symbols: @focus_symbol)
+    # new/create already evaluate pending limits; skip duplicate pass here.
 
     @focus_stock = StockPrice.find_by(symbol: @focus_symbol)
     @focus_name = MarketData::NestakTop30::DISPLAY_NAMES[@focus_symbol] || @focus_symbol
     @focus_holding = @portfolio.holdings.find_by(symbol: @focus_symbol)
     @focus_cash_balance = @portfolio.cash_balance.to_d
 
-    @candles_by_interval = StockCandle::INTERVALS.index_with do |interval|
-      StockCandle
-        .for_symbol(@focus_symbol)
-        .for_interval(interval)
-        .recent_first
-        .limit(150)
-        .to_a
-        .reverse
-    end
+    # Load only the active interval for this render. Other tabs request their own page load.
+    candles = StockCandle
+      .for_symbol(@focus_symbol)
+      .for_interval(@quote_interval)
+      .recent_first
+      .limit(150)
+      .to_a
+      .reverse
+    # Some providers can emit more than one timestamp for a "daily" bar.
+    # Keep one candle per trading day so 1D history/table stays clean.
+    candles = collapse_daily_candles(candles, @quote_interval)
+    @candles_by_interval = { @quote_interval => candles }
 
-    @stats_by_interval = @candles_by_interval.transform_values do |candles|
-      interval_stats(candles, @focus_stock)
-    end
+    @stats_by_interval = { @quote_interval => interval_stats(candles, @focus_stock) }
 
-    # Which timeframe tab is shown (buttons + optional hidden field on POST).
-    @quote_interval = normalize_quote_interval(params[:quote_interval])
+    # Reuse loaded rows to avoid another DB round-trip in helper revision fingerprint.
+    max_candle_updated_at = candles.map(&:updated_at).compact.max
+    @quote_revision = [ @focus_stock&.updated_at, max_candle_updated_at ].compact.max&.iso8601(6).to_s
   end
 
   def normalize_quote_interval(raw)
@@ -92,7 +96,7 @@ class TradesController < ApplicationController
     p = params[:prefill_symbol].to_s.strip
     return p.upcase if p.present?
 
-    if params[:q].to_s.strip.present? && @available_stocks.size == 1
+    if params[:q].to_s.strip.present? && @available_stocks.length == 1
       return @available_stocks.first.symbol
     end
 
@@ -135,6 +139,19 @@ class TradesController < ApplicationController
     }
   end
 
+  # Deduplicates 1d candles by market date while preserving chronological order.
+  # For duplicate dates, keep the latest timestamp entry as the canonical daily bar.
+  def collapse_daily_candles(candles, interval)
+    return candles unless interval.to_s == "1d"
+
+    candles_by_day = {}
+    candles.each do |candle|
+      market_day = candle.candle_at.in_time_zone("America/New_York").to_date
+      candles_by_day[market_day] = candle
+    end
+    candles_by_day.values
+  end
+
   def set_trade
     @trade = Trade.find(params[:id])
   end
@@ -158,7 +175,8 @@ class TradesController < ApplicationController
                    current_user.portfolios.find(params[:portfolio_id])
     end
 
-    @selected_league = @portfolio.league
+    # Prefer preloaded league object to avoid an extra association query.
+    @selected_league = @joined_leagues.find { |league| league.id == @portfolio.league_id } || @portfolio.league
     @nav_league = @selected_league
     @nav_portfolio = @portfolio
   end

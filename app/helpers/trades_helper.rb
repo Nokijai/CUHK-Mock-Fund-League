@@ -25,6 +25,10 @@ module TradesHelper
 
   # Fingerprint for JS polling: last change to quote or any candle row for this symbol.
   def quote_revision_for(symbol)
+    # Prefer controller-computed revision when candles/quote are already loaded.
+    precomputed = @quote_revision.to_s
+    return precomputed if precomputed.present?
+
     sym = symbol.to_s.upcase
     sp = StockPrice.find_by(symbol: sym)
     return "" unless sp
