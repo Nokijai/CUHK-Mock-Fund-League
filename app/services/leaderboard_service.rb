@@ -54,7 +54,8 @@ class LeaderboardService
 
   def display_name(user)
     return "Unknown" unless user
-    user.name.presence || user.email
+    # Support both auth schemas: username-first, then legacy name, then email.
+    (user.respond_to?(:username) ? user.username : nil).presence || user.try(:name).presence || user.email
   end
 
   def compute_daily_change(current_value, snapshots)

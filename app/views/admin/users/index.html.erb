@@ -30,7 +30,8 @@
       <% @users.each do |user| %>
         <tr>
           <td class="terminal-muted-cell">#<%= user.id %></td>
-          <td><%= user.name || "—" %></td>
+          <%# Support both auth schemas: username-first, then legacy name, then email. %>
+          <td><%= (user.respond_to?(:username) ? user.username : nil).presence || user.try(:name).presence || user.email %></td>
           <td><%= user.email %></td>
           <td><span class="<%= user.admin? ? 'terminal-up' : '' %>"><%= user.role.upcase %></span></td>
           <td class="terminal-muted-cell"><%= user.created_at.strftime("%Y-%m-%d") %></td>

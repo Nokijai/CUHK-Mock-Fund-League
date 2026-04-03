@@ -2,7 +2,8 @@
 <%= render "shared/league_selector", page_type: :portfolio %>
 <div class="terminal-page-head">
   <h1 class="terminal-page-title">PORTFOLIO</h1>
-  <div class="terminal-page-meta"><%= @portfolio.user&.name %> · <%= @portfolio.league&.name %></div>
+  <%# Support both auth schemas: username-first, then legacy name, then email. %>
+  <div class="terminal-page-meta"><%= (@portfolio.user&.respond_to?(:username) ? @portfolio.user&.username : nil).presence || @portfolio.user&.try(:name).presence || @portfolio.user&.email %> · <%= @portfolio.league&.name %></div>
 </div>
 <div class="terminal-stats-row terminal-stats-row--tight">
   <div class="terminal-stat-card">
