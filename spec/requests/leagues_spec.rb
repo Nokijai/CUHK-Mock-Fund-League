@@ -163,7 +163,15 @@ RSpec.describe "Api::V1::Leagues", type: :request do
   # POST /api/v1/leagues/:league_id/memberships
   # ─────────────────────────────────────────────────────────────
   describe "POST /api/v1/leagues/:league_id/memberships" do
-    let!(:league) { create(:league, starting_capital: 100_000) }
+    let!(:league) do
+      create(:league, starting_capital: 100_000).tap do |open_league|
+        # Membership join tests assume an active join window by default.
+        open_league.update!(
+          start_date: 1.day.ago,
+          end_date: 1.day.from_now
+        )
+      end
+    end
     let!(:user)   { create(:user) }
 
     it "creates a membership and a portfolio, returns 201" do
@@ -203,6 +211,38 @@ RSpec.describe "Api::V1::Leagues", type: :request do
            params: { user_id: user.id }.to_json,
            headers: headers
       expect(response).to have_http_status(:not_found)
+    end
+
+    it "rejects join when league has not opened yet" do
+      scheduled_league = create(
+        :league,
+        start_date: 2.days.from_now,
+        end_date: 3.days.from_now,
+        starting_capital: 100_000
+      )
+
+      post "/api/v1/leagues/#{scheduled_league.id}/memberships",
+           params: { user_id: user.id }.to_json,
+           headers: headers
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(JSON.parse(response.body)["errors"]).to include("League has not opened yet")
+    end
+
+    it "rejects join when league has expired" do
+      expired_league = create(:league, starting_capital: 100_000)
+      # Update after create to model an already-finished league window.
+      expired_league.update!(
+        start_date: 3.days.ago,
+        end_date: 1.day.ago
+      )
+
+      post "/api/v1/leagues/#{expired_league.id}/memberships",
+           params: { user_id: user.id }.to_json,
+           headers: headers
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(JSON.parse(response.body)["errors"]).to include("League has expired")
     end
   end
 

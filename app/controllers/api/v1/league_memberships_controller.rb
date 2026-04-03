@@ -9,6 +9,17 @@ module Api
         user = User.find_by(id: membership_user_id)
         return render json: { errors: [ "User not found" ] }, status: :not_found unless user
 
+        unless @league.join_open_now?
+          # Keep API join rules aligned with web join flow and league schedule.
+          error_message = @league.join_block_reason == :not_opened ? "League has not opened yet" : "League has expired"
+          return render json: { errors: [ error_message ] }, status: :unprocessable_entity
+        end
+
+        if @league.full_for_new_members? && !@league.league_memberships.exists?(user_id: user.id)
+          # Keep API behavior consistent with web join flow when league reaches capacity.
+          return render json: { errors: [ "League is full" ] }, status: :unprocessable_entity
+        end
+
         membership = LeagueMembership.new(user:, league: @league)
         begin
           saved = membership.save

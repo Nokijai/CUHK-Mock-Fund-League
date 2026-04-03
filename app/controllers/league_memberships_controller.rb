@@ -14,6 +14,19 @@ class LeagueMembershipsController < ApplicationController
       return
     end
 
+    unless league.join_open_now?
+      # Enforce league schedule window before allowing new members.
+      alert_message = league.join_block_reason == :not_opened ? "This league has not opened yet." : "This league has expired."
+      redirect_to leagues_path(anchor: "league-#{league.id}"), alert: alert_message
+      return
+    end
+
+    if league.full_for_new_members?
+      # Capacity rule comes from admin-configured league.rules max_participants.
+      redirect_to leagues_path(anchor: "league-#{league.id}"), alert: "This league is already full."
+      return
+    end
+
     ActiveRecord::Base.transaction do
       @league_membership.save!
       # Ensure joined users can immediately trade by having a portfolio in this league.

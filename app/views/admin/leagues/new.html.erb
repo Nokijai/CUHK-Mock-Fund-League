@@ -47,6 +47,22 @@
       </div>
     </div>
 
+    <%# Structured admin rule controls are stored in leagues.rules JSON behind virtual model fields. %>
+    <div class="terminal-form-field">
+      <%= f.label :max_participants, "MAX PARTICIPANTS (OPTIONAL)" %>
+      <%= f.number_field :max_participants, class: "terminal-input", min: 1, step: 1, placeholder: "e.g., 50" %>
+    </div>
+
+    <div class="terminal-form-field">
+      <%= f.label :handling_fee_proportion, "HANDLING FEE PROPORTION (0.01 = 1%)" %>
+      <%= f.number_field :handling_fee_proportion, class: "terminal-input", min: 0, max: 1, step: "0.0001", placeholder: "e.g., 0.0025" %>
+    </div>
+
+    <div class="terminal-form-field">
+      <%= f.label :minimum_final_balance, "MINIMUM FINAL BALANCE (OPTIONAL)" %>
+      <%= f.number_field :minimum_final_balance, class: "terminal-input", min: 0, step: "0.01", placeholder: "e.g., 90000" %>
+    </div>
+
     <div style="display: flex; gap: 1rem; margin-top: 2rem;">
       <%= f.submit "CREATE LEAGUE", class: "terminal-btn terminal-btn-primary", style: "color: var(--terminal-bg);" %>
       <%= link_to "CANCEL", admin_leagues_path, class: "terminal-btn" %>

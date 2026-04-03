@@ -46,6 +46,16 @@ class Admin::LeaguesController < Admin::BaseController
   end
 
   def league_params
-    params.require(:league).permit(:name, :description, :start_date, :end_date, :starting_capital)
+    # Keep admin rule controls explicit to avoid free-form JSON editing in UI.
+    params.require(:league).permit(
+      :name,
+      :description,
+      :start_date,
+      :end_date,
+      :starting_capital,
+      :max_participants,
+      :handling_fee_proportion,
+      :minimum_final_balance
+    )
   end
 end
