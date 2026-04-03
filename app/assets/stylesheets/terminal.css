@@ -358,13 +358,20 @@ body.terminal-shell .disclaimer {
 }
 
 .terminal-chart-xaxis {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem 1.5rem;
+  position: relative;
+  min-height: 1.25rem;
   padding: 0.5rem 0 0.75rem;
   font-size: 10px;
   color: var(--terminal-muted);
   border-top: 1px solid var(--terminal-border);
+}
+
+.terminal-chart-label {
+  position: absolute;
+  top: 0.5rem;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  pointer-events: none;
 }
 
 .terminal-dash-bottom {

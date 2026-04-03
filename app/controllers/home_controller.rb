@@ -1,41 +1,47 @@
 class HomeController < ApplicationController
   def dashboard
-    @portfolio = demo_focus_portfolio
-    @league = @portfolio&.league || League.order(:id).first
+    @portfolio = dashboard_portfolio
+    @league = dashboard_league(@portfolio)
     valuator = PortfolioValuationService.new
     @total_value = @portfolio ? valuator.total_value(@portfolio).to_f : 0.0
     @cash = @portfolio&.cash_balance.to_f
     @starting = @league&.starting_capital.to_f.nonzero? || 100_000.0
     @pnl = @portfolio ? (@total_value - @starting) : 0.0
     @pnl_pct = @starting.positive? ? (@pnl / @starting * 100.0) : 0.0
-    @rank = 0
-    @total_participants = 0
-    if @league && @portfolio
-      rankings = LeaderboardService.new(@league).compute
-      @total_participants = rankings.size
-      idx = rankings.index { |r| r[:user_id] == @portfolio.user_id }
-      @rank = idx ? idx + 1 : 0
-    end
-    @chart_points = chart_points(@total_value)
+    @rank, @total_participants = dashboard_rank(@league, @portfolio)
+    @chart_points = portfolio_performance_points(@portfolio, valuator)
     @top_holdings = top_holdings_for(@portfolio, valuator)
     @market_movers = market_movers_rows
   end
 
   private
 
-  def demo_focus_portfolio
-    u = User.find_by(name: "Demo Trader")
-    p = u&.portfolios&.first
-    p || Portfolio.order(:id).first
+  def dashboard_portfolio
+    current_user&.portfolios&.includes(:league, :holdings, :trades)&.order(updated_at: :desc)&.first || demo_focus_portfolio
   end
 
-  def chart_points(end_value)
-    return default_chart_points(100_000) unless end_value.positive?
-    start_v = end_value * 0.93
-    (0..14).map do |i|
-      t = i / 14.0
-      v = start_v + (end_value - start_v) * t + Math.sin(i * 0.7) * 800 + (i % 4) * 120
-      { label: (Date.current - 14 + i).strftime("%b %-d"), value: v.round(2) }
+  def dashboard_league(portfolio)
+    portfolio&.league || current_user&.leagues&.order(:id)&.first || League.order(:id).first
+  end
+
+  def dashboard_rank(league, portfolio)
+    return [ 0, 0 ] unless league && portfolio
+
+    rankings = LeaderboardService.new(league).compute
+    index = rankings.index { |row| row[:user_id] == portfolio.user_id }
+    [ index ? index + 1 : 0, rankings.size ]
+  end
+
+  def portfolio_performance_points(portfolio, valuator)
+    return default_chart_points(@starting) unless portfolio
+
+    trades = portfolio.trades.order(Arel.sql("COALESCE(executed_at, created_at) ASC"), :id).to_a
+    return default_chart_points(@total_value.positive? ? @total_value : @starting) if trades.empty?
+
+    (Date.current - 14..Date.current).map do |date|
+      snapshot = portfolio_snapshot_at(portfolio, trades, date.end_of_day)
+      value = snapshot[:cash] + holdings_market_value_from_positions(snapshot[:positions], valuator)
+      { label: date.strftime("%b %-d"), value: value.round(2) }
     end
   end
 
@@ -43,8 +49,39 @@ class HomeController < ApplicationController
     (0..14).map { |i| { label: (Date.current - 14 + i).strftime("%b %-d"), value: (base * (0.95 + i * 0.004)).round(2) } }
   end
 
+  def portfolio_snapshot_at(portfolio, trades, cutoff_time)
+    cash = portfolio.league&.starting_capital.to_d
+    cash = 100_000.to_d if cash <= 0
+    positions = Hash.new(0)
+
+    trades.each do |trade|
+      trade_time = trade.executed_at || trade.created_at
+      next if trade_time > cutoff_time
+
+      trade_value = trade.price.to_d * trade.quantity.to_d
+      if trade.trade_type.to_s.downcase == "sell"
+        cash += trade_value
+        positions[trade.symbol] -= trade.quantity.to_i
+      else
+        cash -= trade_value
+        positions[trade.symbol] += trade.quantity.to_i
+      end
+    end
+
+    { cash: cash, positions: positions }
+  end
+
+  def holdings_market_value_from_positions(positions, valuator)
+    positions.sum do |symbol, quantity|
+      next 0.to_d if quantity.to_i <= 0
+
+      valuator.price_for_symbol(symbol) * quantity.to_i
+    end
+  end
+
   def top_holdings_for(portfolio, valuator)
     return [] unless portfolio
+
     portfolio.holdings.map do |h|
       last = valuator.price_for_symbol(h.symbol).to_f
       avg = h.average_cost.to_f
@@ -74,15 +111,38 @@ class HomeController < ApplicationController
   }.freeze
 
   def market_movers_rows
-    %w[NVDA AAPL MSFT GOOGL 0700].filter_map do |sym|
+    symbols = (StockPrice.order(:symbol).pluck(:symbol) + Trade.order(updated_at: :desc, created_at: :desc).limit(20).pluck(:symbol)).uniq
+
+    symbols.filter_map do |sym|
       sp = StockPrice.find_by(symbol: sym)
       next unless sp
+
+      trade_prices = Trade.where(symbol: sym).order(Arel.sql("COALESCE(executed_at, created_at) ASC"), :id).pluck(:price)
+      chg = if trade_prices.size >= 2
+        base = trade_prices.first.to_f
+        base.positive? ? ((sp.price.to_f - base) / base * 100.0) : 0.0
+      elsif trade_prices.size == 1
+        base = trade_prices.first.to_f
+        base.positive? ? ((sp.price.to_f - base) / base * 100.0) : 0.0
+      else
+        0.0
+      end
+
       {
         symbol: sym,
         name: MOVER_LABELS[sym] || sym,
         price: sp.price.to_f,
-        chg: MOVER_CHG[sym] || 0.0
+        chg: chg
       }
-    end
+    end.sort_by { |row| -row[:chg].abs }.first(5)
+  end
+
+  def demo_focus_portfolio
+    user = User.find_by(name: "Demo Trader")
+    user&.portfolios&.includes(:league, :holdings, :trades)&.first || Portfolio.order(:id).first
+  end
+
+  def mover_name(symbol)
+    MOVER_LABELS[symbol] || symbol
   end
 end

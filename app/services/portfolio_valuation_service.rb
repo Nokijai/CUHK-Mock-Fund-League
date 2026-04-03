@@ -16,6 +16,8 @@ class PortfolioValuationService
   end
 
   def calculate(portfolio)
-    total_value(portfolio).to_f
+    value = total_value(portfolio).to_f
+    portfolio.update_column(:total_value, value) if portfolio&.persisted?
+    value
   end
 end
