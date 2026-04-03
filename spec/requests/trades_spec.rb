@@ -39,5 +39,42 @@ RSpec.describe "Trades", type: :request do
       expect(price_el).to be_present
       expect(BigDecimal(price_el["value"].to_s)).to eq(BigDecimal("378.5"))
     end
+
+    it "renders one row per market day for 1d historical prices" do
+      # Two 1d rows on the same NY market day should collapse to one display row.
+      create(
+        :stock_price,
+        symbol: "AMR",
+        price: 209.31
+      )
+      StockCandle.create!(
+        symbol: "AMR",
+        interval: "1d",
+        candle_at: Time.find_zone("UTC").parse("2026-04-02 04:00:00"),
+        open: 197.46,
+        high: 209.63,
+        low: 197.46,
+        close: 209.31,
+        volume: 206_200
+      )
+      StockCandle.create!(
+        symbol: "AMR",
+        interval: "1d",
+        candle_at: Time.find_zone("UTC").parse("2026-04-02 12:00:00"),
+        open: 197.46,
+        high: 209.63,
+        low: 197.46,
+        close: 209.31,
+        volume: 206_200
+      )
+
+      get new_portfolio_trade_path(portfolio, q: "AMR", quote_interval: "1d")
+      expect(response).to have_http_status(:ok)
+
+      doc = Nokogiri::HTML(response.body)
+      rows = doc.css(".terminal-historical-prices tbody tr")
+
+      expect(rows.length).to eq(1)
+    end
   end
 end
