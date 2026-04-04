@@ -3,7 +3,8 @@
 
 development:
   clear_solid_queue_finished_jobs:
-    command: "SolidQueue::Job.clear_finished_in_batches(sleep_between_batches: 0.3)"
+    # Use job class (not command) to stay compatible across recurring_task schemas.
+    class: SolidQueueCleanupJob
     schedule: every hour at minute 12
   # Fast refresh every 15m with short lookback windows for lower latency.
   nestak_market_data_refresh_fast:
@@ -20,7 +21,8 @@ development:
 
 production:
   clear_solid_queue_finished_jobs:
-    command: "SolidQueue::Job.clear_finished_in_batches(sleep_between_batches: 0.3)"
+    # Use job class (not command) to stay compatible across recurring_task schemas.
+    class: SolidQueueCleanupJob
     schedule: every hour at minute 12
   nestak_market_data_refresh_fast:
     class: MarketDataRefreshFastJob

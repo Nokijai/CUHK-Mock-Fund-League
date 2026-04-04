@@ -21,10 +21,12 @@ RUN apt-get update -qq && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
 
 # Set production environment variables and enable jemalloc for reduced memory usage and latency.
+# BUNDLE_WITHOUT is overridable at build-time (use empty string for dev images).
+ARG BUNDLE_WITHOUT="development:test"
 ENV RAILS_ENV="production" \
     BUNDLE_DEPLOYMENT="1" \
     BUNDLE_PATH="/usr/local/bundle" \
-    BUNDLE_WITHOUT="development" \
+    BUNDLE_WITHOUT="${BUNDLE_WITHOUT}" \
     LD_PRELOAD="/usr/local/lib/libjemalloc.so" \
     MARKET_DATA_PYTHON_BIN="/opt/market-data-venv/bin/python"
 
@@ -76,7 +78,7 @@ COPY --chown=rails:rails --from=build "${BUNDLE_PATH}" "${BUNDLE_PATH}"
 COPY --chown=rails:rails --from=build /rails /rails
 COPY --from=build /opt/market-data-venv /opt/market-data-venv
 
-# Entrypoint prepares the database.
+# Entrypoint prepares app DB + queue DB schema for zero-to-run startup.
 ENTRYPOINT ["/rails/bin/docker-entrypoint"]
 
 # Start server via Thruster by default, this can be overwritten at runtime
