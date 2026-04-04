@@ -13,7 +13,7 @@ module ApiClients
     # Get historical data for charts (range: 1d, 5d, 1mo, 3mo, 6mo, 1y)
     def history(symbol, range: "1mo", interval: "1d")
       url = URI("#{BASE_URL}#{URI.encode_www_form_component(symbol)}?interval=#{interval}&range=#{range}")
-      
+
       http = Net::HTTP.new(url.host, url.port)
       http.use_ssl = true
       http.open_timeout = 10

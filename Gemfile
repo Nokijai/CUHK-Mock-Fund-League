@@ -1,7 +1,7 @@
 source "https://rubygems.org"
 
 # Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"
-gem "rails", "~> 8.1.2"
+gem "rails", "~> 8.1.3"
 # The modern asset pipeline for Rails [https://github.com/rails/propshaft]
 gem "propshaft"
 # Use postgresql as the database for Active Record
@@ -18,13 +18,20 @@ gem "stimulus-rails"
 gem "jbuilder"
 
 # Use Active Model has_secure_password [https://guides.rubyonrails.org/active_model_basics.html#securepassword]
-gem "bcrypt", "~> 3.1.7"
+gem "bcrypt", "~> 3.1", ">= 3.1.22"
 
 # User authentication
 gem "devise", ">= 5.0.3"
 gem "rack", ">= 3.2.5"
 gem "nokogiri", ">= 1.19.1"
-gem "action_text-trix", ">= 2.1.17"
+gem "action_text-trix", ">= 2.1.18"
+
+# Pagination
+gem "kaminari"
+
+# Load environment variables from .env
+# Keep dotenv in test too so local test runs can load .env values when needed.
+gem "dotenv", require: false, group: [ :development, :test ]
 
 # Testing
 gem "rspec-rails", "~> 7.0", group: [ :development, :test ]

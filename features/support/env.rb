@@ -9,7 +9,9 @@ require 'cucumber/rails'
 require 'capybara/rails'
 require 'capybara/rspec'
 require 'factory_bot_rails'
+require 'warden/test/helpers'
 World(FactoryBot::Syntax::Methods)
+World(Warden::Test::Helpers)
 
 # By default, any exception happening in your Rails application will bubble up
 # to Cucumber so that your scenario will fail. This is a different from how
@@ -55,3 +57,11 @@ end
 # The :transaction strategy is faster, but might give you threading problems.
 # See https://github.com/cucumber/cucumber-rails/blob/master/features/choose_javascript_database_strategy.feature
 Cucumber::Rails::Database.javascript_strategy = :truncation
+
+Before do
+  Warden.test_mode!
+end
+
+After do
+  Warden.test_reset!
+end

@@ -2,6 +2,9 @@ class User < ApplicationRecord
   SIGNUP_OTP_TTL = 10.minutes
   SIGNUP_OTP_MAX_ATTEMPTS = 5
   SIGNUP_OTP_RESEND_COOLDOWN = 30.seconds
+  ROLES = %w[user admin].freeze
+
+  include Searchable
 
   # Include default devise modules. Others available are:
   # :confirmable, :lockable, :timeoutable, :trackable and :omniauthable
@@ -15,8 +18,10 @@ class User < ApplicationRecord
   # Username validations
   validates :username, presence: true, uniqueness: { case_sensitive: false }
   validates :username, format: { without: /\s/, message: "cannot contain spaces" }
-
+  validates :role, inclusion: { in: ROLES, message: "%{value} is not a valid role" }
   validate :password_complexity
+
+  after_initialize :set_default_role, if: :new_record?
 
   # Class method to find user by username or email for authentication
   def self.find_for_database_authentication(warden_conditions)
@@ -82,6 +87,14 @@ class User < ApplicationRecord
     )
   end
 
+  def admin?
+    role == "admin"
+  end
+
+  def user?
+    role == "user"
+  end
+
   private
 
   def digest_signup_otp(code)
@@ -96,6 +109,10 @@ class User < ApplicationRecord
     else
       update_columns(signup_otp_attempts: attempts)
     end
+  end
+
+  def set_default_role
+    self.role ||= "user"
   end
 
   def password_complexity

@@ -1,25 +1,86 @@
-<%= form_with model: [ portfolio, trade ], class: "terminal-form" do |f| %>
+<% latest_market_price = @focus_stock&.price&.to_d || trade.price&.to_d %>
+<%= form_with model: [ portfolio, trade ],
+  class: "terminal-form",
+  data: {
+    controller: "order-form",
+    action: "submit->order-form#onSubmit keydown.esc@window->order-form#onEscape",
+    order_form_market_price_value: latest_market_price&.to_f,
+    # Keep fee/cash values on the controller so confirmation numbers match current league context.
+    order_form_fee_rate_value: portfolio.league.handling_fee_proportion.to_f,
+    order_form_cash_balance_value: portfolio.cash_balance.to_f
+  } do |f| %>
+  <%# Keep selected league context in URL after submit/re-render. %>
+  <%= hidden_field_tag :league_id, portfolio.league_id %>
+  <%# Keep ticker search filter after a failed submit (matches assign_available_stocks). %>
+  <%= hidden_field_tag :q, params[:q] if params[:q].present? %>
+  <%# Preserve selected chart interval when re-rendering after validation errors. %>
+  <%= hidden_field_tag :quote_interval, @quote_interval if defined?(@quote_interval) && @quote_interval.present? %>
   <%= render "shared/errors", object: trade %>
   <div class="terminal-form-grid">
     <div class="terminal-field">
       <%= f.label :symbol, "SYMBOL", class: "terminal-label" %>
-      <%= f.text_field :symbol, class: "terminal-input", placeholder: "AAPL", required: true %>
+      <%= f.text_field :symbol, class: "terminal-input", placeholder: "AAPL", required: true, data: { order_form_target: "symbol" } %>
     </div>
     <div class="terminal-field">
       <%= f.label :trade_type, "SIDE", class: "terminal-label" %>
-      <%= f.select :trade_type, %w[buy sell], {}, class: "terminal-input terminal-select" %>
+      <%= f.select :trade_type, %w[buy sell], {}, class: "terminal-input terminal-select", data: { order_form_target: "tradeType" } %>
+    </div>
+    <div class="terminal-field">
+      <%= f.label :order_type, "ORDER TYPE", class: "terminal-label" %>
+      <%= f.select :order_type,
+        [["Market", "market"], ["Limit", "limit"]],
+        {},
+        class: "terminal-input terminal-select",
+        data: { order_form_target: "orderType", action: "change->order-form#onOrderTypeChange" } %>
     </div>
     <div class="terminal-field">
       <%= f.label :quantity, "QUANTITY", class: "terminal-label" %>
-      <%= f.number_field :quantity, class: "terminal-input", min: 1, required: true %>
+      <%= f.number_field :quantity, class: "terminal-input", min: 1, required: true, data: { order_form_target: "quantity" } %>
     </div>
     <div class="terminal-field">
-      <%= f.label :price, "LIMIT / EXEC PRICE", class: "terminal-label" %>
-      <%= f.number_field :price, class: "terminal-input", step: 0.01, min: 0, required: true %>
+      <%= f.label :price, "PRICE", class: "terminal-label" %>
+      <%= f.number_field :price,
+        class: "terminal-input",
+        step: 0.01,
+        min: 0.01,
+        required: true,
+        data: { order_form_target: "price" } %>
     </div>
   </div>
   <div class="terminal-form-actions">
-    <%= f.submit "SUBMIT ORDER", class: "terminal-btn terminal-btn-primary" %>
-    <%= link_to "BACK TO PORTFOLIO", portfolio_path(portfolio), class: "terminal-btn" %>
+    <%= f.submit "SUBMIT ORDER", class: "terminal-btn terminal-btn-primary", data: { order_form_target: "submitButton" } %>
+    <%= link_to "BACK TO PORTFOLIO", portfolio_path(portfolio, league_id: portfolio.league_id), class: "terminal-btn" %>
+  </div>
+  <%# Confirmation modal: keep inside the same Stimulus scope as the form. %>
+  <div class="terminal-trade-confirm-overlay" data-order-form-target="confirmOverlay" hidden>
+    <div class="terminal-window terminal-trade-confirm-modal" role="dialog" aria-modal="true" aria-labelledby="trade-confirm-title">
+      <div class="terminal-window-title" id="trade-confirm-title">CONFIRM ORDER</div>
+      <div class="terminal-trade-confirm-body">
+        <p class="terminal-page-meta">Review this estimate before final submission.</p>
+        <div class="terminal-trade-confirm-grid">
+          <div class="terminal-trade-confirm-label">SIDE</div>
+          <div data-order-form-target="confirmSide">-</div>
+          <div class="terminal-trade-confirm-label">SYMBOL</div>
+          <div data-order-form-target="confirmSymbol">-</div>
+          <div class="terminal-trade-confirm-label">QUANTITY</div>
+          <div data-order-form-target="confirmQuantity">-</div>
+          <div class="terminal-trade-confirm-label">PRICE</div>
+          <div data-order-form-target="confirmPrice">-</div>
+          <div class="terminal-trade-confirm-label">TRANSACTION AMOUNT</div>
+          <div data-order-form-target="confirmAmount">-</div>
+          <div class="terminal-trade-confirm-label">TOTAL FEE</div>
+          <div data-order-form-target="confirmFee">-</div>
+          <div class="terminal-trade-confirm-label">EST. CASH BALANCE</div>
+          <div data-order-form-target="confirmBalance">-</div>
+        </div>
+        <div class="terminal-page-meta">
+          Final execution may differ for market orders due to live quote changes.
+        </div>
+      </div>
+      <div class="terminal-form-actions terminal-trade-confirm-actions">
+        <button type="button" class="terminal-btn" data-action="order-form#closeConfirmModal">CANCEL</button>
+        <button type="button" class="terminal-btn terminal-btn-primary" data-action="order-form#confirmSubmit">SUBMIT ORDER</button>
+      </div>
+    </div>
   </div>
 <% end %>

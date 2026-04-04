@@ -1,6 +1,13 @@
 require "rails_helper"
 
 RSpec.describe "Home dashboard", type: :request do
+  let(:user) { create(:user) }
+
+  before do
+    # Dashboard is behind authentication.
+    sign_in user
+  end
+
   describe "GET /" do
     it "returns success" do
       get root_path

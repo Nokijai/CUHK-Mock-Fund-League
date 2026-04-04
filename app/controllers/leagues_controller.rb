@@ -2,10 +2,19 @@ class LeaguesController < ApplicationController
   before_action :set_league, only: [ :show, :edit, :update, :destroy ]
 
   def index
-    @leagues = League.all
+    # Use counter cache via left_joins + select to avoid loading all membership rows.
+    @leagues = League
+      .left_joins(:league_memberships)
+      .group("leagues.id")
+      .select("leagues.*, COUNT(league_memberships.id) AS memberships_count")
+      .order(start_date: :asc, id: :asc)
+    # Reuse preloaded memberships from ApplicationController nav context.
+    @membership_by_league_id = current_user.league_memberships.index_by(&:league_id)
   end
 
   def show
+    # League details/actions now live on /leagues expandable cards to reduce context switching.
+    redirect_to leagues_path(anchor: "league-#{@league.id}")
   end
 
   def new

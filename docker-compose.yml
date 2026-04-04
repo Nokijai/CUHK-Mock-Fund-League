@@ -1,0 +1,66 @@
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: mock_fund_league_development
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d mock_fund_league_development"]
+      interval: 5s
+      timeout: 5s
+      retries: 15
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  web:
+    build:
+      context: .
+      args:
+        BUNDLE_WITHOUT: ""
+    command: ./bin/rails server -b 0.0.0.0 -p 3000
+    environment:
+      RAILS_ENV: development
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/mock_fund_league_development
+      QUEUE_DATABASE_URL: postgresql://postgres:postgres@db:5432/mock_fund_league_development
+      MARKET_DATA_PYTHON_BIN: /opt/market-data-venv/bin/python
+      SOLID_QUEUE_IN_PUMA: "0"
+    ports:
+      - "3000:3000"
+    # Health only after boot + migrations, so downstream services can wait safely.
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:3000/up >/dev/null || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - .:/rails
+
+  jobs:
+    build:
+      context: .
+      args:
+        BUNDLE_WITHOUT: ""
+    command: ./bin/jobs
+    environment:
+      RAILS_ENV: development
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/mock_fund_league_development
+      QUEUE_DATABASE_URL: postgresql://postgres:postgres@db:5432/mock_fund_league_development
+      MARKET_DATA_PYTHON_BIN: /opt/market-data-venv/bin/python
+    depends_on:
+      db:
+        condition: service_healthy
+      web:
+        # Avoid Solid Queue boot before web has finished db:prepare/db:migrate:queue.
+        condition: service_healthy
+    volumes:
+      - .:/rails
+
+volumes:
+  postgres_data:

@@ -1,32 +1,47 @@
 class HomeController < ApplicationController
   def dashboard
-    @portfolio = demo_focus_portfolio
-    @league = @portfolio&.league || League.order(:id).first
+    @portfolio = current_user_focus_portfolio
+    @league = @portfolio&.league || @selected_league
     valuator = PortfolioValuationService.new
+    # Warm quote cache once for all dashboard widgets (holdings, movers, ticker).
+    valuator.preload_symbols(dashboard_quote_symbols)
     @total_value = @portfolio ? valuator.total_value(@portfolio).to_f : 0.0
     @cash = @portfolio&.cash_balance.to_f
     @starting = @league&.starting_capital.to_f.nonzero? || 100_000.0
     @pnl = @portfolio ? (@total_value - @starting) : 0.0
     @pnl_pct = @starting.positive? ? (@pnl / @starting * 100.0) : 0.0
-    @rank = 0
-    @total_participants = 0
-    if @league && @portfolio
-      rankings = LeaderboardService.new(@league).compute
-      @total_participants = rankings.size
-      idx = rankings.index { |r| r[:user_id] == @portfolio.user_id }
-      @rank = idx ? idx + 1 : 0
-    end
+    # Lightweight rank lookup — avoids computing full leaderboard with trades/snapshots
+    # just to display one number on the dashboard.
+    rank_info = @league && @portfolio ? lightweight_rank(@league, @portfolio) : { rank: 0, total: 0 }
+    @rank = rank_info[:rank]
+    @total_participants = rank_info[:total]
     @chart_points = chart_points(@total_value)
     @top_holdings = top_holdings_for(@portfolio, valuator)
-    @market_movers = market_movers_rows
+    @market_movers = cached_market_movers
+    # Separate horizontal tickers: tracked stocks vs browseable leagues (not one merged strip).
+    @ticker_stock_items = cached_ticker_stock_items
+    @ticker_league_items = cached_ticker_league_items
+  end
+
+  # Handles GET /trading (nav link, bookmarks, SW). Resolves portfolio on the server so
+  # the header does not need a separate nav_p check that could disagree with the DB.
+  def trading_redirect
+    portfolio = current_user_focus_portfolio
+    if portfolio
+      redirect_to new_portfolio_trade_path(portfolio, league_id: portfolio.league_id), status: :see_other
+    else
+      redirect_to leagues_path, status: :see_other
+    end
   end
 
   private
 
-  def demo_focus_portfolio
-    u = User.find_by(username: "Demo Trader")
-    p = u&.portfolios&.first
-    p || Portfolio.order(:id).first
+  # Resolves the current user's portfolio in the selected league (fallback = first owned portfolio).
+  def current_user_focus_portfolio
+    return nil unless current_user
+    return @league_portfolio_map[@selected_league.id] if @selected_league
+
+    current_user.portfolios.first
   end
 
   def chart_points(end_value)
@@ -64,25 +79,144 @@ class HomeController < ApplicationController
     end.sort_by { |r| -r[:mkt] }.first(4)
   end
 
-  MOVER_CHG = {
-    "NVDA" => 2.31, "AAPL" => 1.15, "MSFT" => -0.42, "GOOGL" => 0.88, "0700" => -1.05, "META" => 0.55
-  }.freeze
-
-  MOVER_LABELS = {
-    "NVDA" => "NVIDIA Corp", "AAPL" => "Apple Inc", "MSFT" => "Microsoft", "GOOGL" => "Alphabet",
-    "0700" => "Tencent", "META" => "Meta Platforms"
-  }.freeze
-
   def market_movers_rows
-    %w[NVDA AAPL MSFT GOOGL 0700].filter_map do |sym|
-      sp = StockPrice.find_by(symbol: sym)
+    # Surface a slice of the Nestak watchlist; prices come from DB (refreshed by jobs).
+    symbols = MarketData::NestakTop30::SYMBOLS.first(6)
+    prices_by_symbol = stock_prices_for(symbols)
+
+    symbols.filter_map do |sym|
+      sp = prices_by_symbol[sym]
       next unless sp
       {
         symbol: sym,
-        name: MOVER_LABELS[sym] || sym,
+        name: MarketData::NestakTop30::DISPLAY_NAMES[sym] || sym,
         price: sp.price.to_f,
-        chg: MOVER_CHG[sym] || 0.0
+        chg: 0.0
       }
     end
+  end
+
+  # Stock-only row hashes for the first dashboard marquee bar.
+  def ticker_stock_items_rows
+    scrolling_stocks_rows.map do |row|
+      {
+        symbol: row[:symbol],
+        name: row[:name],
+        price: row[:price]
+      }
+    end
+  end
+
+  # League-only row hashes for the second dashboard marquee bar.
+  def ticker_league_items_rows
+    available_league_rows.map do |row|
+      {
+        id: row[:id],
+        name: row[:name],
+        members_count: row[:members_count],
+        starting_capital: row[:starting_capital]
+      }
+    end
+  end
+
+  # Pulls DB-backed prices for the tracked symbols so the ticker stays request-local.
+  def scrolling_stocks_rows
+    symbols = MarketData::NestakTop30::ALL_REFRESH_SYMBOLS
+    prices_by_symbol = stock_prices_for(symbols)
+
+    symbols.filter_map do |sym|
+      stock_price = prices_by_symbol[sym]
+      next unless stock_price
+
+      {
+        symbol: sym,
+        name: MarketData::NestakTop30::DISPLAY_NAMES[sym] || sym,
+        price: stock_price.price.to_f
+      }
+    end
+  end
+
+  # Lists leagues users can browse/join with a compact set of fields for the ticker.
+  def available_league_rows
+    # Counter in SQL avoids loading all membership rows just to count.
+    League
+      .left_joins(:league_memberships)
+      .group("leagues.id")
+      .order(start_date: :asc)
+      .limit(10)
+      .pluck("leagues.id", "leagues.name", "leagues.starting_capital", "COUNT(league_memberships.id)")
+      .map do |id, name, starting_capital, members_count|
+      {
+        id: id,
+        name: name,
+        members_count: members_count.to_i,
+        starting_capital: starting_capital.to_f
+      }
+    end
+  end
+
+  # Computes only the current user's rank without loading trades/snapshots/sparklines
+  # for every portfolio in the league (the full LeaderboardService is 10-50x heavier).
+  def lightweight_rank(league, portfolio)
+    valuator = PortfolioValuationService.new
+    portfolios = league.portfolios.includes(:holdings).to_a
+
+    all_symbols = portfolios.flat_map { |p| p.holdings.map(&:symbol) }.uniq
+    valuator.preload_symbols(all_symbols)
+
+    values = portfolios.map do |p|
+      { portfolio_id: p.id, value: p.cash_balance.to_f + valuator.holdings_market_value(p).to_f }
+    end
+
+    values.sort_by! { |v| -v[:value] }
+    idx = values.index { |v| v[:portfolio_id] == portfolio.id }
+
+    { rank: idx ? idx + 1 : 0, total: values.size }
+  end
+
+  # Cached stock strip; prices follow market job cadence.
+  def cached_ticker_stock_items
+    Rails.cache.fetch("dashboard/ticker_stock_items", expires_in: 2.minutes) do
+      ticker_stock_items_rows
+    end
+  end
+
+  # Cached league strip; membership counts change less often but still bounded TTL.
+  def cached_ticker_league_items
+    Rails.cache.fetch("dashboard/ticker_league_items", expires_in: 2.minutes) do
+      ticker_league_items_rows
+    end
+  end
+
+  # Cache wrapper for market movers section.
+  def cached_market_movers
+    Rails.cache.fetch("dashboard/market_movers", expires_in: 2.minutes) do
+      market_movers_rows
+    end
+  end
+
+  # One symbol list for dashboard quote consumers to keep DB access batched.
+  def dashboard_quote_symbols
+    symbols = MarketData::NestakTop30::ALL_REFRESH_SYMBOLS.dup
+    symbols.concat(MarketData::NestakTop30::SYMBOLS.first(6))
+    symbols.concat(@portfolio&.holdings&.map(&:symbol) || [])
+    symbols.map { |s| s.to_s.upcase }.uniq
+  end
+
+  # Centralized quote lookup to avoid repeated where/find_by calls.
+  def stock_prices_for(symbols)
+    @stock_prices_cache ||= {}
+    normalized = Array(symbols).map { |s| s.to_s.upcase }.uniq
+    missing = normalized.reject { |sym| @stock_prices_cache.key?(sym) }
+
+    if missing.any?
+      StockPrice.where(symbol: missing).find_each do |row|
+        @stock_prices_cache[row.symbol] = row
+      end
+      # Mark misses so repeated calls do not keep querying absent symbols.
+      missing.each { |sym| @stock_prices_cache[sym] ||= nil }
+    end
+
+    @stock_prices_cache.slice(*normalized)
   end
 end

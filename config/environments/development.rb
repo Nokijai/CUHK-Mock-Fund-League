@@ -73,6 +73,12 @@ Rails.application.configure do
   # Append comments with runtime information tags to SQL queries in logs.
   config.active_record.query_log_tags_enabled = true
 
+  # Solid Queue: jobs + recurring market data (see config/recurring.yml).
+  config.active_job.queue_adapter = :solid_queue
+  config.solid_queue.connects_to = { database: { writing: :queue } }
+  # Make `bin/jobs` output visible in Docker logs instead of only log/development.log.
+  config.solid_queue.logger = ActiveSupport::Logger.new($stdout)
+
   # Highlight code that enqueued background job in logs.
   config.active_job.verbose_enqueue_logs = true
 

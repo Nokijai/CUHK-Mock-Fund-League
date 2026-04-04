@@ -17,12 +17,20 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <%= stylesheet_link_tag "terminal", "data-turbo-track": "reload" %>
+    <%= stylesheet_link_tag "leaderboards", "data-turbo-track": "reload" %>
     <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
+    <%= javascript_importmap_tags %>
   </head>
 
   <body class="terminal-shell">
+    <%# Subscribe all authenticated users to global league creation notifications. %>
+    <%= turbo_stream_from "league_notifications" if user_signed_in? %>
+    <%# Subscribe each user to their private league reminder stream (member-only reminders). %>
+    <%= turbo_stream_from [current_user, "league_notifications"] if user_signed_in? %>
     <% if notice.present? %><p class="notice" role="status"><%= notice %></p><% end %>
     <% if alert.present? %><p class="alert" role="alert"><%= alert %></p><% end %>
+    <%# Incoming notifications are prepended here by League broadcasts. %>
+    <section id="realtime-notifications" class="terminal-realtime-notifications" aria-live="polite"></section>
     <%= render "layouts/terminal_header" %>
     <main class="terminal-main">
     <%= yield %>

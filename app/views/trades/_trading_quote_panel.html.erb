@@ -1,0 +1,130 @@
+<%# Broker snapshot: interval tabs + SVG fallback + interactive canvas (polls /stocks/:symbol.json). %>
+<% chart_payload = trading_quote_candles_payload(@candles_by_interval[@quote_interval]) %>
+<% iv = @quote_interval %>
+<% stats = @stats_by_interval[iv] %>
+<%= tag.div class: "terminal-window terminal-quote-panel", data: {
+  controller: "trading-quote",
+  trading_quote_symbol_value: @focus_symbol,
+  trading_quote_interval_value: @quote_interval,
+  trading_quote_revision_value: quote_revision_for(@focus_symbol),
+  trading_quote_poll_interval_value: 30_000
+} do %>
+  <%# Candle OHLCV for Stimulus: JSON script avoids broken data-* parsing on large payloads. %>
+  <script type="application/json" data-trading-quote-candles-json>
+<%= raw chart_payload.to_json %>
+  </script>
+
+  <div class="terminal-quote-head">
+    <div>
+      <div class="terminal-quote-kicker">SELECTED INSTRUMENT</div>
+      <div class="terminal-quote-symbol-row">
+        <span class="terminal-quote-symbol"><%= @focus_symbol %></span>
+        <span class="terminal-quote-name"><%= @focus_name %></span>
+      </div>
+    </div>
+    <div class="terminal-quote-last-block">
+      <% last = @focus_stock&.price&.to_f %>
+      <div class="terminal-quote-last-label">LAST</div>
+      <div class="terminal-quote-last-value" data-trading-quote-target="lastPrice">
+        <%= last.present? && last.positive? ? number_to_currency(last, precision: 2) : "—" %>
+      </div>
+      <% if @focus_stock&.updated_at %>
+        <div class="terminal-quote-updated" data-trading-quote-target="updatedAt">
+          <%# "As of" time is rendered in browser timezone; JS live updates already use local time. %>
+          As of <%= user_local_time(@focus_stock.updated_at, include_zone: true) %>
+        </div>
+      <% else %>
+        <div class="terminal-quote-updated" data-trading-quote-target="updatedAt"></div>
+      <% end %>
+    </div>
+  </div>
+
+  <div class="terminal-quote-interval-toolbar" role="tablist" aria-label="Chart interval">
+    <% StockCandle::INTERVALS.each do |interval| %>
+      <% active = @quote_interval == interval %>
+      <%= link_to trading_interval_tab_label(interval),
+          new_portfolio_trade_path(@portfolio, trading_quote_link_params(interval)),
+          class: [ "terminal-btn", "terminal-quote-tab", (active ? "terminal-quote-tab--active" : nil) ].compact.join(" "),
+          role: "tab",
+          "aria-selected": active %>
+    <% end %>
+  </div>
+
+  <div class="terminal-quote-interval-view">
+    <div class="terminal-quote-interval-heading"><%= trading_interval_title(iv) %></div>
+    <div class="terminal-quote-stat-grid">
+      <div class="terminal-quote-stat">
+        <span class="terminal-quote-stat-label">O</span>
+        <span class="terminal-quote-stat-val" data-trading-quote-target="statOpen"><%= stats[:open] ? number_to_currency(stats[:open], precision: 2) : "—" %></span>
+      </div>
+      <div class="terminal-quote-stat">
+        <span class="terminal-quote-stat-label">H</span>
+        <span class="terminal-quote-stat-val" data-trading-quote-target="statHigh"><%= stats[:high] ? number_to_currency(stats[:high], precision: 2) : "—" %></span>
+      </div>
+      <div class="terminal-quote-stat">
+        <span class="terminal-quote-stat-label">L</span>
+        <span class="terminal-quote-stat-val" data-trading-quote-target="statLow"><%= stats[:low] ? number_to_currency(stats[:low], precision: 2) : "—" %></span>
+      </div>
+      <div class="terminal-quote-stat">
+        <span class="terminal-quote-stat-label">C</span>
+        <span class="terminal-quote-stat-val" data-trading-quote-target="statClose"><%= stats[:close] ? number_to_currency(stats[:close], precision: 2) : "—" %></span>
+      </div>
+      <div class="terminal-quote-stat">
+        <span class="terminal-quote-stat-label">CHG %</span>
+        <span class="terminal-quote-stat-val <%= stats[:chg_pct].nil? ? "" : (stats[:chg_pct] >= 0 ? "terminal-text-up" : "terminal-text-down") %>" data-trading-quote-target="statChg">
+          <%= stats[:chg_pct] ? sprintf("%+.2f", stats[:chg_pct]) : "—" %>
+        </span>
+      </div>
+      <div class="terminal-quote-stat">
+        <span class="terminal-quote-stat-label">VOL</span>
+        <span class="terminal-quote-stat-val" data-trading-quote-target="statVol">
+          <%= stats[:volume] ? number_with_delimiter(stats[:volume].round) : "—" %>
+        </span>
+      </div>
+      <div class="terminal-quote-stat">
+        <span class="terminal-quote-stat-label">HI/LO</span>
+        <span class="terminal-quote-stat-val" data-trading-quote-target="statHiLo">
+          <% if stats[:period_high] && stats[:period_low] %>
+            <%= number_to_currency(stats[:period_high], precision: 2) %> / <%= number_to_currency(stats[:period_low], precision: 2) %>
+          <% else %>
+            —
+          <% end %>
+        </span>
+      </div>
+      <div class="terminal-quote-stat">
+        <span class="terminal-quote-stat-label">BARS</span>
+        <span class="terminal-quote-stat-val" data-trading-quote-target="statBars"><%= stats[:bars] %></span>
+      </div>
+    </div>
+
+    <div class="terminal-quote-chart-shell" data-trading-quote-target="chartShell">
+      <div class="terminal-quote-chart-toolbar">
+        <span class="terminal-quote-chart-hint">Scroll zoom · drag pan · hover candle for OHLCV · dbl-click reset · SVG if JS off</span>
+        <div class="terminal-quote-chart-actions">
+          <%# Explicit click-> so toolbar actions always fire (Stimulus default click on buttons). %>
+          <button type="button" class="terminal-btn terminal-btn--small" data-trading-quote-target="gridButton" data-action="click->trading-quote#toggleGrid" aria-pressed="true" aria-label="Toggle price grid">GRID</button>
+          <button type="button" class="terminal-btn terminal-btn--small" data-action="click->trading-quote#resetView" aria-label="Reset chart zoom and pan">RESET</button>
+          <button type="button" class="terminal-btn terminal-btn--small" data-action="click->trading-quote#toggleFullscreen" aria-label="Expand chart to full screen">EXPAND</button>
+        </div>
+      </div>
+      <div class="terminal-quote-chart-canvas-wrap terminal-quote-chart-stack <%= "terminal-quote-chart-stack--layered" if chart_payload.any? %>">
+        <% if chart_payload.any? %>
+          <div class="terminal-quote-svg-fallback" data-trading-quote-target="svgFallback">
+            <%= trading_candlestick_chart_svg(@candles_by_interval[@quote_interval]) %>
+          </div>
+        <% end %>
+        <canvas
+          data-trading-quote-target="canvas"
+          class="terminal-quote-chart-canvas"
+          role="img"
+          aria-label="Candlestick chart"></canvas>
+        <%# OHLCV near cursor (see trading_quote_controller.js hit-test). %>
+        <div class="terminal-quote-candle-tooltip" data-trading-quote-target="candleTooltip" hidden role="tooltip"></div>
+        <p class="terminal-quote-chart-empty" data-trading-quote-target="empty"<% if chart_payload.any? %> hidden<% end %>>
+          No chart data — run market refresh jobs.
+        </p>
+      </div>
+      <p class="terminal-quote-chart-fullscreen-hint" data-trading-quote-target="fsHint" hidden>Press Esc to exit expanded chart.</p>
+    </div>
+  </div>
+<% end %>

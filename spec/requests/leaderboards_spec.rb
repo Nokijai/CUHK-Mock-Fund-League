@@ -5,6 +5,11 @@ RSpec.describe "Leaderboards", type: :request do
   let(:user) { create(:user) }
   let!(:portfolio) { create(:portfolio, user: user, league: league, cash_balance: 50_000) }
 
+  before do
+    # Views under ApplicationController require a signed-in user.
+    sign_in user
+  end
+
   describe "GET /leagues/:league_id/leaderboard" do
     it "returns success" do
       get league_leaderboard_path(league)
@@ -14,7 +19,7 @@ RSpec.describe "Leaderboards", type: :request do
     it "shows leaderboard heading and participant" do
       get league_leaderboard_path(league)
       expect(response.body).to include("LEADERBOARD")
-      expect(response.body).to include(user.username)
+      expect(response.body).to include(user.name)
     end
   end
 end

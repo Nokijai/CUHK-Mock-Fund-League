@@ -1,6 +1,36 @@
-# Solid Queue recurring tasks
-# Run with: bin/jobs
+# Solid Queue recurring schedule (scheduler runs inside bin/jobs or Puma plugin).
+# See: https://github.com/rails/solid_queue#recurring-tasks
 
-stock_price_update:
-  class: StockPriceUpdateAllJob
-  schedule: every 15 minutes
+development:
+  clear_solid_queue_finished_jobs:
+    # Use job class (not command) to stay compatible across recurring_task schemas.
+    class: SolidQueueCleanupJob
+    schedule: every hour at minute 12
+  # Fast refresh every 15m with short lookback windows for lower latency.
+  nestak_market_data_refresh_fast:
+    class: MarketDataRefreshFastJob
+    schedule: every 15 minutes
+  # Full refresh hourly for broader candles without slowing every 15m run.
+  nestak_market_data_refresh_full:
+    class: MarketDataRefreshFullJob
+    schedule: every hour at minute 7
+  # Send league end-time reminders to joined users (1h / 15m / 5m / expiry).
+  league_expiry_reminders:
+    class: LeagueExpiryReminderJob
+    schedule: every minute
+
+production:
+  clear_solid_queue_finished_jobs:
+    # Use job class (not command) to stay compatible across recurring_task schemas.
+    class: SolidQueueCleanupJob
+    schedule: every hour at minute 12
+  nestak_market_data_refresh_fast:
+    class: MarketDataRefreshFastJob
+    schedule: every 15 minutes
+  nestak_market_data_refresh_full:
+    class: MarketDataRefreshFullJob
+    schedule: every hour at minute 7
+  # Send league end-time reminders to joined users (1h / 15m / 5m / expiry).
+  league_expiry_reminders:
+    class: LeagueExpiryReminderJob
+    schedule: every minute

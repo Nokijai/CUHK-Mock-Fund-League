@@ -1,0 +1,25 @@
+<%# League selector used on Trading/Portfolio; options only include joined leagues. %>
+<% if user_signed_in? && @joined_leagues.present? %>
+  <% league_options = @joined_leagues.filter_map do |league| %>
+    <% portfolio = @league_portfolio_map[league.id] %>
+    <% next unless portfolio %>
+    <% destination = page_type == :trading ? new_portfolio_trade_path(portfolio, league_id: league.id) : portfolio_path(portfolio, league_id: league.id) %>
+    <%# Return [label, value] pair for options_for_select (no raw text output). %>
+    <% [league.name, destination] %>
+  <% end %>
+
+  <% if league_options.present? %>
+    <div class="terminal-window terminal-league-selector">
+      <div class="terminal-window-title">LEAGUE SELECTION</div>
+      <div class="terminal-toolbar terminal-league-selector-toolbar">
+        <label class="terminal-label" for="league-selector-input">CURRENT LEAGUE</label>
+        <%# Option values are full URLs so switching can navigate without extra JS files. %>
+        <%= select_tag "league_selector_input",
+          options_for_select(league_options, (page_type == :trading ? new_portfolio_trade_path(@portfolio, league_id: @portfolio.league_id) : portfolio_path(@portfolio, league_id: @portfolio.league_id))),
+          class: "terminal-input terminal-select terminal-league-selector-input",
+          id: "league-selector-input",
+          onchange: "if (this.value) window.location = this.value;" %>
+      </div>
+    </div>
+  <% end %>
+<% end %>
