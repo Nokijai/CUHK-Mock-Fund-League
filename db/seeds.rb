@@ -16,7 +16,7 @@ end
 
 admin = User.create!(
   email: "admin@mockfund.com",
-  name: "Admin User",
+  username: "admin",
   role: "admin",
   password: "Admin123!",
   password_confirmation: "Admin123!"
@@ -25,7 +25,7 @@ admin = User.create!(
 users = Array.new(20) do |index|
   User.create!(
     email: "user#{index + 1}@mockfund.com",
-    name: "User #{index + 1}",
+    username: "user#{index + 1}",
     role: "user",
     password: "User123!",
     password_confirmation: "User123!"
