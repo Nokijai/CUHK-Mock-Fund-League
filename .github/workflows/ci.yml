@@ -108,7 +108,15 @@ jobs:
           - 5432:5432
     env:
       RAILS_ENV: test
+      # Force ActiveRecord/pg to use TCP in GitHub Actions service container networking.
+      PGHOST: localhost
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: postgres
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/mock_fund_league_test
+      QUEUE_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/mock_fund_league_test
+      CACHE_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/mock_fund_league_test
+      CABLE_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/mock_fund_league_test
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
