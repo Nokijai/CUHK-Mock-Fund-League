@@ -243,7 +243,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_04_000001) do
     t.string "login_otp_digest"
     t.datetime "login_otp_locked_until"
     t.datetime "login_otp_sent_at"
-    t.string "name"
     t.datetime "remember_created_at"
     t.datetime "reset_password_sent_at"
     t.string "reset_password_token"
