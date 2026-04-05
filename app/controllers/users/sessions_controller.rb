@@ -5,7 +5,7 @@ class Users::SessionsController < Devise::SessionsController
     # Get login identifier (can be username or email)
     login = sign_in_params[:email].to_s.strip
     password = sign_in_params[:password].to_s
-    
+
     # Use the custom finder that supports both username and email
     user = User.find_for_database_authentication(email: login)
 
@@ -19,7 +19,7 @@ class Users::SessionsController < Devise::SessionsController
 
     # Sign in the user directly (no OTP required)
     sign_in(resource_name, user)
-    
+
     # Handle "remember me" functionality
     remember_me(user) if ActiveModel::Type::Boolean.new.cast(sign_in_params[:remember_me]) && devise_mapping.rememberable?
 

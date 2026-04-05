@@ -27,7 +27,7 @@ class User < ApplicationRecord
   def self.find_for_database_authentication(warden_conditions)
     conditions = warden_conditions.dup
     if (login = conditions.delete(:email))
-      where(conditions).find_by(["lower(username) = :value OR lower(email) = :value", { value: login.downcase }])
+      where(conditions).find_by([ "lower(username) = :value OR lower(email) = :value", { value: login.downcase } ])
     elsif conditions.has_key?(:username) || conditions.has_key?(:email)
       where(conditions).first
     end
@@ -75,7 +75,7 @@ class User < ApplicationRecord
   def signup_otp_resend_wait_seconds
     return 0 if signup_otp_resend_available?
 
-    [(signup_otp_sent_at + SIGNUP_OTP_RESEND_COOLDOWN - Time.current).ceil, 0].max
+    [ (signup_otp_sent_at + SIGNUP_OTP_RESEND_COOLDOWN - Time.current).ceil, 0 ].max
   end
 
   def clear_signup_otp!

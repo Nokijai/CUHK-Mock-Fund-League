@@ -1,5 +1,5 @@
 Rails.application.routes.draw do
-  devise_for :users, controllers: { 
+  devise_for :users, controllers: {
     sessions: "users/sessions",
     registrations: "users/registrations"
   }
@@ -10,7 +10,7 @@ Rails.application.routes.draw do
     post "users/verify_otp", to: "users/sessions#otp_authenticate", as: :users_otp_authenticate
     get "users/verify_otp/cancel", to: "users/sessions#cancel_otp_login", as: :users_cancel_otp_login
     post "users/verify_otp/resend", to: "users/sessions#resend_otp", as: :users_resend_otp
-    
+
     # Signup OTP routes
     get "users/verify_signup_otp", to: "users/registrations#verify_otp", as: :users_verify_signup_otp
     post "users/verify_signup_otp", to: "users/registrations#otp_authenticate", as: :users_signup_otp_authenticate

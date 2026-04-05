@@ -10,3 +10,6 @@ RSpec.configure do |config|
     end
   end
 end
+
+# Allow database_cleaner to work with remote DATABASE_URL in CI/Docker
+DatabaseCleaner.allow_remote_database_url = true

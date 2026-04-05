@@ -2,11 +2,19 @@ require "rails_helper"
 
 RSpec.describe User, type: :model do
   describe "validations" do
-    subject { build(:user) }
+    it "validates presence of username" do
+      user = build(:user, username: nil)
+      expect(user).not_to be_valid
+      expect(user.errors[:username]).to include("can't be blank")
+    end
 
-    it { should validate_presence_of(:username) }
-    it { should validate_uniqueness_of(:username).case_insensitive }
-    
+    it "validates uniqueness of username (case insensitive)" do
+      existing_user = create(:user, username: "testuser")
+      new_user = build(:user, username: "TestUser")
+      expect(new_user).not_to be_valid
+      expect(new_user.errors[:username]).to include("has already been taken")
+    end
+
     it "validates username format (no spaces)" do
       user = build(:user, username: "user name")
       expect(user).not_to be_valid

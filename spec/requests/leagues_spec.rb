@@ -292,7 +292,7 @@ RSpec.describe "Api::V1::Leagues", type: :request do
       standings = json["standings"]
       expect(standings).to be_an(Array)
       expect(standings.first["rank"]).to eq(1)
-      expect(standings.map { |s| s["name"] }).to include("Alice", "Bob")
+      expect(standings.map { |s| s["name"] }).to include("alice", "bob")
     end
 
     it "returns standings in descending value order" do
