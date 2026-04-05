@@ -64,11 +64,11 @@ Rails.application.configure do
 
   config.action_mailer.delivery_method = :smtp
   config.action_mailer.smtp_settings = {
-    user_name: ENV.fetch("SMTP_USERNAME", ""),
-    password: ENV.fetch("SMTP_PASSWORD", ""),
-    address: ENV.fetch("SMTP_ADDRESS", "smtp.sendgrid.net"),
+    user_name: ENV.fetch("SMTP_USERNAME"),
+    password: ENV.fetch("SMTP_PASSWORD"),
+    address: ENV.fetch("SMTP_ADDRESS", "smtp.gmail.com"),
     port: ENV.fetch("SMTP_PORT", "587").to_i,
-    domain: ENV.fetch("SMTP_DOMAIN", ENV.fetch("APP_HOST", "example.com")),
+    domain: ENV.fetch("SMTP_DOMAIN", "gmail.com"),
     authentication: ENV.fetch("SMTP_AUTH", "plain").to_sym,
     enable_starttls_auto: ENV.fetch("SMTP_STARTTLS", "true") == "true"
   }
