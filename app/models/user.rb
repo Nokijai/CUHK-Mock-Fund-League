@@ -33,60 +33,6 @@ class User < ApplicationRecord
     end
   end
 
-  def generate_signup_otp!
-    code = format("%06d", SecureRandom.random_number(1_000_000))
-
-    update!(
-      signup_otp_digest: digest_signup_otp(code),
-      signup_otp_sent_at: Time.current,
-      signup_otp_attempts: 0,
-      signup_otp_locked_until: nil
-    )
-
-    code
-  end
-
-  def verify_signup_otp!(code)
-    return false if code.blank? || signup_otp_digest.blank?
-    return false if signup_otp_locked?
-    return false if signup_otp_expired?
-
-    if ActiveSupport::SecurityUtils.secure_compare(digest_signup_otp(code), signup_otp_digest)
-      clear_signup_otp!
-      true
-    else
-      consume_failed_signup_otp_attempt!
-      false
-    end
-  end
-
-  def signup_otp_expired?
-    signup_otp_sent_at.blank? || signup_otp_sent_at < SIGNUP_OTP_TTL.ago
-  end
-
-  def signup_otp_locked?
-    signup_otp_locked_until.present? && signup_otp_locked_until.future?
-  end
-
-  def signup_otp_resend_available?
-    signup_otp_sent_at.blank? || signup_otp_sent_at <= SIGNUP_OTP_RESEND_COOLDOWN.ago
-  end
-
-  def signup_otp_resend_wait_seconds
-    return 0 if signup_otp_resend_available?
-
-    [ (signup_otp_sent_at + SIGNUP_OTP_RESEND_COOLDOWN - Time.current).ceil, 0 ].max
-  end
-
-  def clear_signup_otp!
-    update_columns(
-      signup_otp_digest: nil,
-      signup_otp_sent_at: nil,
-      signup_otp_attempts: 0,
-      signup_otp_locked_until: nil
-    )
-  end
-
   def admin?
     role == "admin"
   end
@@ -96,20 +42,6 @@ class User < ApplicationRecord
   end
 
   private
-
-  def digest_signup_otp(code)
-    OpenSSL::HMAC.hexdigest("SHA256", Rails.application.secret_key_base, "#{id}:#{code}")
-  end
-
-  def consume_failed_signup_otp_attempt!
-    attempts = signup_otp_attempts.to_i + 1
-
-    if attempts >= SIGNUP_OTP_MAX_ATTEMPTS
-      update_columns(signup_otp_attempts: attempts, signup_otp_locked_until: 15.minutes.from_now)
-    else
-      update_columns(signup_otp_attempts: attempts)
-    end
-  end
 
   def set_default_role
     self.role ||= "user"
