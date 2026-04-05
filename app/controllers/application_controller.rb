@@ -12,8 +12,8 @@ class ApplicationController < ActionController::Base
   private
 
   def configure_permitted_parameters
-    devise_parameter_sanitizer.permit(:sign_up, keys: [ :username, :name ])
-    devise_parameter_sanitizer.permit(:account_update, keys: [ :username, :name ])
+    devise_parameter_sanitizer.permit(:sign_up, keys: [ :username ])
+    devise_parameter_sanitizer.permit(:account_update, keys: [ :username ])
   end
 
   def set_terminal_nav_context

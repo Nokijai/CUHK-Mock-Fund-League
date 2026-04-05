@@ -24,11 +24,11 @@ class RefactorUserAuthenticationFields < ActiveRecord::Migration[8.1]
     end
     
     # Rename indexes for the renamed columns (check if old index exists)
-    if index_exists?(:users, :signup_otp_sent_at, name: :index_users_on_login_otp_sent_at)
+    if index_exists?(:users, :login_otp_sent_at, name: :index_users_on_login_otp_sent_at)
       rename_index :users, :index_users_on_login_otp_sent_at, :index_users_on_signup_otp_sent_at
     end
     
-    if index_exists?(:users, :signup_otp_locked_until, name: :index_users_on_login_otp_locked_until)
+    if index_exists?(:users, :login_otp_locked_until, name: :index_users_on_login_otp_locked_until)
       rename_index :users, :index_users_on_login_otp_locked_until, :index_users_on_signup_otp_locked_until
     end
   end
