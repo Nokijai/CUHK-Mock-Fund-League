@@ -1,6 +1,7 @@
 class User < ApplicationRecord
   SIGNUP_OTP_TTL = 10.minutes
   SIGNUP_OTP_MAX_ATTEMPTS = 5
+  # Minimum wait between signup OTP resends; RegistrationsController uses this for session-based cooldown math.
   SIGNUP_OTP_RESEND_COOLDOWN = 60.seconds
   LOGIN_OTP_TTL = 10.minutes
   LOGIN_OTP_MAX_ATTEMPTS = 5
