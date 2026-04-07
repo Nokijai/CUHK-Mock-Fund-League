@@ -239,6 +239,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_04_000001) do
     t.datetime "created_at", null: false
     t.string "email", null: false
     t.string "encrypted_password", default: "", null: false
+    t.integer "login_otp_attempts", default: 0, null: false
+    t.string "login_otp_digest"
+    t.datetime "login_otp_locked_until"
+    t.datetime "login_otp_sent_at"
+    t.string "name"
     t.datetime "remember_created_at"
     t.datetime "reset_password_sent_at"
     t.string "reset_password_token"
@@ -250,6 +255,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_04_000001) do
     t.datetime "updated_at", null: false
     t.string "username"
     t.index ["email"], name: "index_users_on_email", unique: true
+    t.index ["login_otp_locked_until"], name: "index_users_on_login_otp_locked_until"
+    t.index ["login_otp_sent_at"], name: "index_users_on_login_otp_sent_at"
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
     t.index ["role"], name: "index_users_on_role"
     t.index ["signup_otp_locked_until"], name: "index_users_on_signup_otp_locked_until"

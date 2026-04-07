@@ -12,8 +12,6 @@ StockPrice.delete_all
 %w[users leagues portfolios holdings trades stock_prices stock_candles].each do |table_name|
   ActiveRecord::Base.connection.reset_pk_sequence!(table_name)
 end
-
-
 admin = User.create!(
   email: "admin@mockfund.com",
   username: "admin",
