@@ -2,11 +2,12 @@ services:
   db:
     image: postgres:16
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: mock_fund_league_development
+      # Prefer .env values, keep defaults for first-run local setup.
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-mock_fund_league_development}
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d mock_fund_league_development"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-mock_fund_league_development}"]
       interval: 5s
       timeout: 5s
       retries: 15
@@ -21,14 +22,20 @@ services:
       args:
         BUNDLE_WITHOUT: ""
     command: ./bin/rails server -b 0.0.0.0 -p 3000
+    # Load runtime env directly from .env so local changes apply in containers.
+    env_file:
+      - .env
     environment:
-      RAILS_ENV: development
-      DATABASE_URL: postgresql://postgres:postgres@db:5432/mock_fund_league_development
-      QUEUE_DATABASE_URL: postgresql://postgres:postgres@db:5432/mock_fund_league_development
-      MARKET_DATA_PYTHON_BIN: /opt/market-data-venv/bin/python
-      SOLID_QUEUE_IN_PUMA: "0"
+      # Explicit fallbacks keep compose bootable even if a key is absent in .env.
+      RAILS_ENV: ${RAILS_ENV:-development}
+      DATABASE_URL: ${DATABASE_URL:-postgresql://postgres:postgres@db:5432/mock_fund_league_development}
+      QUEUE_DATABASE_URL: ${QUEUE_DATABASE_URL:-postgresql://postgres:postgres@db:5432/mock_fund_league_development}
+      CACHE_DATABASE_URL: ${CACHE_DATABASE_URL:-postgresql://postgres:postgres@db:5432/mock_fund_league_development}
+      CABLE_DATABASE_URL: ${CABLE_DATABASE_URL:-postgresql://postgres:postgres@db:5432/mock_fund_league_development}
+      MARKET_DATA_PYTHON_BIN: ${MARKET_DATA_PYTHON_BIN:-/opt/market-data-venv/bin/python}
+      SOLID_QUEUE_IN_PUMA: ${SOLID_QUEUE_IN_PUMA:-0}
     ports:
-      - "3000:3000"
+      - "${WEB_PORT:-3000}:3000"
     # Health only after boot + migrations, so downstream services can wait safely.
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://localhost:3000/up >/dev/null || exit 1"]
@@ -48,11 +55,17 @@ services:
       args:
         BUNDLE_WITHOUT: ""
     command: ./bin/jobs
+    # Mirror web env loading so worker and app stay in sync.
+    env_file:
+      - .env
     environment:
-      RAILS_ENV: development
-      DATABASE_URL: postgresql://postgres:postgres@db:5432/mock_fund_league_development
-      QUEUE_DATABASE_URL: postgresql://postgres:postgres@db:5432/mock_fund_league_development
-      MARKET_DATA_PYTHON_BIN: /opt/market-data-venv/bin/python
+      # Worker inherits same DB/env conventions as web.
+      RAILS_ENV: ${RAILS_ENV:-development}
+      DATABASE_URL: ${DATABASE_URL:-postgresql://postgres:postgres@db:5432/mock_fund_league_development}
+      QUEUE_DATABASE_URL: ${QUEUE_DATABASE_URL:-postgresql://postgres:postgres@db:5432/mock_fund_league_development}
+      CACHE_DATABASE_URL: ${CACHE_DATABASE_URL:-postgresql://postgres:postgres@db:5432/mock_fund_league_development}
+      CABLE_DATABASE_URL: ${CABLE_DATABASE_URL:-postgresql://postgres:postgres@db:5432/mock_fund_league_development}
+      MARKET_DATA_PYTHON_BIN: ${MARKET_DATA_PYTHON_BIN:-/opt/market-data-venv/bin/python}
     depends_on:
       db:
         condition: service_healthy
