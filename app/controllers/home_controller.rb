@@ -44,8 +44,35 @@ class HomeController < ApplicationController
     current_user.portfolios.first
   end
 
+  def dashboard_league(portfolio)
+    portfolio&.league || current_user&.leagues&.order(:id)&.first || League.order(:id).first
+  end
+
+  def dashboard_rank(league, portfolio)
+    return [ 0, 0 ] unless league && portfolio
+
+    rankings = LeaderboardService.new(league).compute
+    index = rankings.index { |row| row[:user_id] == portfolio.user_id }
+    [ index ? index + 1 : 0, rankings.size ]
+  end
+
+  def portfolio_performance_points(portfolio, valuator)
+    return default_chart_points(@starting) unless portfolio
+
+    trades = portfolio.trades.order(Arel.sql("COALESCE(executed_at, created_at) ASC"), :id).to_a
+    return default_chart_points(@total_value.positive? ? @total_value : @starting) if trades.empty?
+
+    (Date.current - 14..Date.current).map do |date|
+      snapshot = portfolio_snapshot_at(portfolio, trades, date.end_of_day)
+      value = snapshot[:cash] + holdings_market_value_from_positions(snapshot[:positions], valuator)
+      { label: date.strftime("%b %-d"), value: value.round(2) }
+    end
+  end
+
+  # Synthetic 14-day series for the dashboard sparkline (smooth curve toward current total value).
   def chart_points(end_value)
     return default_chart_points(100_000) unless end_value.positive?
+
     start_v = end_value * 0.93
     (0..14).map do |i|
       t = i / 14.0
@@ -58,8 +85,39 @@ class HomeController < ApplicationController
     (0..14).map { |i| { label: (Date.current - 14 + i).strftime("%b %-d"), value: (base * (0.95 + i * 0.004)).round(2) } }
   end
 
+  def portfolio_snapshot_at(portfolio, trades, cutoff_time)
+    cash = portfolio.league&.starting_capital.to_d
+    cash = 100_000.to_d if cash <= 0
+    positions = Hash.new(0)
+
+    trades.each do |trade|
+      trade_time = trade.executed_at || trade.created_at
+      next if trade_time > cutoff_time
+
+      trade_value = trade.price.to_d * trade.quantity.to_d
+      if trade.trade_type.to_s.downcase == "sell"
+        cash += trade_value
+        positions[trade.symbol] -= trade.quantity.to_i
+      else
+        cash -= trade_value
+        positions[trade.symbol] += trade.quantity.to_i
+      end
+    end
+
+    { cash: cash, positions: positions }
+  end
+
+  def holdings_market_value_from_positions(positions, valuator)
+    positions.sum do |symbol, quantity|
+      next 0.to_d if quantity.to_i <= 0
+
+      valuator.price_for_symbol(symbol) * quantity.to_i
+    end
+  end
+
   def top_holdings_for(portfolio, valuator)
     return [] unless portfolio
+
     portfolio.holdings.map do |h|
       last = valuator.price_for_symbol(h.symbol).to_f
       avg = h.average_cost.to_f
@@ -87,13 +145,34 @@ class HomeController < ApplicationController
     symbols.filter_map do |sym|
       sp = prices_by_symbol[sym]
       next unless sp
+
+      trade_prices = Trade.where(symbol: sym).order(Arel.sql("COALESCE(executed_at, created_at) ASC"), :id).pluck(:price)
+      chg = if trade_prices.size >= 2
+        base = trade_prices.first.to_f
+        base.positive? ? ((sp.price.to_f - base) / base * 100.0) : 0.0
+      elsif trade_prices.size == 1
+        base = trade_prices.first.to_f
+        base.positive? ? ((sp.price.to_f - base) / base * 100.0) : 0.0
+      else
+        0.0
+      end
+
       {
         symbol: sym,
         name: MarketData::NestakTop30::DISPLAY_NAMES[sym] || sym,
         price: sp.price.to_f,
-        chg: 0.0
+        chg: chg
       }
-    end
+    end.sort_by { |row| -row[:chg].abs }.first(5)
+  end
+
+  def demo_focus_portfolio
+    user = User.find_by(name: "Demo Trader")
+    user&.portfolios&.includes(:league, :holdings, :trades)&.first || Portfolio.order(:id).first
+  end
+
+  def mover_name(symbol)
+    MOVER_LABELS[symbol] || symbol
   end
 
   # Stock-only row hashes for the first dashboard marquee bar.

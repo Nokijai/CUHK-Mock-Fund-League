@@ -171,12 +171,13 @@ module Users
 
     def otp_resend_available?(signup_data)
       return true if signup_data["otp_sent_at"].blank?
-      Time.at(signup_data["otp_sent_at"]) <= 30.seconds.ago
+      # Aligned with User::SIGNUP_OTP_RESEND_COOLDOWN (session-based signup OTP).
+      Time.at(signup_data["otp_sent_at"]) <= User::SIGNUP_OTP_RESEND_COOLDOWN.ago
     end
 
     def otp_resend_wait_seconds(signup_data)
       return 0 if otp_resend_available?(signup_data)
-      [ (Time.at(signup_data["otp_sent_at"]) + 30.seconds - Time.current).ceil, 0 ].max
+      [ (Time.at(signup_data["otp_sent_at"]) + User::SIGNUP_OTP_RESEND_COOLDOWN - Time.current).ceil, 0 ].max
     end
   end
 end

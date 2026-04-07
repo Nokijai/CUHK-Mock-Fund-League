@@ -1,7 +1,16 @@
-Hi <%= @user.username.presence || @user.email %>,
+Dear <%= @user.username.presence || @user.email %>,
 
-Your Mock-Fund League login verification code is: <%= @code %>
+We received a request to sign in to your Mock-Fund League account.
+
+Please use the verification code below:
+
+<%= @code %>
 
 This code expires in <%= @expires_in_minutes %> minutes.
+For your security, please do not share this code with anyone.
 
-If you did not attempt to log in, you can ignore this email.
+If you did not attempt to sign in, you may safely ignore this email.
+
+--
+Mock-Fund League
+Automated Notification (No Reply)

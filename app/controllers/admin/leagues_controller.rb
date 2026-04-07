@@ -46,16 +46,14 @@ class Admin::LeaguesController < Admin::BaseController
   end
 
   def league_params
-    # Keep admin rule controls explicit to avoid free-form JSON editing in UI.
-    params.require(:league).permit(
-      :name,
-      :description,
-      :start_date,
-      :end_date,
-      :starting_capital,
-      :max_participants,
-      :handling_fee_proportion,
-      :minimum_final_balance
-    )
+    # starting_capital + rule fields only on create; see League immutability validations.
+    if action_name == "create"
+      params.require(:league).permit(
+        :name, :description, :start_date, :end_date, :starting_capital,
+        :max_participants, :handling_fee_proportion, :minimum_final_balance
+      )
+    else
+      params.require(:league).permit(:name, :description, :start_date, :end_date)
+    end
   end
 end

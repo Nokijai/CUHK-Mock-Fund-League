@@ -11,6 +11,11 @@ require 'rspec/rails'
 require 'devise'
 # Add additional requires below this line. Rails is not loaded until this point!
 
+# Request specs use Rack::Test default User-Agent ("Rack::Test"), which can be rejected by
+# `allow_browser versions: :modern`. Force a modern UA so request specs exercise controllers
+# instead of the browser gate returning 403.
+Rails.application.env_config["HTTP_USER_AGENT"] ||= "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+
 # Requires supporting ruby files with custom matchers and macros, etc, in
 # spec/support/ and its subdirectories. Files matching `spec/**/*_spec.rb` are
 # run as spec files by default. This means that files in spec/support that end

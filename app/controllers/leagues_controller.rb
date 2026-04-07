@@ -53,6 +53,10 @@ class LeaguesController < ApplicationController
   end
 
   def league_params
-    params.require(:league).permit(:name, :description, :starting_capital, :start_date, :end_date, :rules)
+    if action_name == "create"
+      params.require(:league).permit(:name, :description, :starting_capital, :start_date, :end_date, :rules)
+    else
+      params.require(:league).permit(:name, :description, :start_date, :end_date)
+    end
   end
 end

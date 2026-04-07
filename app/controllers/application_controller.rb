@@ -46,6 +46,7 @@ class ApplicationController < ActionController::Base
     @nav_portfolio = nil
   end
 
+  # Keep pending signup users inside OTP verification flow until completion.
   def redirect_pending_otp_user
     return if user_signed_in?
     return unless session[:pending_signup].present?

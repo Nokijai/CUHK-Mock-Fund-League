@@ -14,10 +14,19 @@ RSpec.describe "Home dashboard", type: :request do
       expect(response).to have_http_status(:ok)
     end
 
-    it "renders terminal dashboard shell" do
+    it "renders dashboard metrics" do
+      # Ensure the dashboard has a focus portfolio so value/cash are non-zero.
+      create(:portfolio, user:, cash_balance: 121_699.50, total_value: 121_699.50)
+
       get root_path
       expect(response.body).to include("DASHBOARD")
       expect(response.body).to include("MOCK-FUND")
+      expect(response.body).to include("TOTAL PORTFOLIO VALUE")
+      expect(response.body).to include("CASH BALANCE")
+      expect(response.body).to include("LEAGUE RANK")
+      expect(response.body).to include("TOP HOLDINGS")
+      expect(response.body).to include("MARKET MOVERS")
+      expect(response.body).to include("$121,699.50")
     end
   end
 end

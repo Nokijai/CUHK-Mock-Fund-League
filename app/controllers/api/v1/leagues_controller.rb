@@ -75,7 +75,12 @@ module Api
       end
 
       def league_params
-        params.require(:league).permit(:name, :description, :starting_capital, :start_date, :end_date, rules: {})
+        # Rules + starting_capital fixed at creation; PATCH only allows descriptive/schedule fields.
+        if action_name == "create"
+          params.require(:league).permit(:name, :description, :starting_capital, :start_date, :end_date, rules: {})
+        else
+          params.require(:league).permit(:name, :description, :start_date, :end_date)
+        end
       end
     end
   end

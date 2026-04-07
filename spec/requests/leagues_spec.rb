@@ -137,6 +137,24 @@ RSpec.describe "Api::V1::Leagues", type: :request do
             headers: headers
       expect(response).to have_http_status(:unprocessable_entity)
     end
+
+    it "does not change rules via PATCH (ignored at strong params)" do
+      league.update_column(:rules, { "max_participants" => 5 })
+      patch "/api/v1/leagues/#{league.id}",
+            params: { league: { name: league.name, rules: { "max_participants" => 99 } } }.to_json,
+            headers: headers
+      expect(response).to have_http_status(:ok)
+      expect(league.reload.rules["max_participants"]).to eq(5)
+    end
+
+    it "does not change starting_capital via PATCH (ignored at strong params)" do
+      original = league.starting_capital
+      patch "/api/v1/leagues/#{league.id}",
+            params: { league: { name: league.name, starting_capital: 999_999 } }.to_json,
+            headers: headers
+      expect(response).to have_http_status(:ok)
+      expect(league.reload.starting_capital).to eq(original)
+    end
   end
 
   # ─────────────────────────────────────────────────────────────

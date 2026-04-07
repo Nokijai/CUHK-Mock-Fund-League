@@ -1,6 +1,8 @@
 class League < ApplicationRecord
   include Searchable
 
+  # Rule keys live only in DB column `leagues.rules` (jsonb). There are no separate columns.
+  # Virtual accessors below read/write these keys; `save` persists the whole `rules` hash.
   MAX_PARTICIPANTS_RULE_KEY = "max_participants".freeze
   HANDLING_FEE_RULE_KEY = "handling_fee_proportion".freeze
   MINIMUM_FINAL_BALANCE_RULE_KEY = "minimum_final_balance".freeze
@@ -21,8 +23,11 @@ class League < ApplicationRecord
   validate :max_participants_rule_must_be_positive_integer
   validate :handling_fee_rule_must_be_valid_proportion
   validate :minimum_final_balance_rule_must_be_non_negative
+  # Once persisted, economic/rule fields are frozen (fairness); only set on create.
+  validate :rules_immutable_after_create, on: :update
+  validate :starting_capital_immutable_after_create, on: :update
 
-  # Virtual accessors backed by rules JSON so admin form can bind clean fields.
+  # Virtual accessors backed by `rules` JSON (same storage as API `league.rules` and leagues#index per-card RULES block).
   def max_participants
     raw = rules_hash[MAX_PARTICIPANTS_RULE_KEY]
     raw.present? ? raw.to_i : nil
@@ -48,6 +53,11 @@ class League < ApplicationRecord
 
   def minimum_final_balance=(value)
     write_rule_value(MINIMUM_FINAL_BALANCE_RULE_KEY, value, decimal: true)
+  end
+
+  # True when admins stored a handling fee in rules (including 0%); used so UI can show "0%" vs omitting the line.
+  def handling_fee_rule_configured?
+    rules.is_a?(Hash) && rules.key?(HANDLING_FEE_RULE_KEY)
   end
 
   # Capacity guard used by both web and API join endpoints.
@@ -79,14 +89,17 @@ class League < ApplicationRecord
     rules
   end
 
+  # Assign full hash so ActiveRecord marks `rules` dirty (in-place jsonb mutation does not).
   def write_rule_value(key, raw_value, integer: false, decimal: false)
+    base = rules.is_a?(Hash) ? rules.deep_dup : {}
     sanitized = raw_value.to_s.strip
     if sanitized.blank?
-      rules_hash.delete(key)
+      base.delete(key)
+      self.rules = base
       return
     end
 
-    rules_hash[key] =
+    base[key] =
       if integer
         sanitized.match?(/\A[1-9]\d*\z/) ? sanitized.to_i : sanitized
       elsif decimal
@@ -98,6 +111,21 @@ class League < ApplicationRecord
       else
         sanitized
       end
+    self.rules = base
+  end
+
+  def rules_immutable_after_create
+    # Prefer Rails dirty-tracking that works consistently for jsonb assignments.
+    return unless will_save_change_to_rules?
+
+    errors.add(:rules, "cannot be changed after the league is created")
+  end
+
+  # Portfolios are seeded from starting_capital; changing it post-create would desync balances.
+  def starting_capital_immutable_after_create
+    return unless will_save_change_to_starting_capital?
+
+    errors.add(:starting_capital, "cannot be changed after the league is created")
   end
 
   def end_date_after_start_date
