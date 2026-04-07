@@ -2,6 +2,7 @@ class ApplicationController < ActionController::Base
   allow_browser versions: :modern
   stale_when_importmap_changes
 
+  before_action :redirect_pending_otp_user
   before_action :authenticate_user!
   before_action :set_terminal_nav_context
   before_action :configure_permitted_parameters, if: :devise_controller?
@@ -11,8 +12,8 @@ class ApplicationController < ActionController::Base
   private
 
   def configure_permitted_parameters
-    devise_parameter_sanitizer.permit(:sign_up, keys: [ :name ])
-    devise_parameter_sanitizer.permit(:account_update, keys: [ :name ])
+    devise_parameter_sanitizer.permit(:sign_up, keys: [ :username ])
+    devise_parameter_sanitizer.permit(:account_update, keys: [ :username ])
   end
 
   def set_terminal_nav_context
@@ -43,6 +44,17 @@ class ApplicationController < ActionController::Base
     @selected_league = nil
     @nav_league = nil
     @nav_portfolio = nil
+  end
+
+  # Keep pending signup users inside OTP verification flow until completion.
+  def redirect_pending_otp_user
+    return if user_signed_in?
+    return unless session[:pending_signup].present?
+    return if devise_controller? && (
+      (controller_name == "registrations" && %w[new create verify_otp otp_authenticate cancel_otp_signup resend_otp].include?(action_name))
+    )
+
+    redirect_to users_verify_signup_otp_path, alert: "Please complete email verification before continuing."
   end
 
   def show_admin_league_actions?

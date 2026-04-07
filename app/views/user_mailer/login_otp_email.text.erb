@@ -1,0 +1,7 @@
+Hi <%= @user.username.presence || @user.email %>,
+
+Your Mock-Fund League login verification code is: <%= @code %>
+
+This code expires in <%= @expires_in_minutes %> minutes.
+
+If you did not attempt to log in, you can ignore this email.

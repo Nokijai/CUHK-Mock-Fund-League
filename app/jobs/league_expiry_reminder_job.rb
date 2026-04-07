@@ -58,7 +58,7 @@ class LeagueExpiryReminderJob < ApplicationJob
 
   def broadcast_member_notice(user, league, message)
     league.broadcast_prepend_to(
-      [user, "league_notifications"],
+      [ user, "league_notifications" ],
       target: "realtime-notifications",
       partial: "leagues/realtime_notification",
       locals: {

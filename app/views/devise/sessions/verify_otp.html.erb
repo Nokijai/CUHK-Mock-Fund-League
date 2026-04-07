@@ -1,0 +1,74 @@
+<div style="display: flex; align-items: center; justify-content: center; min-height: calc(100vh - 60px); padding: 2rem;">
+  <div class="terminal-form-shell terminal-form-shell--narrow" style="width: 100%; max-width: 480px;">
+    <div class="terminal-window">
+      <div class="terminal-window-title">VERIFY LOGIN</div>
+      <div style="padding: 1.5rem;">
+        <% resend_wait_seconds = @pending_user.login_otp_resend_wait_seconds %>
+        <p style="font-size: 12px; color: var(--terminal-muted); margin: 0 0 1rem 0;">
+          Enter the 6-digit verification code sent to your email.
+        </p>
+
+        <%= form_with url: users_otp_authenticate_path, method: :post, local: true do |f| %>
+          <div style="margin-bottom: 1rem;">
+            <%= f.label :otp_code, "VERIFICATION CODE", class: "terminal-label" %>
+            <%= f.text_field :otp_code,
+                autofocus: true,
+                autocomplete: "one-time-code",
+                maxlength: 6,
+                pattern: "[0-9]{6}",
+                class: "terminal-input",
+                placeholder: "123456" %>
+          </div>
+
+          <div class="terminal-form-actions" style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--terminal-border);">
+            <%= f.submit "VERIFY & LOG IN", class: "terminal-btn terminal-btn-primary" %>
+          </div>
+        <% end %>
+
+        <div style="margin-top: 1rem;">
+          <%= link_to "Back to login", users_cancel_otp_login_path, style: "color: var(--terminal-muted); text-decoration: none; font-size: 11px;" %>
+        </div>
+
+        <div style="margin-top: 0.75rem;">
+          <%= form_with url: users_resend_otp_path, method: :post, local: true, html: { style: "display: inline-block;" } do %>
+            <%= button_tag "Resend verification code",
+                type: "submit",
+                class: "terminal-btn",
+                style: "font-size: 11px; padding: 0.25rem 0.5rem;",
+                disabled: resend_wait_seconds.positive?,
+                data: { resend_otp_button: true } %>
+          <% end %>
+
+          <div id="resend-otp-cooldown" style="margin-top: 0.35rem; font-size: 11px; color: var(--terminal-muted);" data-seconds-left="<%= resend_wait_seconds %>"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function() {
+    const cooldownEl = document.getElementById("resend-otp-cooldown");
+    const button = document.querySelector('[data-resend-otp-button="true"]');
+    if (!cooldownEl || !button) return;
+
+    let secondsLeft = parseInt(cooldownEl.dataset.secondsLeft || "0", 10);
+
+    function render() {
+      if (secondsLeft <= 0) {
+        cooldownEl.textContent = "";
+        button.disabled = false;
+        button.textContent = "Resend verification code";
+        return;
+      }
+
+      button.disabled = true;
+      button.textContent = "Resend verification code (wait " + secondsLeft + "s)";
+      cooldownEl.textContent = "You can resend a new code in " + secondsLeft + " second" + (secondsLeft === 1 ? "" : "s") + ".";
+      secondsLeft -= 1;
+      window.setTimeout(render, 1000);
+    }
+
+    render();
+  })();
+</script>

@@ -279,8 +279,8 @@ RSpec.describe "Api::V1::Leagues", type: :request do
   # ─────────────────────────────────────────────────────────────
   describe "GET /api/v1/leagues/:league_id/leaderboard" do
     let!(:league) { create(:league) }
-    let!(:user1)  { create(:user, name: "Alice") }
-    let!(:user2)  { create(:user, name: "Bob") }
+    let!(:user1)  { create(:user, username: "alice") }
+    let!(:user2)  { create(:user, username: "bob") }
     let!(:p1) { create(:portfolio, user: user1, league: league, total_value: 120_000) }
     let!(:p2) { create(:portfolio, user: user2, league: league, total_value: 95_000) }
 
@@ -292,7 +292,7 @@ RSpec.describe "Api::V1::Leagues", type: :request do
       standings = json["standings"]
       expect(standings).to be_an(Array)
       expect(standings.first["rank"]).to eq(1)
-      expect(standings.map { |s| s["name"] }).to include("Alice", "Bob")
+      expect(standings.map { |s| s["name"] }).to include("alice", "bob")
     end
 
     it "returns standings in descending value order" do

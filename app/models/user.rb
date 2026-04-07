@@ -1,4 +1,9 @@
 class User < ApplicationRecord
+  SIGNUP_OTP_TTL = 10.minutes
+  SIGNUP_OTP_MAX_ATTEMPTS = 5
+  SIGNUP_OTP_RESEND_COOLDOWN = 30.seconds
+  ROLES = %w[user admin].freeze
+
   include Searchable
 
   # Include default devise modules. Others available are:
@@ -10,12 +15,23 @@ class User < ApplicationRecord
   has_many :leagues, through: :league_memberships
   has_many :portfolios, dependent: :destroy
 
-  ROLES = %w[user admin].freeze
-
+  # Username validations
+  validates :username, presence: true, uniqueness: { case_sensitive: false }
+  validates :username, format: { without: /\s/, message: "cannot contain spaces" }
   validates :role, inclusion: { in: ROLES, message: "%{value} is not a valid role" }
   validate :password_complexity
 
   after_initialize :set_default_role, if: :new_record?
+
+  # Class method to find user by username or email for authentication
+  def self.find_for_database_authentication(warden_conditions)
+    conditions = warden_conditions.dup
+    if (login = conditions.delete(:email))
+      where(conditions).find_by([ "lower(username) = :value OR lower(email) = :value", { value: login.downcase } ])
+    elsif conditions.has_key?(:username) || conditions.has_key?(:email)
+      where(conditions).first
+    end
+  end
 
   def admin?
     role == "admin"

@@ -19,7 +19,7 @@ RSpec.describe "Leaderboards", type: :request do
     it "shows leaderboard heading and participant" do
       get league_leaderboard_path(league)
       expect(response.body).to include("LEADERBOARD")
-      expect(response.body).to include(user.name)
+      expect(response.body).to include(user.username)
     end
   end
 end

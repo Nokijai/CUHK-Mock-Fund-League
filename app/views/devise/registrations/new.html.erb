@@ -7,8 +7,11 @@
           <%= render "devise/shared/error_messages", resource: resource %>
 
           <div style="margin-bottom: 1rem;">
-            <%= f.label :name, "NAME", class: "terminal-label" %>
-            <%= f.text_field :name, class: "terminal-input", placeholder: "Your full name" %>
+            <%= f.label :username, "USERNAME", class: "terminal-label" %>
+            <div style="font-size: 10px; color: var(--terminal-muted); margin-top: 0.25rem; margin-bottom: 0.35rem;">
+              No spaces allowed
+            </div>
+            <%= f.text_field :username, class: "terminal-input", placeholder: "user123" %>
           </div>
 
           <div style="margin-bottom: 1rem;">

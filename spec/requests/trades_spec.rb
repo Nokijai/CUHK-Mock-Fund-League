@@ -2,7 +2,7 @@ require "rails_helper"
 require "nokogiri"
 
 RSpec.describe "Trades", type: :request do
-  let(:user) { create(:user, name: "Demo Trader") }
+  let(:user) { create(:user, username: "demo_trader") }
   let(:league) { create(:league) }
   let(:portfolio) { create(:portfolio, user: user, league: league) }
   let!(:membership) { create(:league_membership, user: user, league: league) }

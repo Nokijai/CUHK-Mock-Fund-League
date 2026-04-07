@@ -17,8 +17,8 @@ class CreateSolidQueueTables < ActiveRecord::Migration[8.1]
     add_index :solid_queue_jobs, :active_job_id,                  name: "index_solid_queue_jobs_on_active_job_id",      if_not_exists: true
     add_index :solid_queue_jobs, :class_name,                     name: "index_solid_queue_jobs_on_class_name",         if_not_exists: true
     add_index :solid_queue_jobs, :finished_at,                    name: "index_solid_queue_jobs_on_finished_at",        if_not_exists: true
-    add_index :solid_queue_jobs, [:queue_name, :finished_at],     name: "index_solid_queue_jobs_for_filtering",         if_not_exists: true
-    add_index :solid_queue_jobs, [:scheduled_at, :finished_at],   name: "index_solid_queue_jobs_for_alerting",          if_not_exists: true
+    add_index :solid_queue_jobs, [ :queue_name, :finished_at ],     name: "index_solid_queue_jobs_for_filtering",         if_not_exists: true
+    add_index :solid_queue_jobs, [ :scheduled_at, :finished_at ],   name: "index_solid_queue_jobs_for_alerting",          if_not_exists: true
 
     create_table :solid_queue_blocked_executions, if_not_exists: true do |t|
       t.bigint   :job_id, null: false
@@ -29,8 +29,8 @@ class CreateSolidQueueTables < ActiveRecord::Migration[8.1]
       t.datetime :created_at, null: false
     end
 
-    add_index :solid_queue_blocked_executions, [:concurrency_key, :priority, :job_id], name: "index_solid_queue_blocked_executions_for_release",      if_not_exists: true
-    add_index :solid_queue_blocked_executions, [:expires_at, :concurrency_key],        name: "index_solid_queue_blocked_executions_for_maintenance", if_not_exists: true
+    add_index :solid_queue_blocked_executions, [ :concurrency_key, :priority, :job_id ], name: "index_solid_queue_blocked_executions_for_release",      if_not_exists: true
+    add_index :solid_queue_blocked_executions, [ :expires_at, :concurrency_key ],        name: "index_solid_queue_blocked_executions_for_maintenance", if_not_exists: true
     add_index :solid_queue_blocked_executions, :job_id,                                name: "index_solid_queue_blocked_executions_on_job_id",       unique: true, if_not_exists: true
 
     create_table :solid_queue_claimed_executions, if_not_exists: true do |t|
@@ -40,7 +40,7 @@ class CreateSolidQueueTables < ActiveRecord::Migration[8.1]
     end
 
     add_index :solid_queue_claimed_executions, :job_id,                name: "index_solid_queue_claimed_executions_on_job_id",                unique: true, if_not_exists: true
-    add_index :solid_queue_claimed_executions, [:process_id, :job_id], name: "index_solid_queue_claimed_executions_on_process_id_and_job_id",  if_not_exists: true
+    add_index :solid_queue_claimed_executions, [ :process_id, :job_id ], name: "index_solid_queue_claimed_executions_on_process_id_and_job_id",  if_not_exists: true
 
     create_table :solid_queue_failed_executions, if_not_exists: true do |t|
       t.bigint   :job_id, null: false
@@ -69,7 +69,7 @@ class CreateSolidQueueTables < ActiveRecord::Migration[8.1]
     end
 
     add_index :solid_queue_processes, :last_heartbeat_at,          name: "index_solid_queue_processes_on_last_heartbeat_at",          if_not_exists: true
-    add_index :solid_queue_processes, [:name, :supervisor_id],     name: "index_solid_queue_processes_on_name_and_supervisor_id",     unique: true, if_not_exists: true
+    add_index :solid_queue_processes, [ :name, :supervisor_id ],     name: "index_solid_queue_processes_on_name_and_supervisor_id",     unique: true, if_not_exists: true
     add_index :solid_queue_processes, :supervisor_id,              name: "index_solid_queue_processes_on_supervisor_id",              if_not_exists: true
 
     create_table :solid_queue_ready_executions, if_not_exists: true do |t|
@@ -80,8 +80,8 @@ class CreateSolidQueueTables < ActiveRecord::Migration[8.1]
     end
 
     add_index :solid_queue_ready_executions, :job_id,                              name: "index_solid_queue_ready_executions_on_job_id", unique: true, if_not_exists: true
-    add_index :solid_queue_ready_executions, [:priority, :job_id],                 name: "index_solid_queue_poll_all",                   if_not_exists: true
-    add_index :solid_queue_ready_executions, [:queue_name, :priority, :job_id],    name: "index_solid_queue_poll_by_queue",              if_not_exists: true
+    add_index :solid_queue_ready_executions, [ :priority, :job_id ],                 name: "index_solid_queue_poll_all",                   if_not_exists: true
+    add_index :solid_queue_ready_executions, [ :queue_name, :priority, :job_id ],    name: "index_solid_queue_poll_by_queue",              if_not_exists: true
 
     create_table :solid_queue_recurring_executions, if_not_exists: true do |t|
       t.bigint   :job_id, null: false
@@ -91,7 +91,7 @@ class CreateSolidQueueTables < ActiveRecord::Migration[8.1]
     end
 
     add_index :solid_queue_recurring_executions, :job_id,                name: "index_solid_queue_recurring_executions_on_job_id",                unique: true, if_not_exists: true
-    add_index :solid_queue_recurring_executions, [:task_key, :run_at],   name: "index_solid_queue_recurring_executions_on_task_key_and_run_at",   unique: true, if_not_exists: true
+    add_index :solid_queue_recurring_executions, [ :task_key, :run_at ],   name: "index_solid_queue_recurring_executions_on_task_key_and_run_at",   unique: true, if_not_exists: true
 
     create_table :solid_queue_recurring_tasks, if_not_exists: true do |t|
       t.string   :key, null: false
@@ -118,7 +118,7 @@ class CreateSolidQueueTables < ActiveRecord::Migration[8.1]
     end
 
     add_index :solid_queue_scheduled_executions, :job_id,                                  name: "index_solid_queue_scheduled_executions_on_job_id", unique: true, if_not_exists: true
-    add_index :solid_queue_scheduled_executions, [:scheduled_at, :priority, :job_id],       name: "index_solid_queue_dispatch_all",                   if_not_exists: true
+    add_index :solid_queue_scheduled_executions, [ :scheduled_at, :priority, :job_id ],       name: "index_solid_queue_dispatch_all",                   if_not_exists: true
 
     create_table :solid_queue_semaphores, if_not_exists: true do |t|
       t.string   :key, null: false
@@ -128,7 +128,7 @@ class CreateSolidQueueTables < ActiveRecord::Migration[8.1]
     end
 
     add_index :solid_queue_semaphores, :expires_at,      name: "index_solid_queue_semaphores_on_expires_at",      if_not_exists: true
-    add_index :solid_queue_semaphores, [:key, :value],   name: "index_solid_queue_semaphores_on_key_and_value",   if_not_exists: true
+    add_index :solid_queue_semaphores, [ :key, :value ],   name: "index_solid_queue_semaphores_on_key_and_value",   if_not_exists: true
     add_index :solid_queue_semaphores, :key,             name: "index_solid_queue_semaphores_on_key",             unique: true, if_not_exists: true
 
     add_foreign_key :solid_queue_blocked_executions,   :solid_queue_jobs, column: :job_id, on_delete: :cascade
