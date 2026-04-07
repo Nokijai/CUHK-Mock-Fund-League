@@ -7,7 +7,8 @@
   <%# CREATE LEAGUE action intentionally disabled on /leagues page; use admin manage pages instead. %>
 </div>
 
-<div class="terminal-league-cards">
+<%# data-controller: open the league card that matches #league-<id> so each league’s rules block is visible after redirect/deep link. %>
+<div class="terminal-league-cards" data-controller="leagues-deep-link">
   <% @leagues.each do |league| %>
     <% membership = @membership_by_league_id[league.id] %>
     <%# Use SQL-counted value from controller to avoid loading membership rows. %>
@@ -55,7 +56,8 @@
                 Max participants: <%= league.max_participants %><br>
                 <% rendered_rule_line = true %>
               <% end %>
-              <% if league.handling_fee_proportion.positive? %>
+              <%# Include 0% when the key exists in leagues.rules (virtual attr defaults to 0 when key absent). %>
+              <% if league.handling_fee_rule_configured? %>
                 Handling fee: <%= number_to_percentage(league.handling_fee_proportion * 100, precision: 2) %><br>
                 <% rendered_rule_line = true %>
               <% end %>

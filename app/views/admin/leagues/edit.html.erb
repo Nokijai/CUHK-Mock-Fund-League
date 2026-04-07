@@ -30,9 +30,10 @@
       <%= f.text_area :description, class: "terminal-input", rows: 4 %>
     </div>
 
+    <%# Starting capital is set once at create (portfolios use it); not editable here. %>
     <div class="terminal-form-field">
-      <%= f.label :starting_capital, "STARTING CAPITAL ($)" %>
-      <%= f.number_field :starting_capital, class: "terminal-input", required: true, step: "0.01" %>
+      <div class="terminal-label" style="margin-bottom: 0.35rem;">STARTING CAPITAL (LOCKED AFTER CREATION)</div>
+      <p class="terminal-page-meta" style="margin: 0;"><%= number_to_currency(@league.starting_capital, precision: 2) %></p>
     </div>
 
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
@@ -47,20 +48,31 @@
       </div>
     </div>
 
-    <%# Structured admin rule controls are stored in leagues.rules JSON behind virtual model fields. %>
+    <%# Rules are persisted in leagues.rules only at create; edit is read-only for fairness. %>
     <div class="terminal-form-field">
-      <%= f.label :max_participants, "MAX PARTICIPANTS (OPTIONAL)" %>
-      <%= f.number_field :max_participants, class: "terminal-input", min: 1, step: 1, placeholder: "e.g., 50" %>
-    </div>
-
-    <div class="terminal-form-field">
-      <%= f.label :handling_fee_proportion, "HANDLING FEE PROPORTION (0.01 = 1%)" %>
-      <%= f.number_field :handling_fee_proportion, class: "terminal-input", min: 0, max: 1, step: "0.0001", placeholder: "e.g., 0.0025" %>
-    </div>
-
-    <div class="terminal-form-field">
-      <%= f.label :minimum_final_balance, "MINIMUM FINAL BALANCE (OPTIONAL)" %>
-      <%= f.number_field :minimum_final_balance, class: "terminal-input", min: 0, step: "0.01", placeholder: "e.g., 90000" %>
+      <div class="terminal-label" style="margin-bottom: 0.35rem;">RULES (LOCKED AFTER CREATION)</div>
+      <% if @league.rules.present? %>
+        <p class="terminal-page-meta" style="margin: 0;">
+          <% rendered_rule_line = false %>
+          <% if @league.max_participants.present? %>
+            Max participants: <%= @league.max_participants %><br>
+            <% rendered_rule_line = true %>
+          <% end %>
+          <% if @league.handling_fee_rule_configured? %>
+            Handling fee: <%= number_to_percentage(@league.handling_fee_proportion * 100, precision: 2) %><br>
+            <% rendered_rule_line = true %>
+          <% end %>
+          <% if @league.minimum_final_balance.present? %>
+            Minimum final balance: <%= number_to_currency(@league.minimum_final_balance) %>
+            <% rendered_rule_line = true %>
+          <% end %>
+          <% unless rendered_rule_line %>
+            <%= @league.rules.is_a?(Hash) ? @league.rules.to_json : @league.rules %>
+          <% end %>
+        </p>
+      <% else %>
+        <p class="terminal-page-meta" style="margin: 0;">No league-specific rules stored.</p>
+      <% end %>
     </div>
 
     <div style="display: flex; gap: 1rem; margin-top: 2rem;">
