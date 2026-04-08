@@ -33,14 +33,27 @@
       </tr>
     </thead>
     <tbody>
-      <% @rows.each do |r| %>
+      <% if @rows.any? %>
+        <% @rows.each do |r| %>
+          <tr>
+            <td><%= r[:symbol] %></td>
+            <td class="num"><%= r[:qty] %></td>
+            <td class="num"><%= number_to_currency(r[:avg], precision: 2) %></td>
+            <td class="num"><%= number_to_currency(r[:last], precision: 2) %></td>
+            <td class="num"><%= number_to_currency(r[:mkt], precision: 2) %></td>
+            <td class="num <%= r[:pnl] >= 0 ? "terminal-text-up" : "terminal-text-down" %>"><%= sprintf("%+.2f", r[:pnl_pct]) %>%</td>
+          </tr>
+        <% end %>
+      <% else %>
         <tr>
-          <td><%= r[:symbol] %></td>
-          <td class="num"><%= r[:qty] %></td>
-          <td class="num"><%= number_to_currency(r[:avg], precision: 2) %></td>
-          <td class="num"><%= number_to_currency(r[:last], precision: 2) %></td>
-          <td class="num"><%= number_to_currency(r[:mkt], precision: 2) %></td>
-          <td class="num <%= r[:pnl] >= 0 ? "terminal-text-up" : "terminal-text-down" %>"><%= sprintf("%+.2f", r[:pnl_pct]) %>%</td>
+          <td colspan="6">
+            <div class="terminal-empty-cta">
+              <span class="terminal-empty-cta-icon">◇</span>
+              <div class="terminal-empty-cta-title">NO POSITIONS</div>
+              <div class="terminal-empty-cta-desc">Your portfolio is empty. Buy your first stock to start building your holdings.</div>
+              <%= link_to "BUY YOUR FIRST STOCK →", new_portfolio_trade_path(@portfolio, league_id: @portfolio.league_id), class: "terminal-btn terminal-btn-primary" %>
+            </div>
+          </td>
         </tr>
       <% end %>
     </tbody>
