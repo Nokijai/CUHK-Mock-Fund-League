@@ -3,7 +3,6 @@
   <% selected_league_id = @selected_league&.id %>
   <% league_params = selected_league_id ? { league_id: selected_league_id } : {} %>
   <%= link_to "DASHBOARD", root_path, class: (controller_name == "home" && action_name == "dashboard") ? "terminal-nav-active" : nil %>
-  <%# Portfolio link needs an id; TRADING uses /trading → HomeController#trading_redirect (same resolution as seeds). %>
   <% nav_p = @nav_portfolio %>
   <% trading_active = controller_name == "trades" || (controller_name == "home" && action_name == "trading_redirect") %>
   <%= link_to "TRADING", trading_path(league_params), class: trading_active ? "terminal-nav-active" : nil %>
@@ -14,7 +13,6 @@
   <% end %>
   <% leagues_nav_active = controller_name == "leagues" && %w[index show edit update].include?(action_name) && !request.path.start_with?("/admin") %>
   <%= link_to "LEAGUES", leagues_path, class: leagues_nav_active ? "terminal-nav-active" : nil %>
-  <%# Reuse preloaded nav data; avoid a DB hit on every request just for fallback. %>
   <% lb_league = @nav_league || @joined_leagues&.first %>
   <% if lb_league %>
     <%= link_to "LEADERBOARD", league_leaderboard_path(lb_league, league_params), class: controller_name == "leaderboards" ? "terminal-nav-active" : nil %>
@@ -29,15 +27,14 @@
   <% end %>
 
   <% if user_signed_in? %>
-    <span style="margin-left: auto; font-size: 11px; color: var(--terminal-muted); letter-spacing: 0.06em;">
-      <%# Support both auth schemas: username-first, then legacy name, then email. %>
-      <%= (current_user.respond_to?(:username) ? current_user.username : nil).presence || current_user.try(:name).presence || current_user.email %>
+    <span class="terminal-topbar-user">
+      <%= current_user.username.presence || current_user.email %>
     </span>
-    <%= button_to "LOGOUT", destroy_user_session_path, method: :delete, style: "background: none; border: 1px solid var(--terminal-border); padding: 0.25rem 0.5rem; font-size: 11px; color: var(--terminal-text); cursor: pointer; font-family: inherit; font-weight: 600; letter-spacing: 0.06em; border-radius: 2px; margin-left: 0.5rem;", onmouseover: "this.style.color='var(--terminal-down)'; this.style.borderColor='var(--terminal-down)'", onmouseout: "this.style.color='var(--terminal-text)'; this.style.borderColor='var(--terminal-border)'" %>
+    <%= button_to "LOGOUT", destroy_user_session_path, method: :delete, class: "terminal-topbar-logout" %>
   <% else %>
-    <%= link_to "LOGIN", new_user_session_path, style: "margin-left: auto; font-size: 11px; font-weight: 600; color: var(--terminal-accent); text-decoration: none; text-transform: uppercase; letter-spacing: 0.06em; padding: 0.25rem 0.5rem; border: 1px solid var(--terminal-border); border-radius: 2px;" %>
-    <%= link_to "SIGN UP", new_user_registration_path, style: "font-size: 11px; font-weight: 600; color: var(--terminal-bg); background: var(--terminal-accent); text-decoration: none; text-transform: uppercase; letter-spacing: 0.06em; padding: 0.25rem 0.5rem; border: 1px solid var(--terminal-accent); border-radius: 2px;" %>
+    <%= link_to "LOGIN", new_user_session_path, class: "terminal-topbar-login" %>
+    <%= link_to "SIGN UP", new_user_registration_path, class: "terminal-topbar-signup" %>
   <% end %>
 
-  <span class="terminal-market-live" style="margin-left: 0.5rem;">MARKET: LIVE</span>
+  <span class="terminal-market-live">MARKET: LIVE</span>
 </header>
