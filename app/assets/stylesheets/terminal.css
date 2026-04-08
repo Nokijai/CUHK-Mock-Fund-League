@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap");
 
 :root {
   --terminal-bg: #1c1c1e;
@@ -21,11 +21,12 @@
 body.terminal-shell {
   margin: 0;
   min-height: 100vh;
-  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-family: "JetBrains Mono", "IBM Plex Mono", ui-monospace, monospace;
   font-size: 13px;
   background: var(--terminal-bg);
   color: var(--terminal-text);
   line-height: 1.4;
+  font-variant-numeric: tabular-nums;
 }
 
 /* Accessibility: consistent keyboard focus ring across interactive elements. */
@@ -901,6 +902,21 @@ body.terminal-shell #error_explanation ul {
   border-radius: 2px;
 }
 
+.terminal-errors ul {
+  margin: 0.35rem 0 0 1.25rem;
+  padding: 0;
+  color: var(--terminal-text);
+}
+
+.terminal-errors ul li {
+  margin-bottom: 0.2rem;
+}
+
+.terminal-errors strong {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
 /* Main trading page layout: LEFT = trading grid, RIGHT = stock info */
 .terminal-trading-layout {
   display: flex;
@@ -1561,4 +1577,476 @@ body.terminal-shell.terminal-modal-open {
 
 .terminal-trade-confirm-actions {
   justify-content: flex-end;
+}
+
+/* ── Dark scrollbar for consistent terminal look ── */
+body.terminal-shell ::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+body.terminal-shell ::-webkit-scrollbar-track {
+  background: var(--terminal-bg);
+}
+
+body.terminal-shell ::-webkit-scrollbar-thumb {
+  background: var(--terminal-border);
+  border-radius: 3px;
+}
+
+body.terminal-shell ::-webkit-scrollbar-thumb:hover {
+  background: var(--terminal-muted);
+}
+
+body.terminal-shell {
+  scrollbar-color: var(--terminal-border) var(--terminal-bg);
+  scrollbar-width: thin;
+}
+
+/* ── Badge: inactive / pending state ── */
+.terminal-badge-inactive {
+  display: inline-block;
+  margin-top: 0.35rem;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 0.2rem 0.5rem;
+  background: var(--terminal-border);
+  color: var(--terminal-muted);
+  border-radius: 2px;
+  width: fit-content;
+}
+
+/* ── Auth pages: centered form layout ── */
+.terminal-auth-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 60px);
+  padding: 2rem;
+}
+
+.terminal-auth-card {
+  width: 100%;
+  max-width: 480px;
+}
+
+.terminal-auth-body {
+  padding: 1.5rem;
+}
+
+.terminal-form-field {
+  margin-bottom: 1rem;
+}
+
+.terminal-form-hint {
+  font-size: 10px;
+  color: var(--terminal-muted);
+  margin-top: 0.25rem;
+  margin-bottom: 0.35rem;
+}
+
+.terminal-form-divider {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--terminal-border);
+}
+
+/* Devise shared links inside auth forms */
+.terminal-auth-body .devise-links,
+.terminal-auth-body p {
+  font-size: 11px;
+  margin: 0.5rem 0;
+}
+
+.terminal-auth-body .devise-links a,
+.terminal-auth-body p a {
+  color: var(--terminal-accent);
+  text-decoration: none;
+}
+
+.terminal-auth-body .devise-links a:hover,
+.terminal-auth-body p a:hover {
+  color: var(--terminal-text);
+}
+
+/* ── Navigation: extracted inline styles ── */
+.terminal-topbar-user {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--terminal-muted);
+  letter-spacing: 0.06em;
+}
+
+.terminal-topbar-logout {
+  background: none;
+  border: 1px solid var(--terminal-border);
+  padding: 0.25rem 0.5rem;
+  font-size: 11px;
+  color: var(--terminal-text);
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  border-radius: 2px;
+  margin-left: 0.5rem;
+}
+
+.terminal-topbar-logout:hover {
+  color: var(--terminal-down);
+  border-color: var(--terminal-down);
+}
+
+.terminal-topbar-login {
+  margin-left: auto;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--terminal-accent);
+  text-decoration: none;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--terminal-border);
+  border-radius: 2px;
+}
+
+.terminal-topbar-login:hover {
+  border-color: var(--terminal-accent);
+  color: var(--terminal-text);
+}
+
+.terminal-topbar-signup {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--terminal-bg);
+  background: var(--terminal-accent);
+  text-decoration: none;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--terminal-accent);
+  border-radius: 2px;
+}
+
+.terminal-topbar-signup:hover {
+  filter: brightness(1.1);
+  color: var(--terminal-bg);
+}
+
+/* ── Admin: inline-action buttons (approve, delete text-style) ── */
+.terminal-action-link {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.terminal-action-link--approve {
+  color: var(--terminal-up);
+}
+
+.terminal-action-link--approve:hover {
+  color: var(--terminal-text);
+}
+
+.terminal-action-link--delete {
+  color: var(--terminal-down);
+}
+
+.terminal-action-link--delete:hover {
+  color: var(--terminal-text);
+}
+
+.terminal-action-link--disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ── Pagination bar ── */
+.terminal-pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.terminal-pagination-info {
+  color: var(--terminal-muted);
+  font-size: 12px;
+}
+
+.terminal-btn--ghost {
+  opacity: 0.3;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* ── Empty state block ── */
+.terminal-empty-state {
+  text-align: center;
+  padding: 2rem;
+  color: var(--terminal-muted);
+  font-size: 12px;
+}
+
+/* ── Landing page (unauthenticated home) ── */
+.terminal-landing {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 120px);
+  text-align: center;
+  gap: 1.5rem;
+  padding: 2rem;
+}
+
+.terminal-landing-brand {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--terminal-accent);
+  letter-spacing: 0.08em;
+}
+
+.terminal-landing-tagline {
+  font-size: 14px;
+  color: var(--terminal-muted);
+  max-width: 520px;
+  line-height: 1.6;
+}
+
+.terminal-landing-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.terminal-landing-footer {
+  font-size: 11px;
+  color: var(--terminal-border);
+  letter-spacing: 0.04em;
+  margin-top: 2rem;
+}
+
+/* ── Admin form styles ── */
+.terminal-form {
+  padding: 1.5rem;
+}
+
+.terminal-form .terminal-form-field {
+  margin-bottom: 1.25rem;
+}
+
+.terminal-form .terminal-form-field label,
+.terminal-form .terminal-form-field .terminal-label {
+  display: block;
+  font-size: 10px;
+  color: var(--terminal-accent);
+  letter-spacing: 0.08em;
+  margin-bottom: 0.35rem;
+  font-weight: 600;
+}
+
+.terminal-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+@media (max-width: 560px) {
+  .terminal-form-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.terminal-admin-form-card {
+  max-width: 600px;
+}
+
+.terminal-admin-error-panel {
+  max-width: 600px;
+  background: rgba(255, 69, 58, 0.08);
+  border-left: 3px solid var(--terminal-down);
+  margin-bottom: 1rem;
+  padding: 1rem 1.25rem;
+  border-radius: 2px;
+}
+
+.terminal-admin-error-panel strong {
+  color: var(--terminal-down);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.terminal-admin-error-panel ul {
+  margin: 0.5rem 0 0 1.5rem;
+  line-height: 1.8;
+  color: var(--terminal-text);
+  font-size: 12px;
+}
+
+/* ── Admin: search box ── */
+.terminal-search-box {
+  margin-bottom: 1rem;
+  padding: 1rem;
+}
+
+.terminal-search-wrap {
+  position: relative;
+}
+
+.terminal-search-clear {
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--terminal-muted);
+  cursor: pointer;
+  font-size: 1.2rem;
+  padding: 0.25rem;
+}
+
+.terminal-search-clear:hover {
+  color: var(--terminal-text);
+}
+
+/* ── Delete confirmation modal (admin) ── */
+.terminal-modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.72);
+  z-index: 10000;
+  align-items: center;
+  justify-content: center;
+}
+
+.terminal-modal-card {
+  max-width: 500px;
+  margin: 2rem;
+}
+
+.terminal-modal-body {
+  padding: 1.5rem;
+}
+
+.terminal-modal-title {
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  color: var(--terminal-accent);
+  letter-spacing: 0.06em;
+}
+
+.terminal-modal-message {
+  margin-bottom: 1.5rem;
+  color: var(--terminal-text);
+  font-size: 12px;
+}
+
+.terminal-modal-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+}
+
+.terminal-btn--danger {
+  background: var(--terminal-down);
+  color: var(--terminal-text);
+  border-color: var(--terminal-down);
+}
+
+.terminal-btn--danger:hover {
+  filter: brightness(1.1);
+  color: var(--terminal-text);
+}
+
+/* ── Team roster grid in admin ── */
+.terminal-team-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+  margin-top: 0.65rem;
+}
+
+.terminal-team-card {
+  padding: 0.75rem 0.85rem;
+}
+
+.terminal-team-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.terminal-team-members {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.6rem;
+}
+
+.terminal-team-member-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* ── Responsive: header wrap for narrow viewports ── */
+@media (max-width: 768px) {
+  .terminal-topbar {
+    gap: 0.35rem 0.75rem;
+    padding: 0.4rem 0.6rem;
+    min-height: auto;
+  }
+
+  .terminal-topbar a {
+    font-size: 10px;
+    padding: 0.2rem 0.25rem;
+  }
+
+  .terminal-brand {
+    font-size: 10px;
+  }
+
+  .terminal-topbar-user {
+    font-size: 10px;
+  }
+
+  .terminal-main {
+    padding: 0.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .terminal-topbar {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .terminal-topbar-user {
+    margin-left: 0;
+    width: 100%;
+    text-align: center;
+  }
+
+  .terminal-market-live {
+    margin-left: 0;
+  }
+
+  .terminal-auth-page {
+    padding: 1rem;
+  }
 }
