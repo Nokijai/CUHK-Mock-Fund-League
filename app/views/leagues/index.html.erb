@@ -11,6 +11,7 @@
 <div class="terminal-league-cards" data-controller="leagues-deep-link">
   <% @leagues.each do |league| %>
     <% membership = @membership_by_league_id[league.id] %>
+    <% team_membership = @team_membership_by_league_id[league.id] %>
     <%# Use SQL-counted value from controller to avoid loading membership rows. %>
     <% member_count = league.respond_to?(:memberships_count) ? league.memberships_count : league.league_memberships.size %>
     <details class="terminal-window terminal-league-card" id="league-<%= league.id %>">
@@ -72,6 +73,13 @@
           <% end %>
         </div>
 
+        <% if league.team_mode? %>
+          <%# Turbo frame keeps the league card open: join/create updates this section only. %>
+          <%= turbo_frame_tag "league-teams-#{league.id}" do %>
+            <%= render "leagues/team_mode_panel", league: league, team_membership: team_membership %>
+          <% end %>
+        <% end %>
+
         <div class="terminal-toolbar">
           <% if membership %>
             <span class="terminal-btn terminal-btn-disabled">ALREADY JOINED</span>
@@ -84,6 +92,9 @@
           <% elsif league.full_for_new_members? %>
             <%# Show capacity lock state so users understand why join is unavailable. %>
             <span class="terminal-btn terminal-btn-disabled">LEAGUE FULL</span>
+          <% elsif league.team_mode? %>
+            <%# Team-mode leagues are joined via a team selection above. %>
+            <span class="terminal-btn terminal-btn-disabled">JOIN VIA TEAM ABOVE</span>
           <% else %>
             <%# Join action lives on /leagues so users do not need a separate show page. %>
             <%= button_to "JOIN LEAGUE",

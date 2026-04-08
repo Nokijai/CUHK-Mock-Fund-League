@@ -10,7 +10,7 @@
   <%= link_to "CREATE USER", new_admin_user_path, class: "terminal-btn terminal-btn-primary", style: "color: var(--terminal-bg);" %>
 </div>
 
-<%= render "admin/shared/search_box", search_placeholder: "Search by name or email...", search_endpoint: admin_users_path %>
+<%= render "admin/shared/search_box", search_placeholder: "Search by username or email...", search_endpoint: admin_users_path %>
 
 <!-- User Table -->
 
@@ -19,9 +19,10 @@
     <thead>
       <tr>
         <th>ID</th>
-        <th>NAME</th>
+        <th>USERNAME</th>
         <th>EMAIL</th>
         <th>ROLE</th>
+        <th>STATUS</th>
         <th>JOINED</th>
         <th></th>
       </tr>
@@ -30,14 +31,35 @@
       <% @users.each do |user| %>
         <tr>
           <td class="terminal-muted-cell">#<%= user.id %></td>
-          <%# Support both auth schemas: username-first, then legacy name, then email. %>
-          <td><%= (user.respond_to?(:username) ? user.username : nil).presence || user.try(:name).presence || user.email %></td>
+          <td><%= user.username.presence || user.email %></td>
           <td><%= user.email %></td>
           <td><span class="<%= user.admin? ? 'terminal-up' : '' %>"><%= user.role.upcase %></span></td>
+          <td>
+            <% if user.signup_pending? %>
+              <span class="terminal-badge-inactive">PENDING</span>
+            <% else %>
+              <span class="terminal-badge-active">VERIFIED</span>
+            <% end %>
+          </td>
           <td class="terminal-muted-cell"><%= user.created_at.strftime("%Y-%m-%d") %></td>
           <td class="terminal-table-actions">
             <%= link_to "EDIT", edit_admin_user_path(user) %>
-            <%= button_to "DELETE", admin_user_path(user), method: :delete, form: { onsubmit: "showDeleteModal('#{user.email}', this); return false;" }, style: "background: none; border: none; color: var(--terminal-down); cursor: pointer; padding: 0; font: inherit;" %>
+            <% if user.signup_pending? %>
+              <%= button_to "APPROVE",
+                            approve_signup_admin_user_path(user),
+                            method: :post,
+                            form: { data: { turbo_confirm: "Approve this user and bypass email verification?" } },
+                            style: "background: none; border: none; color: var(--terminal-up); cursor: pointer; padding: 0; font: inherit;" %>
+            <% end %>
+            <% if user == current_user %>
+              <span style="opacity: 0.4; cursor: not-allowed;">DELETE</span>
+            <% else %>
+              <%= button_to "DELETE",
+                            admin_user_path(user),
+                            method: :delete,
+                            form: { onsubmit: "showDeleteModal('#{user.email}', this); return false;" },
+                            style: "background: none; border: none; color: var(--terminal-down); cursor: pointer; padding: 0; font: inherit;" %>
+            <% end %>
           </td>
         </tr>
       <% end %>

@@ -5,6 +5,12 @@ Rails.application.routes.draw do
   }
 
   devise_scope :user do
+    # Login: password then email OTP (see Users::SessionsController).
+    get "users/verify_otp", to: "users/sessions#verify_otp", as: :users_verify_otp
+    post "users/verify_otp", to: "users/sessions#otp_authenticate", as: :users_otp_authenticate
+    get "users/verify_otp/cancel", to: "users/sessions#cancel_otp_login", as: :users_cancel_otp_login
+    post "users/verify_otp/resend", to: "users/sessions#resend_otp", as: :users_resend_login_otp
+
     # Signup OTP routes
     get "users/verify_signup_otp", to: "users/registrations#verify_otp", as: :users_verify_signup_otp
     post "users/verify_signup_otp", to: "users/registrations#otp_authenticate", as: :users_signup_otp_authenticate
@@ -22,12 +28,24 @@ Rails.application.routes.draw do
   # Admin namespace
   namespace :admin do
     root "users#index"
-    resources :users
-    resources :leagues
+    resources :users do
+      # Allow admins to approve a pending signup (bypass email OTP).
+      post "approve_signup", on: :member
+    end
+    resources :leagues do
+      # Admin team management for team-mode leagues (remove users from teams).
+      resources :teams, only: [] do
+        resources :memberships, controller: "team_memberships", only: [ :destroy ]
+      end
+    end
   end
 
   resources :leagues do
     get "leaderboard", to: "leaderboards#show", as: :leaderboard
+    # Team-mode leagues: users join by selecting a team (with password) instead of direct league join.
+    resources :teams, controller: "league_teams", only: [ :create, :destroy ] do
+      post "join", to: "team_memberships#create"
+    end
   end
   resources :league_memberships, only: [ :index, :create, :destroy ]
 

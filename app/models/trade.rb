@@ -84,6 +84,20 @@ class Trade < ApplicationRecord
   end
 
   def validate_creation_constraints
+    if portfolio&.league&.team_mode?
+      # Team-mode leagues require a team that meets the minimum eligibility rule.
+      membership = TeamMembership.find_by(user_id: portfolio.user_id, league_id: portfolio.league_id)
+      if membership.blank?
+        errors.add(:base, "You must join a team before trading in this league")
+        return
+      end
+
+      unless portfolio.league.team_eligible?(membership.team)
+        errors.add(:base, "Your team is not eligible yet (needs more participants)")
+        return
+      end
+    end
+
     if market_order? && latest_price.blank?
       errors.add(:price, "is unavailable because latest market price was not found")
       return

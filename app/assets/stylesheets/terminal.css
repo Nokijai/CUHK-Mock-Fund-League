@@ -28,6 +28,20 @@ body.terminal-shell {
   line-height: 1.4;
 }
 
+/* Accessibility: consistent keyboard focus ring across interactive elements. */
+body.terminal-shell a:focus-visible,
+body.terminal-shell button:focus-visible,
+body.terminal-shell input:focus-visible,
+body.terminal-shell select:focus-visible,
+body.terminal-shell textarea:focus-visible {
+  outline: 2px solid var(--terminal-accent);
+  outline-offset: 2px;
+}
+
+.terminal-btn:focus-visible {
+  border-color: var(--terminal-accent);
+}
+
 .terminal-topbar {
   display: flex;
   flex-wrap: wrap;
@@ -104,6 +118,24 @@ body.terminal-shell {
 @keyframes terminal-blink {
   50% {
     opacity: 0.35;
+  }
+}
+
+/* Accessibility: respect reduced motion preferences (avoid blinking + long-running marquees). */
+@media (prefers-reduced-motion: reduce) {
+  .terminal-market-live {
+    animation: none;
+  }
+
+  .terminal-marquee-roll {
+    animation: none;
+    transform: none;
+  }
+
+  .terminal-stock-row,
+  .terminal-stock-link,
+  .terminal-stock-name-link {
+    transition: none;
   }
 }
 

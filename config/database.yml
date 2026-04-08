@@ -51,10 +51,14 @@ development:
 test:
   primary:
     <<: *default
+    # Local default: use TCP localhost even if `.env` contains Docker service hostnames.
+    # Override with PGHOST_TEST when running tests inside Docker.
+    host: <%= ENV.fetch("PGHOST_TEST", "localhost") %>
     database: cuhk_mock_fund_league_test
   # Mirror development: keep queue tables in the same test DB.
   queue:
     <<: *default
+    host: <%= ENV.fetch("PGHOST_TEST", "localhost") %>
     database: cuhk_mock_fund_league_test
     migrations_paths: db/queue_migrate
 

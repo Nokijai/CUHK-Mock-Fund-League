@@ -4,6 +4,57 @@
   <div class="terminal-page-meta"><%= @league.name %></div>
 </div>
 
+<%# Team roster management: admins can remove users from teams for a league. %>
+<% if @league.team_mode? %>
+  <div class="terminal-window" style="max-width: 900px; margin-top: 1rem;">
+    <div class="terminal-stat-label">TEAM ROSTERS (ADMIN)</div>
+    <p class="terminal-page-meta" style="margin-top: 0.25rem;">
+      Remove players from teams if needed (e.g., wrong team, moderation).
+    </p>
+
+    <% teams = @league.teams.sort_by(&:id) %>
+    <% if teams.empty? %>
+      <p class="terminal-page-meta" style="margin: 0;">No teams created for this league yet.</p>
+    <% else %>
+      <div style="display:grid; grid-template-columns: 1fr; gap: 0.75rem; margin-top: 0.65rem;">
+        <% teams.each do |team| %>
+          <div class="terminal-window" style="padding: 0.75rem 0.85rem;">
+            <div style="display:flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; justify-content: space-between;">
+              <div>
+                <strong><%= team.name %></strong>
+                <span class="terminal-page-meta" style="margin-left: 0.5rem;">(<%= team.team_memberships_count.to_i %>)</span>
+              </div>
+            </div>
+
+            <div style="margin-top: 0.6rem;">
+              <% memberships = team.team_memberships.sort_by { |m| m.user.username.to_s.downcase } %>
+              <% if memberships.empty? %>
+                <p class="terminal-page-meta" style="margin: 0;">No members.</p>
+              <% else %>
+                <div style="display:flex; flex-direction: column; gap: 0.5rem;">
+                  <% memberships.each do |membership| %>
+                    <div style="display:flex; flex-wrap: wrap; gap: 0.6rem; align-items: center; justify-content: space-between;">
+                      <div class="terminal-page-meta" style="margin: 0;">
+                        <%= membership.user.username.presence || membership.user.email %>
+                        <span style="opacity: 0.7;">(user_id=<%= membership.user_id %>)</span>
+                      </div>
+                      <%= button_to "REMOVE",
+                                    admin_league_team_membership_path(@league, team, membership),
+                                    method: :delete,
+                                    class: "terminal-btn",
+                                    data: { turbo_confirm: "Remove this user from the team?" } %>
+                    </div>
+                  <% end %>
+                </div>
+              <% end %>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+<% end %>
+
 <% if @league.errors.any? %>
   <div class="terminal-window" style="max-width: 600px; background: rgba(255, 50, 50, 0.1); border-left: 4px solid var(--terminal-down);">
     <div style="color: var(--terminal-down); font-weight: bold; margin-bottom: 0.5rem;">

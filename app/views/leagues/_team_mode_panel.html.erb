@@ -1,0 +1,148 @@
+<%# Team-mode league join/create UI. Rendered inside a Turbo Frame so join/create updates only this section. %>
+<%# Locals: league:, team_membership:, inline_notice: nil, inline_alert: nil %>
+
+<% if local_assigns[:inline_notice].present? %>
+  <p class="notice" role="status"><%= inline_notice %></p>
+<% end %>
+<% if local_assigns[:inline_alert].present? %>
+  <p class="alert" role="alert"><%= inline_alert %></p>
+<% end %>
+
+<div class="terminal-league-details">
+  <div class="terminal-stat-label">TEAMS</div>
+  <p class="terminal-page-meta">
+    <% if league.team_max_participants.present? %>
+      Team size: up to <%= league.team_max_participants %> members<br>
+    <% end %>
+    <% if league.team_min_participants.present? %>
+      Minimum to be eligible: <%= league.team_min_participants %> members
+    <% else %>
+      Minimum to be eligible: 1 member
+    <% end %>
+  </p>
+
+  <%# Show which team the current user joined (quick visual cue). %>
+  <% if team_membership&.team.present? %>
+    <p class="terminal-page-meta" style="margin-top: 0.45rem;">
+      You joined: <strong><%= team_membership.team.name %></strong>
+    </p>
+  <% end %>
+
+  <% teams = league.teams.sort_by(&:id) %>
+  <% if teams.empty? %>
+    <p class="terminal-page-meta">No teams yet. Create one below.</p>
+  <% else %>
+    <div style="display: grid; grid-template-columns: 1fr; gap: 0.6rem; margin-top: 0.5rem;">
+      <% teams.each do |team| %>
+        <% team_full = team.full? %>
+        <% eligible = league.team_eligible?(team) %>
+        <% leader_can_manage = current_user.admin? || league.creator_id == current_user.id %>
+        <details class="terminal-window" style="padding: 0.65rem 0.8rem;">
+          <summary style="list-style: none; cursor: pointer;">
+            <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: space-between; align-items: center;">
+            <div>
+              <strong><%= team.name %></strong>
+              <span class="terminal-page-meta" style="margin-left: 0.5rem;">
+                (<%= team.team_memberships_count.to_i %><% if league.team_max_participants.present? %>/<%= league.team_max_participants %><% end %>)
+              </span>
+              <% if eligible %>
+                <span class="terminal-badge-active" style="margin-left: 0.5rem;">ELIGIBLE</span>
+              <% else %>
+                <span class="terminal-badge-inactive" style="margin-left: 0.5rem;">NOT ELIGIBLE</span>
+              <% end %>
+            </div>
+
+            <% if team_membership&.team_id == team.id %>
+              <span class="terminal-btn terminal-btn-disabled">JOINED</span>
+            <% elsif team_full %>
+              <span class="terminal-btn terminal-btn-disabled">TEAM FULL</span>
+            <% elsif !league.join_open_now? %>
+              <span class="terminal-btn terminal-btn-disabled">
+                <%= league.join_block_reason == :not_opened ? "NOT OPEN YET" : "EXPIRED" %>
+              </span>
+            <% else %>
+              <%= form_with url: league_team_join_path(league, team),
+                            method: :post,
+                            class: "terminal-form",
+                            style: "display:flex; gap: 0.5rem; align-items: center;",
+                            data: { turbo_frame: "league-teams-#{league.id}" } do |f| %>
+                <%= f.password_field :password,
+                                     name: "team_join[password]",
+                                     class: "terminal-input",
+                                     placeholder: "Team password",
+                                     required: true,
+                                     style: "max-width: 220px;" %>
+                <%= f.submit "JOIN TEAM", class: "terminal-btn terminal-btn-primary" %>
+              <% end %>
+            <% end %>
+            </div>
+          </summary>
+
+          <%# Every user can view team roster by expanding the team card. %>
+          <div style="margin-top: 0.6rem;">
+            <% if leader_can_manage %>
+              <div style="display:flex; justify-content: flex-end; margin-bottom: 0.6rem;">
+                <%= button_to "DELETE TEAM",
+                              league_team_path(league, team),
+                              method: :delete,
+                              class: "terminal-btn",
+                              data: { turbo_confirm: "Delete team '#{team.name}'? This will remove all members from the team." , turbo_frame: "league-teams-#{league.id}" } %>
+              </div>
+            <% end %>
+            <% members = team.users.sort_by { |u| u.username.to_s.downcase } %>
+            <% if members.empty? %>
+              <p class="terminal-page-meta" style="margin: 0;">No members yet.</p>
+            <% else %>
+              <div class="terminal-page-meta" style="margin: 0;">
+                <% members.each do |user| %>
+                  <div style="display:flex; gap: 0.5rem; align-items: center;">
+                    <span><%= user.username.presence || user.email %></span>
+                    <% if user.id == current_user.id %>
+                      <span class="terminal-badge-active">YOU</span>
+                    <% end %>
+                  </div>
+                <% end %>
+              </div>
+            <% end %>
+          </div>
+        </details>
+      <% end %>
+    </div>
+  <% end %>
+
+  <div class="terminal-window" style="margin-top: 0.8rem; padding: 0.75rem 0.85rem;">
+    <div class="terminal-stat-label">CREATE A TEAM</div>
+    <p class="terminal-page-meta" style="margin-top: 0.25rem;">
+      Anyone can create a team. Share the password with teammates to join.
+    </p>
+    <% if team_membership.present? %>
+      <span class="terminal-btn terminal-btn-disabled">ALREADY IN A TEAM</span>
+      <p class="terminal-page-meta" style="margin-top: 0.5rem;">
+        You can only create one team per league.
+      </p>
+    <% else %>
+      <%= form_with url: league_teams_path(league),
+                    method: :post,
+                    class: "terminal-form",
+                    style: "display:flex; flex-wrap: wrap; gap: 0.6rem; align-items: end;",
+                    data: { turbo_frame: "league-teams-#{league.id}" } do |f| %>
+        <div class="terminal-form-field" style="margin: 0;">
+          <%= f.label :name, "TEAM NAME" %>
+          <%= f.text_field :name, name: "team[name]", class: "terminal-input", required: true, placeholder: "e.g., Alpha Traders" %>
+        </div>
+        <div class="terminal-form-field" style="margin: 0;">
+          <%= f.label :password, "PASSWORD" %>
+          <%= f.password_field :password, name: "team[password]", class: "terminal-input", required: true %>
+        </div>
+        <div class="terminal-form-field" style="margin: 0;">
+          <%= f.label :password_confirmation, "CONFIRM PASSWORD" %>
+          <%= f.password_field :password_confirmation, name: "team[password_confirmation]", class: "terminal-input", required: true %>
+        </div>
+        <div style="display:flex; gap: 0.6rem;">
+          <%= f.submit "CREATE TEAM", class: "terminal-btn terminal-btn-primary" %>
+        </div>
+      <% end %>
+    <% end %>
+  </div>
+</div>
+

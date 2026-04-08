@@ -1,7 +1,54 @@
 # This file is copied to spec/ when you run 'rails generate rspec:install'
 require 'spec_helper'
 ENV['RAILS_ENV'] ||= 'test'
+
+# Local test runs may load `.env` (dotenv-rails) which can contain Docker service hostnames
+# like `db`. When not running inside Docker, rewrite those URLs to localhost so RSpec can boot.
+unless File.exist?("/.dockerenv") || ENV["CI"] == "true"
+  begin
+    require "uri"
+
+    if ENV["PGHOST"].to_s == "db"
+      ENV["PGHOST"] = "localhost"
+    end
+
+    %w[DATABASE_URL QUEUE_DATABASE_URL CACHE_DATABASE_URL CABLE_DATABASE_URL].each do |key|
+      raw = ENV[key].to_s
+      next if raw.empty?
+
+      uri = URI.parse(raw)
+      next unless uri.host == "db"
+
+      uri.host = "localhost"
+      ENV[key] = uri.to_s
+    end
+  rescue URI::InvalidURIError
+    # If env vars are not valid URIs, leave them as-is and let ActiveRecord report errors.
+  end
+end
+
 require_relative '../config/environment'
+
+# dotenv-rails may have loaded `.env` during boot. Re-apply local overrides for non-Docker tests.
+unless File.exist?("/.dockerenv") || ENV["CI"] == "true"
+  begin
+    require "uri"
+
+    ENV["PGHOST"] = "localhost" if ENV["PGHOST"].to_s == "db"
+
+    %w[DATABASE_URL QUEUE_DATABASE_URL CACHE_DATABASE_URL CABLE_DATABASE_URL].each do |key|
+      raw = ENV[key].to_s
+      next if raw.empty?
+
+      uri = URI.parse(raw)
+      next unless uri.host == "db"
+
+      uri.host = "localhost"
+      ENV[key] = uri.to_s
+    end
+  rescue URI::InvalidURIError
+  end
+end
 # Prevent database truncation if the environment is production
 abort("The Rails environment is running in production mode!") if Rails.env.production?
 # Uncomment the line below in case you have `--require rails_helper` in the `.rspec` file

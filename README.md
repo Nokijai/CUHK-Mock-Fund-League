@@ -66,7 +66,6 @@ Optional but recommended:
 ## First-Time Cloud Server Setup (Ubuntu VM)
 
 Run once on a fresh server.
-
 ### 1) Install system packages
 
 ```bash

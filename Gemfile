@@ -23,6 +23,7 @@ gem "bcrypt", "~> 3.1", ">= 3.1.22"
 # User authentication
 gem "devise", ">= 5.0.3"
 gem "rack", ">= 3.2.5"
+gem "rack-attack"
 gem "nokogiri", ">= 1.19.1"
 gem "action_text-trix", ">= 2.1.18"
 

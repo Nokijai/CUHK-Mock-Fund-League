@@ -63,6 +63,26 @@
       <%= f.number_field :minimum_final_balance, class: "terminal-input", min: 0, step: "0.01", placeholder: "e.g., 90000" %>
     </div>
 
+    <%# Team-mode rules: when enabled, users join via teams + password. %>
+    <div class="terminal-form-field">
+      <%= f.label :team_mode, "TEAM MODE (OPTIONAL)" %>
+      <div class="terminal-page-meta" style="margin-top: 0.25rem;">
+        If enabled, users must join a team (with password) instead of joining the league individually.
+      </div>
+      <%= f.check_box :team_mode %>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+      <div class="terminal-form-field">
+        <%= f.label :team_max_participants, "TEAM MAX PARTICIPANTS (OPTIONAL)" %>
+        <%= f.number_field :team_max_participants, class: "terminal-input", min: 1, step: 1, placeholder: "e.g., 5" %>
+      </div>
+      <div class="terminal-form-field">
+        <%= f.label :team_min_participants, "TEAM MIN PARTICIPANTS TO BE ELIGIBLE (OPTIONAL)" %>
+        <%= f.number_field :team_min_participants, class: "terminal-input", min: 1, step: 1, placeholder: "e.g., 3" %>
+      </div>
+    </div>
+
     <div style="display: flex; gap: 1rem; margin-top: 2rem;">
       <%= f.submit "CREATE LEAGUE", class: "terminal-btn terminal-btn-primary", style: "color: var(--terminal-bg);" %>
       <%= link_to "CANCEL", admin_leagues_path, class: "terminal-btn" %>
