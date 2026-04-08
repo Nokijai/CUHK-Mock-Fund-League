@@ -74,4 +74,3 @@ class TeamMembershipsController < ApplicationController
     params.require(:team_join).permit(:password)
   end
 end
-

@@ -11,4 +11,3 @@ class Admin::TeamMembershipsController < Admin::BaseController
     redirect_back fallback_location: admin_leagues_path, alert: "Team membership not found."
   end
 end
-

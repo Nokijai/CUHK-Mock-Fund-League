@@ -4,6 +4,17 @@
 # and recreated between test runs. Don't rely on the data there!
 
 Rails.application.configure do
+  # When dotenv-rails loads `.env` in tests, it may contain Docker service hostnames (db).
+  # Local test runs should use localhost unless explicitly overridden.
+  unless File.exist?("/.dockerenv") || ENV["CI"].present?
+    ENV["PGHOST"] = "localhost" if ENV["PGHOST"].to_s == "db"
+
+    %w[DATABASE_URL QUEUE_DATABASE_URL CACHE_DATABASE_URL CABLE_DATABASE_URL].each do |key|
+      next unless ENV[key].to_s.include?("@db")
+      ENV.delete(key)
+    end
+  end
+
   # Configure 'rails notes' to inspect Cucumber files
   config.annotations.register_directories("features")
   config.annotations.register_extensions("feature") { |tag| /#\s*(#{tag}):?\s*(.*)$/ }

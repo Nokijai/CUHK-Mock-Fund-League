@@ -17,7 +17,8 @@ module Users
       # Persist signup as "pending" so admins can manage/approve it.
       if resource.save
         code = resource.generate_signup_otp!
-        UserMailer.signup_otp_email(resource, code).deliver_now
+        # Queue OTP mail to avoid blocking signup request.
+        UserMailer.signup_otp_email(resource, code).deliver_later
 
         session[:pending_signup_user_id] = resource.id
         redirect_to users_verify_signup_otp_path, notice: "Please check your email for the verification code."
@@ -35,7 +36,8 @@ module Users
       end
 
       unless @pending_user.signup_pending?
-        session.delete(:pending_signup_user_id)
+        # Admin may approve while the user is on this page; rotate the session before sign-in.
+        reset_session
         sign_in(@pending_user)
         redirect_to after_sign_in_path_for(@pending_user), notice: "Welcome! Your account has been created."
       end
@@ -50,7 +52,7 @@ module Users
 
       unless @pending_user.signup_pending?
         # Admin may approve while the user is on this page; treat as already verified.
-        session.delete(:pending_signup_user_id)
+        reset_session
         sign_in(@pending_user)
         redirect_to after_sign_in_path_for(@pending_user), notice: "Welcome! Your account has been created."
         return
@@ -69,7 +71,8 @@ module Users
       end
 
       if @pending_user.verify_signup_otp!(code)
-        session.delete(:pending_signup_user_id)
+        # Prevent session fixation on successful signup verification.
+        reset_session
         sign_in(@pending_user)
         redirect_to after_sign_in_path_for(@pending_user), notice: "Welcome! Your account has been created."
       else
@@ -112,7 +115,8 @@ module Users
       end
 
       code = @pending_user.generate_signup_otp!
-      UserMailer.signup_otp_email(@pending_user, code).deliver_now
+      # Queue resend mail to avoid blocking the response.
+      UserMailer.signup_otp_email(@pending_user, code).deliver_later
 
       redirect_to users_verify_signup_otp_path, notice: "A new verification code has been sent to your email."
     end

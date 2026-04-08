@@ -91,4 +91,13 @@ Rails.application.configure do
   #
   # Skip DNS rebinding protection for the default health check endpoint.
   # config.host_authorization = { exclude: ->(request) { request.path == "/up" } }
+
+  # Security headers: keep browser protections explicit for production deployments.
+  config.action_dispatch.default_headers.merge!(
+    "X-Content-Type-Options" => "nosniff",
+    "X-Frame-Options" => "SAMEORIGIN",
+    "Referrer-Policy" => "strict-origin-when-cross-origin",
+    # Conservative baseline; adjust per-feature when needed.
+    "Permissions-Policy" => "camera=(), microphone=(), geolocation=()"
+  )
 end

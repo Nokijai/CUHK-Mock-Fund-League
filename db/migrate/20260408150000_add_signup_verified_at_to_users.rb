@@ -5,4 +5,3 @@ class AddSignupVerifiedAtToUsers < ActiveRecord::Migration[8.1]
     add_index :users, :signup_verified_at
   end
 end
-

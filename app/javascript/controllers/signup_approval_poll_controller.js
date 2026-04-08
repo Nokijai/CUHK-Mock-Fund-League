@@ -9,6 +9,13 @@ export default class extends Controller {
   connect() {
     this.intervalMs = (this.intervalValue || 2000)
     this.timer = window.setInterval(() => {
+      // Do not refresh while the user is typing; Turbo replace would clear the form state.
+      if (document.visibilityState === "hidden") return
+
+      const otpInput = this.element.querySelector('input[name="otp_code"]')
+      const userIsTyping = otpInput && (document.activeElement === otpInput || (otpInput.value || "").trim().length > 0)
+      if (userIsTyping) return
+
       Turbo.visit(window.location.href, { action: "replace" })
     }, this.intervalMs)
   }

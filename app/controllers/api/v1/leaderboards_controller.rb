@@ -5,7 +5,11 @@ module Api
 
       # GET /api/v1/leagues/:league_id/leaderboard
       def show
-        standings = LeaderboardService.new(@league).compute
+        standings = if @league.team_mode?
+          TeamLeaderboardService.new(@league).compute
+        else
+          LeaderboardService.new(@league).compute
+        end
 
         render json: {
           league_id: @league.id,

@@ -11,20 +11,23 @@
           Enter the 6-digit verification code sent to <strong><%= email %></strong> to complete signup.
         </p>
 
-        <%= form_with url: users_signup_otp_authenticate_path, method: :post, local: true do |f| %>
+        <%= form_with url: users_signup_otp_authenticate_path, method: :post, local: true, data: { controller: "otp-code", otp_code_length_value: 6 } do |f| %>
           <div style="margin-bottom: 1rem;">
             <%= f.label :otp_code, "VERIFICATION CODE", class: "terminal-label" %>
             <%= f.text_field :otp_code,
                 autofocus: true,
                 autocomplete: "one-time-code",
+                inputmode: "numeric",
+                enterkeyhint: "done",
                 maxlength: 6,
                 pattern: "[0-9]{6}",
                 class: "terminal-input",
-                placeholder: "123456" %>
+                placeholder: "123456",
+                data: { otp_code_target: "input", action: "input->otp-code#onInput paste->otp-code#onPaste" } %>
           </div>
 
           <div class="terminal-form-actions" style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--terminal-border);">
-            <%= f.submit "VERIFY & COMPLETE SIGNUP", class: "terminal-btn terminal-btn-primary" %>
+            <%= f.submit "VERIFY & COMPLETE SIGNUP", class: "terminal-btn terminal-btn-primary", disabled: true, data: { otp_code_target: "submit" } %>
           </div>
         <% end %>
 
@@ -32,41 +35,26 @@
           <%= link_to "Cancel signup", users_cancel_otp_signup_path, style: "color: var(--terminal-muted); text-decoration: none; font-size: 11px;" %>
         </div>
 
-        <div style="margin-top: 0.75rem;">
+        <div style="margin-top: 0.75rem;"
+             data-controller="resend-cooldown"
+             data-resend-cooldown-seconds-left-value="<%= resend_wait_seconds %>">
           <%= form_with url: users_resend_signup_otp_path, method: :post, local: true, html: { style: "display: inline-block;" } do %>
             <%= button_tag "Resend verification code",
                 type: "submit",
                 class: "terminal-btn",
                 style: "font-size: 11px; padding: 0.25rem 0.5rem;",
                 disabled: resend_wait_seconds.positive?,
-                data: { resend_otp_button: true } %>
+                data: {
+                  resend_cooldown_target: "button",
+                  base_label: "Resend verification code",
+                  ready_label: "Resend verification code"
+                } %>
           <% end %>
+
+          <div style="margin-top: 0.35rem; font-size: 11px; color: var(--terminal-muted);"
+               data-resend-cooldown-target="help"></div>
         </div>
       </div>
     </div>
   </div>
 </div>
-
-<script>
-  (function() {
-    const button = document.querySelector('[data-resend-otp-button="true"]');
-    if (!button) return;
-
-    let secondsLeft = <%= resend_wait_seconds %>;
-
-    function render() {
-      if (secondsLeft <= 0) {
-        button.disabled = false;
-        button.textContent = "Resend verification code";
-        return;
-      }
-
-      button.disabled = true;
-      button.textContent = "Resend verification code (wait " + secondsLeft + "s)";
-      secondsLeft -= 1;
-      window.setTimeout(render, 1000);
-    }
-
-    render();
-  })();
-</script>

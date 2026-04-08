@@ -14,34 +14,6 @@ Rails 8.1 app with:
 - Queue: Solid Queue (DB-backed)
 - Python deps: `requirements.txt` (`yfinance`, `pandas`)
 
-## Local Hosting (Docker)
-
-Use this for local development on your own machine.
-
-### Start from zero
-
-```bash
-docker compose down -v --remove-orphans
-docker compose up --build
-```
-
-App URL: `http://localhost:3000`
-
-### Useful local commands
-
-```bash
-# Check service status
-docker compose ps
-
-# Follow worker logs (jobs service)
-docker compose logs -f jobs
-
-# Follow web logs
-docker compose logs -f web
-```
-
-Note: Solid Queue worker logs are configured to STDOUT in development, so `docker compose logs -f jobs` should show scheduler/worker activity.
-
 ## Required Environment Variables (Production)
 
 Set these before booting app/worker:

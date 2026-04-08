@@ -6,4 +6,3 @@ class AddCreatorToLeagues < ActiveRecord::Migration[8.1]
     add_reference :leagues, :creator, foreign_key: { to_table: :users }, null: true
   end
 end
-

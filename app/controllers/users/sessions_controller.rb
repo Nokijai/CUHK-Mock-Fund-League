@@ -30,6 +30,8 @@ class Users::SessionsController < Devise::SessionsController
       session.delete(:pending_otp_user_id)
       session.delete(:pending_otp_remember_me)
 
+      # Prevent session fixation on step-up/bypass authentication.
+      reset_session
       sign_in(resource_name, user)
       remember_requested = ActiveModel::Type::Boolean.new.cast(sign_in_params[:remember_me])
       remember_me(user) if remember_requested && devise_mapping.rememberable?
@@ -45,6 +47,8 @@ class Users::SessionsController < Devise::SessionsController
       session.delete(:pending_otp_user_id)
       session.delete(:pending_otp_remember_me)
 
+      # Prevent session fixation in local admin fast-path.
+      reset_session
       sign_in(resource_name, user)
       remember_requested = ActiveModel::Type::Boolean.new.cast(sign_in_params[:remember_me])
       remember_me(user) if remember_requested && devise_mapping.rememberable?
@@ -54,7 +58,8 @@ class Users::SessionsController < Devise::SessionsController
     end
 
     code = user.generate_login_otp!
-    UserMailer.login_otp_email(user, code).deliver_now
+    # OTP emails are queued to avoid blocking the request (and reduce abuse amplification).
+    UserMailer.login_otp_email(user, code).deliver_later
 
     sign_out(resource_name) if user_signed_in?
 
@@ -77,7 +82,8 @@ class Users::SessionsController < Devise::SessionsController
 
     if @pending_user.verify_login_otp!(code)
       remember_requested = ActiveModel::Type::Boolean.new.cast(session.delete(:pending_otp_remember_me))
-      session.delete(:pending_otp_user_id)
+      # Prevent session fixation on successful OTP verification.
+      reset_session
 
       sign_in(resource_name, @pending_user)
       remember_me(@pending_user) if remember_requested && devise_mapping.rememberable?
@@ -113,7 +119,8 @@ class Users::SessionsController < Devise::SessionsController
     end
 
     code = @pending_user.generate_login_otp!
-    UserMailer.login_otp_email(@pending_user, code).deliver_now
+    # Queue resend mail to avoid blocking the response.
+    UserMailer.login_otp_email(@pending_user, code).deliver_later
 
     redirect_to users_verify_otp_path, notice: "A new verification code has been sent to your email."
   end

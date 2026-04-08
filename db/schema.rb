@@ -274,10 +274,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_08_152000) do
     t.datetime "reset_password_sent_at"
     t.string "reset_password_token"
     t.string "role", default: "user"
-    t.integer "signup_otp_attempts", default: 0, null: false
-    t.string "signup_otp_digest"
-    t.datetime "signup_otp_locked_until"
-    t.datetime "signup_otp_sent_at"
     t.datetime "signup_verified_at"
     t.boolean "skip_login_otp", default: false, null: false
     t.datetime "updated_at", null: false
@@ -287,8 +283,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_08_152000) do
     t.index ["login_otp_sent_at"], name: "index_users_on_login_otp_sent_at"
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
     t.index ["role"], name: "index_users_on_role"
-    t.index ["signup_otp_locked_until"], name: "index_users_on_signup_otp_locked_until"
-    t.index ["signup_otp_sent_at"], name: "index_users_on_signup_otp_sent_at"
     t.index ["signup_verified_at"], name: "index_users_on_signup_verified_at"
     t.index ["skip_login_otp"], name: "index_users_on_skip_login_otp"
     t.index ["username"], name: "index_users_on_username", unique: true

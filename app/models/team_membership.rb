@@ -33,4 +33,3 @@ class TeamMembership < ApplicationRecord
     errors.add(:team, "is full") if team.full?
   end
 end
-

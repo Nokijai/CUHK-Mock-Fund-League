@@ -28,7 +28,7 @@ RSpec.describe User, type: :model do
   end
 
   describe "authentication" do
-    let(:user) { create(:user, email: "test@example.com", username: "testuser", password: "Test123!@#") }
+    let!(:user) { create(:user, email: "test@example.com", username: "testuser", password: "Test123!@#", password_confirmation: "Test123!@#") }
 
     describe ".find_for_database_authentication", :skip_in_ci do
       it "finds user by email" do

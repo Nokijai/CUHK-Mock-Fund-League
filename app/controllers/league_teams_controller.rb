@@ -118,4 +118,3 @@ class LeagueTeamsController < ApplicationController
     params.require(:team).permit(:name, :password, :password_confirmation)
   end
 end
-

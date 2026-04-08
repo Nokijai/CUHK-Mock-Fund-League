@@ -36,4 +36,3 @@ class Team < ApplicationRecord
     end
   end
 end
-

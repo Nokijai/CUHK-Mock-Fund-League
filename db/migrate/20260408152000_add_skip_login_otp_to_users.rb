@@ -5,4 +5,3 @@ class AddSkipLoginOtpToUsers < ActiveRecord::Migration[8.1]
     add_index :users, :skip_login_otp
   end
 end
-
