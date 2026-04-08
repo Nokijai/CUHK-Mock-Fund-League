@@ -5,11 +5,9 @@
 </div>
 
 <% if @user.errors.any? %>
-  <div class="terminal-window" style="max-width: 600px; background: rgba(255, 50, 50, 0.1); border-left: 4px solid var(--terminal-down);">
-    <div style="color: var(--terminal-down); font-weight: bold; margin-bottom: 0.5rem;">
-      ⚠️ <%= pluralize(@user.errors.count, "error") %> prevented this user from being saved:
-    </div>
-    <ul style="margin: 0.5rem 0 0 1.5rem; line-height: 1.8; color: var(--terminal-text);">
+  <div class="terminal-admin-error-panel">
+    <strong><%= pluralize(@user.errors.count, "error") %> prevented this user from being saved:</strong>
+    <ul>
       <% @user.errors.full_messages.each do |message| %>
         <li><%= message %></li>
       <% end %>
@@ -17,36 +15,35 @@
   </div>
 <% end %>
 
-<div class="terminal-window" style="max-width: 600px;">
+<div class="terminal-window terminal-admin-form-card">
   <%= form_with model: @user, url: admin_users_path, class: "terminal-form" do |f| %>
-
     <div class="terminal-form-field">
-      <%= f.label :username, "USERNAME" %>
+      <%= f.label :username, "USERNAME", class: "terminal-label" %>
       <%= f.text_field :username, class: "terminal-input", required: true %>
     </div>
 
     <div class="terminal-form-field">
-      <%= f.label :email, "EMAIL" %>
+      <%= f.label :email, "EMAIL", class: "terminal-label" %>
       <%= f.email_field :email, class: "terminal-input", required: true %>
     </div>
 
     <div class="terminal-form-field">
-      <%= f.label :password, "PASSWORD" %>
+      <%= f.label :password, "PASSWORD", class: "terminal-label" %>
       <%= f.password_field :password, class: "terminal-input", required: true %>
     </div>
 
     <div class="terminal-form-field">
-      <%= f.label :password_confirmation, "CONFIRM PASSWORD" %>
+      <%= f.label :password_confirmation, "CONFIRM PASSWORD", class: "terminal-label" %>
       <%= f.password_field :password_confirmation, class: "terminal-input", required: true %>
     </div>
 
     <div class="terminal-form-field">
-      <%= f.label :role, "ROLE" %>
-      <%= f.select :role, User::ROLES.map { |r| [r.titleize, r] }, {}, class: "terminal-input" %>
+      <%= f.label :role, "ROLE", class: "terminal-label" %>
+      <%= f.select :role, User::ROLES.map { |r| [r.titleize, r] }, {}, class: "terminal-input terminal-select" %>
     </div>
 
-    <div style="display: flex; gap: 1rem; margin-top: 2rem;">
-      <%= f.submit "CREATE USER", class: "terminal-btn terminal-btn-primary", style: "color: var(--terminal-bg);" %>
+    <div class="terminal-form-actions">
+      <%= f.submit "CREATE USER", class: "terminal-btn terminal-btn-primary" %>
       <%= link_to "CANCEL", admin_users_path, class: "terminal-btn" %>
     </div>
   <% end %>

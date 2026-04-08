@@ -7,12 +7,10 @@
     <h1 class="terminal-page-title">MANAGE LEAGUES</h1>
     <div class="terminal-page-meta"><%= @leagues.total_count %> leagues total</div>
   </div>
-  <%= link_to "CREATE LEAGUE", new_admin_league_path, class: "terminal-btn terminal-btn-primary", style: "color: var(--terminal-bg);" %>
+  <%= link_to "CREATE LEAGUE", new_admin_league_path, class: "terminal-btn terminal-btn-primary" %>
 </div>
 
 <%= render "admin/shared/search_box", search_placeholder: "Search by league name...", search_endpoint: admin_leagues_path %>
-
-<!-- League Table -->
 
 <div class="terminal-window">
   <table class="terminal-table">
@@ -36,15 +34,15 @@
           <td class="terminal-muted-cell"><%= league.created_at.strftime("%Y-%m-%d") %></td>
           <td class="terminal-table-actions">
             <%= link_to "EDIT", edit_admin_league_path(league) %>
-            <%= button_to "DELETE", admin_league_path(league), method: :delete, form: { onsubmit: "showDeleteModal('#{league.name.gsub("'", "\\'")}', this); return false;" }, style: "background: none; border: none; color: var(--terminal-down); cursor: pointer; padding: 0; font: inherit;" %>
+            <%= button_to "DELETE", admin_league_path(league), method: :delete, form: { onsubmit: "showDeleteModal('#{league.name.gsub("'", "\\'")}', this); return false;" }, class: "terminal-action-link terminal-action-link--delete" %>
           </td>
         </tr>
       <% end %>
     </tbody>
   </table>
-  
+
   <% if @leagues.empty? %>
-    <div style="text-align: center; padding: 2rem; color: var(--terminal-muted);">
+    <div class="terminal-empty-state">
       <% if params[:search].present? %>
         No leagues found matching "<%= params[:search] %>"
       <% else %>
@@ -54,21 +52,18 @@
   <% end %>
 </div>
 
-<!-- Pagination -->
 <% if @leagues.total_pages > 1 %>
-  <div style="display: flex; justify-content: center; align-items: center; gap: 0.5rem; margin-top: 1rem;">
+  <div class="terminal-pagination">
     <% if @leagues.prev_page %>
-      <%= link_to "← PREV", admin_leagues_path(page: @leagues.prev_page, search: params[:search]), class: "terminal-btn" %>
+      <%= link_to "PREV", admin_leagues_path(page: @leagues.prev_page, search: params[:search]), class: "terminal-btn" %>
     <% else %>
-      <span class="terminal-btn" style="opacity: 0.3; cursor: not-allowed;">← PREV</span>
+      <span class="terminal-btn terminal-btn--ghost">PREV</span>
     <% end %>
-    
-    <span style="color: var(--terminal-muted);">Page <%= @leagues.current_page %> of <%= @leagues.total_pages %></span>
-    
+    <span class="terminal-pagination-info">Page <%= @leagues.current_page %> of <%= @leagues.total_pages %></span>
     <% if @leagues.next_page %>
-      <%= link_to "NEXT →", admin_leagues_path(page: @leagues.next_page, search: params[:search]), class: "terminal-btn" %>
+      <%= link_to "NEXT", admin_leagues_path(page: @leagues.next_page, search: params[:search]), class: "terminal-btn" %>
     <% else %>
-      <span class="terminal-btn" style="opacity: 0.3; cursor: not-allowed;">NEXT →</span>
+      <span class="terminal-btn terminal-btn--ghost">NEXT</span>
     <% end %>
   </div>
 <% end %>
