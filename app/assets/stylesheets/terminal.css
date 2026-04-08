@@ -109,10 +109,17 @@ body.terminal-shell textarea:focus-visible {
   box-shadow: 0 0 8px rgba(255, 149, 0, 0.3);
 }
 
+.terminal-topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
 .terminal-market-live {
   font-size: 11px;
   color: var(--terminal-accent);
-  margin-left: auto;
   animation: terminal-blink 1.2s step-end infinite;
 }
 
@@ -1713,7 +1720,6 @@ body.terminal-shell {
 
 /* ── Navigation: extracted inline styles ── */
 .terminal-topbar-user {
-  margin-left: auto;
   font-size: 11px;
   color: var(--terminal-muted);
   letter-spacing: 0.06em;
@@ -1739,7 +1745,6 @@ body.terminal-shell {
 }
 
 .terminal-topbar-login {
-  margin-left: auto;
   font-size: 11px;
   font-weight: 600;
   color: var(--terminal-accent);
@@ -2075,17 +2080,12 @@ body.terminal-shell {
 @media (max-width: 480px) {
   .terminal-topbar {
     flex-wrap: wrap;
-    justify-content: center;
   }
 
-  .terminal-topbar-user {
-    margin-left: 0;
-    width: 100%;
-    text-align: center;
-  }
-
-  .terminal-market-live {
-    margin-left: 0;
+  .terminal-topbar-right {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.35rem;
   }
 
   .terminal-auth-page {
@@ -2294,6 +2294,32 @@ body.terminal-shell {
   display: contents;
 }
 
+/* Admin has 7 nav items — collapse earlier at 1180px */
+@media (max-width: 1180px) {
+  .terminal-topbar--admin .terminal-mobile-toggle {
+    display: inline-block;
+  }
+
+  .terminal-topbar--admin .terminal-nav-links {
+    display: none;
+    flex-basis: 100%;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 0.5rem 0;
+    border-top: 1px solid var(--terminal-border);
+    order: 99;
+  }
+
+  .terminal-topbar--admin .terminal-nav-links.terminal-nav-open {
+    display: flex;
+  }
+
+  .terminal-topbar--admin .terminal-nav-links a {
+    padding: 0.4rem 0.5rem;
+  }
+}
+
+/* Regular users collapse at 768px */
 @media (max-width: 768px) {
   .terminal-mobile-toggle {
     display: inline-block;
@@ -2306,6 +2332,7 @@ body.terminal-shell {
     gap: 0.25rem;
     padding: 0.5rem 0;
     border-top: 1px solid var(--terminal-border);
+    order: 99;
   }
 
   .terminal-nav-links.terminal-nav-open {
@@ -2314,6 +2341,14 @@ body.terminal-shell {
 
   .terminal-nav-links a {
     padding: 0.4rem 0.5rem;
+  }
+
+  .terminal-topbar-right {
+    gap: 0.4rem;
+  }
+
+  .terminal-topbar-user {
+    display: none;
   }
 }
 
