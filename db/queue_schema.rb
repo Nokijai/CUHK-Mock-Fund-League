@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_08_143000) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_08_152000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_stat_statements"
@@ -278,6 +278,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_08_143000) do
     t.string "signup_otp_digest"
     t.datetime "signup_otp_locked_until"
     t.datetime "signup_otp_sent_at"
+    t.datetime "signup_verified_at"
+    t.boolean "skip_login_otp", default: false, null: false
     t.datetime "updated_at", null: false
     t.string "username"
     t.index ["email"], name: "index_users_on_email", unique: true
@@ -287,6 +289,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_08_143000) do
     t.index ["role"], name: "index_users_on_role"
     t.index ["signup_otp_locked_until"], name: "index_users_on_signup_otp_locked_until"
     t.index ["signup_otp_sent_at"], name: "index_users_on_signup_otp_sent_at"
+    t.index ["signup_verified_at"], name: "index_users_on_signup_verified_at"
+    t.index ["skip_login_otp"], name: "index_users_on_skip_login_otp"
     t.index ["username"], name: "index_users_on_username", unique: true
   end
 

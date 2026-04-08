@@ -17,6 +17,27 @@ class Users::SessionsController < Devise::SessionsController
       return
     end
 
+    if user.signup_pending?
+      # Keep unverified signups inside the signup verification flow.
+      session[:pending_signup_user_id] = user.id
+      redirect_to users_verify_signup_otp_path, alert: "Please verify your email before logging in."
+      return
+    end
+
+    if user.skip_login_otp
+      # Admin-approved users can sign in without login OTP.
+      sign_out(resource_name) if user_signed_in?
+      session.delete(:pending_otp_user_id)
+      session.delete(:pending_otp_remember_me)
+
+      sign_in(resource_name, user)
+      remember_requested = ActiveModel::Type::Boolean.new.cast(sign_in_params[:remember_me])
+      remember_me(user) if remember_requested && devise_mapping.rememberable?
+
+      redirect_to after_sign_in_path_for(user), notice: "Logged in successfully."
+      return
+    end
+
     # Seeded admin uses a non-deliverable address (db/seeds.rb); skip OTP only in development
     # so local sign-in works without SMTP. Production still requires email verification for admins.
     if Rails.env.development? && user.admin?

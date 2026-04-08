@@ -28,7 +28,10 @@ Rails.application.routes.draw do
   # Admin namespace
   namespace :admin do
     root "users#index"
-    resources :users
+    resources :users do
+      # Allow admins to approve a pending signup (bypass email OTP).
+      post "approve_signup", on: :member
+    end
     resources :leagues do
       # Admin team management for team-mode leagues (remove users from teams).
       resources :teams, only: [] do

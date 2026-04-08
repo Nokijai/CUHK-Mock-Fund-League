@@ -59,7 +59,16 @@ class ApplicationController < ActionController::Base
       return
     end
 
-    return unless session[:pending_signup].present?
+    pending_signup_user_id = session[:pending_signup_user_id]
+    return if pending_signup_user_id.blank?
+
+    pending_user = User.find_by(id: pending_signup_user_id)
+    unless pending_user&.signup_pending?
+      # Admin may approve the user while they are on the OTP page.
+      # Keep the session flag so RegistrationsController#verify_otp can sign them in.
+      return
+    end
+
     return if devise_controller? && (
       (controller_name == "registrations" && %w[new create verify_otp otp_authenticate cancel_otp_signup resend_otp].include?(action_name))
     )

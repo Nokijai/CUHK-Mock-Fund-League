@@ -1,5 +1,5 @@
 class Admin::UsersController < Admin::BaseController
-  before_action :set_user, only: [ :edit, :update, :destroy ]
+  before_action :set_user, only: [ :edit, :update, :destroy, :approve_signup ]
 
   def index
     @users = User.search_and_paginate(
@@ -51,6 +51,17 @@ class Admin::UsersController < Admin::BaseController
       @user.destroy
       redirect_to admin_users_path, notice: "User deleted successfully."
     end
+  end
+
+  # POST /admin/users/:id/approve_signup
+  def approve_signup
+    unless @user.signup_pending?
+      redirect_to admin_users_path, notice: "User is already verified."
+      return
+    end
+
+    @user.approve_signup!
+    redirect_to admin_users_path, notice: "User approved (verification bypassed)."
   end
 
   private
