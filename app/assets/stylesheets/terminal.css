@@ -1452,6 +1452,16 @@ body.terminal-shell main a.terminal-btn.terminal-quote-tab--active:active {
   color: #000;
 }
 
+body.terminal-shell main a.terminal-btn--primary {
+  color: #000;
+  text-decoration: none;
+}
+
+body.terminal-shell main a.terminal-btn--primary:hover,
+body.terminal-shell main a.terminal-btn--primary:focus-visible {
+  color: #000;
+}
+
 /* Historical prices table on trading page (right side, below chart) */
 .terminal-historical-prices {
   margin-top: 1.5rem;
