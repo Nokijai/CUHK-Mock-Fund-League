@@ -88,7 +88,11 @@
   <div class="terminal-window terminal-chart-window">
     <div class="terminal-window-title">PORTFOLIO PERFORMANCE</div>
     <div class="terminal-chart-wrap">
-      <% if @chart_points.any? %>
+      <% if @chart_points.nil? %>
+        <div class="terminal-chart-skeleton">
+          <span class="terminal-chart-skeleton-label">LOADING CHART DATA...</span>
+        </div>
+      <% elsif @chart_points.any? %>
         <% vals = @chart_points.map { |p| p[:value] } %>
         <% max_v = vals.max %>
         <% min_v = vals.min %>
@@ -120,6 +124,10 @@
               <span class="terminal-chart-label" style="left: <%= (x / w * 100).round(4) %>%;"><%= pt[:label] %></span>
             <% end %>
           <% end %>
+        </div>
+      <% else %>
+        <div class="terminal-chart-skeleton">
+          <span class="terminal-chart-skeleton-label">NO CHART DATA YET</span>
         </div>
       <% end %>
     </div>
