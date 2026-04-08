@@ -10,7 +10,7 @@
   <%= link_to "CREATE USER", new_admin_user_path, class: "terminal-btn terminal-btn-primary", style: "color: var(--terminal-bg);" %>
 </div>
 
-<%= render "admin/shared/search_box", search_placeholder: "Search by name or email...", search_endpoint: admin_users_path %>
+<%= render "admin/shared/search_box", search_placeholder: "Search by username or email...", search_endpoint: admin_users_path %>
 
 <!-- User Table -->
 
@@ -19,7 +19,7 @@
     <thead>
       <tr>
         <th>ID</th>
-        <th>NAME</th>
+        <th>USERNAME</th>
         <th>EMAIL</th>
         <th>ROLE</th>
         <th>JOINED</th>
@@ -30,8 +30,7 @@
       <% @users.each do |user| %>
         <tr>
           <td class="terminal-muted-cell">#<%= user.id %></td>
-          <%# Support both auth schemas: username-first, then legacy name, then email. %>
-          <td><%= (user.respond_to?(:username) ? user.username : nil).presence || user.try(:name).presence || user.email %></td>
+          <td><%= user.username.presence || user.email %></td>
           <td><%= user.email %></td>
           <td><span class="<%= user.admin? ? 'terminal-up' : '' %>"><%= user.role.upcase %></span></td>
           <td class="terminal-muted-cell"><%= user.created_at.strftime("%Y-%m-%d") %></td>

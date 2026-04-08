@@ -21,8 +21,8 @@
   <%= form_with model: @user, url: admin_users_path, class: "terminal-form" do |f| %>
 
     <div class="terminal-form-field">
-      <%= f.label :name, "NAME" %>
-      <%= f.text_field :name, class: "terminal-input" %>
+      <%= f.label :username, "USERNAME" %>
+      <%= f.text_field :username, class: "terminal-input", required: true %>
     </div>
 
     <div class="terminal-form-field">

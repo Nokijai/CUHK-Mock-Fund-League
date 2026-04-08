@@ -4,7 +4,8 @@ class Admin::UsersController < Admin::BaseController
   def index
     @users = User.search_and_paginate(
       params[:search],
-      %w[name email],
+      # Users are now username-first; keep searching email too for admin workflows.
+      %w[username email],
       page: params[:page],
       per_page: 10
     )
@@ -59,7 +60,8 @@ class Admin::UsersController < Admin::BaseController
   end
 
   def user_params
-    params.require(:user).permit(:name, :email, :password, :password_confirmation)
+    # Role is assigned explicitly (see assign_role_from_params) to avoid broad mass-assignment.
+    params.require(:user).permit(:username, :email, :password, :password_confirmation)
   end
 
   def assign_role_from_params(user)

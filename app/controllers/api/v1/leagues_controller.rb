@@ -17,6 +17,8 @@ module Api
       # POST /api/v1/leagues
       def create
         league = League.new(league_params)
+        # League leader is the authenticated API user creating the league.
+        league.creator = current_user
         if league.save
           render json: league_detail(league), status: :created
         else

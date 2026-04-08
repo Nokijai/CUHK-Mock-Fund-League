@@ -17,6 +17,21 @@ class Users::SessionsController < Devise::SessionsController
       return
     end
 
+    # Seeded admin uses a non-deliverable address (db/seeds.rb); skip OTP only in development
+    # so local sign-in works without SMTP. Production still requires email verification for admins.
+    if Rails.env.development? && user.admin?
+      sign_out(resource_name) if user_signed_in?
+      session.delete(:pending_otp_user_id)
+      session.delete(:pending_otp_remember_me)
+
+      sign_in(resource_name, user)
+      remember_requested = ActiveModel::Type::Boolean.new.cast(sign_in_params[:remember_me])
+      remember_me(user) if remember_requested && devise_mapping.rememberable?
+
+      redirect_to after_sign_in_path_for(user), notice: "Logged in successfully."
+      return
+    end
+
     code = user.generate_login_otp!
     UserMailer.login_otp_email(user, code).deliver_now
 

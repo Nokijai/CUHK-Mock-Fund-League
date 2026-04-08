@@ -63,4 +63,5 @@ leagues.each do |league|
 end
 
 puts "Seeded #{User.count} users (including admin), #{League.count} leagues."
+# In development, admin skips email OTP after password (see Users::SessionsController#create).
 puts "Admin login: admin@mockfund.com / Admin123!"

@@ -29,11 +29,20 @@ Rails.application.routes.draw do
   namespace :admin do
     root "users#index"
     resources :users
-    resources :leagues
+    resources :leagues do
+      # Admin team management for team-mode leagues (remove users from teams).
+      resources :teams, only: [] do
+        resources :memberships, controller: "team_memberships", only: [ :destroy ]
+      end
+    end
   end
 
   resources :leagues do
     get "leaderboard", to: "leaderboards#show", as: :leaderboard
+    # Team-mode leagues: users join by selecting a team (with password) instead of direct league join.
+    resources :teams, controller: "league_teams", only: [ :create, :destroy ] do
+      post "join", to: "team_memberships#create"
+    end
   end
   resources :league_memberships, only: [ :index, :create, :destroy ]
 

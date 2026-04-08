@@ -19,6 +19,8 @@ class User < ApplicationRecord
   has_many :league_memberships, dependent: :destroy
   has_many :leagues, through: :league_memberships
   has_many :portfolios, dependent: :destroy
+  has_many :team_memberships, dependent: :destroy
+  has_many :teams, through: :team_memberships
 
   # Username validations
   validates :username, presence: true, uniqueness: { case_sensitive: false }

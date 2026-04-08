@@ -7,9 +7,12 @@ class LeaguesController < ApplicationController
       .left_joins(:league_memberships)
       .group("leagues.id")
       .select("leagues.*, COUNT(league_memberships.id) AS memberships_count")
+      # Preload users through memberships so "My team members" can render without N+1 queries.
+      .includes(teams: { team_memberships: :user })
       .order(start_date: :asc, id: :asc)
     # Reuse preloaded memberships from ApplicationController nav context.
     @membership_by_league_id = current_user.league_memberships.index_by(&:league_id)
+    @team_membership_by_league_id = TeamMembership.where(user_id: current_user.id).index_by(&:league_id)
   end
 
   def show
@@ -26,6 +29,8 @@ class LeaguesController < ApplicationController
 
   def create
     @league = League.new(league_params)
+    # League leader is the user who created the league (even though UI creation is typically admin-only).
+    @league.creator = current_user
     if @league.save
       redirect_to @league, notice: "League was successfully created."
     else

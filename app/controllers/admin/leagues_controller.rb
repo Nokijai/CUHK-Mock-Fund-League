@@ -16,6 +16,8 @@ class Admin::LeaguesController < Admin::BaseController
 
   def create
     @league = League.new(league_params)
+    # League leader is the creating user (admin creates leagues via this UI).
+    @league.creator = current_user
     if @league.save
       redirect_to admin_leagues_path, notice: "League created successfully."
     else
@@ -42,7 +44,8 @@ class Admin::LeaguesController < Admin::BaseController
   private
 
   def set_league
-    @league = League.find(params[:id])
+    # Preload teams + members for admin roster moderation UI.
+    @league = League.includes(teams: { team_memberships: :user }).find(params[:id])
   end
 
   def league_params
@@ -50,7 +53,8 @@ class Admin::LeaguesController < Admin::BaseController
     if action_name == "create"
       params.require(:league).permit(
         :name, :description, :start_date, :end_date, :starting_capital,
-        :max_participants, :handling_fee_proportion, :minimum_final_balance
+        :max_participants, :handling_fee_proportion, :minimum_final_balance,
+        :team_mode, :team_max_participants, :team_min_participants
       )
     else
       params.require(:league).permit(:name, :description, :start_date, :end_date)

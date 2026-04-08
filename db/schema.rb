@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_04_000001) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_08_143000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_stat_statements"
@@ -40,6 +40,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_04_000001) do
 
   create_table "leagues", force: :cascade do |t|
     t.datetime "created_at", null: false
+    t.bigint "creator_id"
     t.text "description"
     t.datetime "end_date"
     t.string "name", null: false
@@ -47,6 +48,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_04_000001) do
     t.datetime "start_date"
     t.decimal "starting_capital", precision: 15, scale: 2, default: "0.0"
     t.datetime "updated_at", null: false
+    t.index ["creator_id"], name: "index_leagues_on_creator_id"
     t.index ["name"], name: "index_leagues_on_name", unique: true
   end
 
@@ -219,6 +221,31 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_04_000001) do
     t.index ["symbol"], name: "index_stock_prices_on_symbol", unique: true
   end
 
+  create_table "team_memberships", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.datetime "joined_at"
+    t.bigint "league_id", null: false
+    t.bigint "team_id", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["league_id", "user_id"], name: "index_team_memberships_on_league_id_and_user_id", unique: true
+    t.index ["league_id"], name: "index_team_memberships_on_league_id"
+    t.index ["team_id", "user_id"], name: "index_team_memberships_on_team_id_and_user_id", unique: true
+    t.index ["team_id"], name: "index_team_memberships_on_team_id"
+    t.index ["user_id"], name: "index_team_memberships_on_user_id"
+  end
+
+  create_table "teams", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "league_id", null: false
+    t.string "name", null: false
+    t.string "password_digest", null: false
+    t.integer "team_memberships_count", default: 0, null: false
+    t.datetime "updated_at", null: false
+    t.index ["league_id", "name"], name: "index_teams_on_league_id_and_name", unique: true
+    t.index ["league_id"], name: "index_teams_on_league_id"
+  end
+
   create_table "trades", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.datetime "executed_at"
@@ -266,6 +293,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_04_000001) do
   add_foreign_key "holdings", "portfolios"
   add_foreign_key "league_memberships", "leagues"
   add_foreign_key "league_memberships", "users"
+  add_foreign_key "leagues", "users", column: "creator_id"
   add_foreign_key "portfolio_snapshots", "portfolios"
   add_foreign_key "portfolios", "leagues"
   add_foreign_key "portfolios", "users"
@@ -275,5 +303,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_04_000001) do
   add_foreign_key "solid_queue_ready_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
   add_foreign_key "solid_queue_recurring_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
   add_foreign_key "solid_queue_scheduled_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
+  add_foreign_key "team_memberships", "leagues"
+  add_foreign_key "team_memberships", "teams"
+  add_foreign_key "team_memberships", "users"
+  add_foreign_key "teams", "leagues"
   add_foreign_key "trades", "portfolios"
 end
