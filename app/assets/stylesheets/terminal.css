@@ -2092,3 +2092,300 @@ body.terminal-shell {
     padding: 1rem;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════
+   UX ENHANCEMENTS
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── #1: Flash notice / alert banner ── */
+.terminal-flash {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0.5rem 1rem;
+  padding: 0.6rem 0.85rem;
+  font-size: 12px;
+  border-radius: 2px;
+  animation: terminal-flash-in 0.35s ease-out;
+}
+
+.terminal-flash--success {
+  color: var(--terminal-up);
+  border: 1px solid var(--terminal-up);
+  background: rgba(48, 209, 88, 0.08);
+}
+
+.terminal-flash--error {
+  color: var(--terminal-down);
+  border: 1px solid var(--terminal-down);
+  background: rgba(255, 69, 58, 0.08);
+}
+
+.terminal-flash-icon {
+  font-weight: 700;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  padding: 0.15rem 0.45rem;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.terminal-flash--success .terminal-flash-icon {
+  background: var(--terminal-up);
+  color: var(--terminal-bg);
+}
+
+.terminal-flash--error .terminal-flash-icon {
+  background: var(--terminal-down);
+  color: var(--terminal-bg);
+}
+
+.terminal-flash-text {
+  flex: 1;
+  color: var(--terminal-text);
+}
+
+.terminal-flash-close {
+  background: none;
+  border: none;
+  color: var(--terminal-muted);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 0 0.25rem;
+  flex-shrink: 0;
+}
+
+.terminal-flash-close:hover {
+  color: var(--terminal-text);
+}
+
+@keyframes terminal-flash-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Auto-dismiss flash after 8 seconds */
+.terminal-flash {
+  animation: terminal-flash-in 0.35s ease-out, terminal-flash-out 0.5s ease-in 8s forwards;
+}
+
+@keyframes terminal-flash-out {
+  to {
+    opacity: 0;
+    max-height: 0;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+  }
+}
+
+/* ── #2: Value change flash animation ── */
+@keyframes terminal-value-flash-up {
+  0% { background: rgba(48, 209, 88, 0.25); }
+  100% { background: transparent; }
+}
+
+@keyframes terminal-value-flash-down {
+  0% { background: rgba(255, 69, 58, 0.25); }
+  100% { background: transparent; }
+}
+
+.terminal-flash-up {
+  animation: terminal-value-flash-up 1.2s ease-out;
+}
+
+.terminal-flash-down {
+  animation: terminal-value-flash-down 1.2s ease-out;
+}
+
+/* ── #3: Nav link "no league" hint ── */
+.terminal-nav-hint {
+  color: var(--terminal-muted);
+  cursor: help;
+  border-bottom: 1px dashed var(--terminal-border);
+  position: relative;
+}
+
+.terminal-nav-hint:hover {
+  color: var(--terminal-muted);
+}
+
+.terminal-nav-hint::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: 6px;
+  padding: 0.35rem 0.55rem;
+  font-size: 10px;
+  font-weight: 400;
+  white-space: nowrap;
+  color: var(--terminal-text);
+  background: var(--terminal-bg);
+  border: 1px solid var(--terminal-border);
+  border-radius: 2px;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 50;
+  transition: opacity 0.15s;
+}
+
+.terminal-nav-hint:hover::after {
+  opacity: 1;
+}
+
+/* ── #4: Empty portfolio CTA ── */
+.terminal-empty-cta {
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.terminal-empty-cta-icon {
+  font-size: 28px;
+  color: var(--terminal-border);
+  line-height: 1;
+}
+
+.terminal-empty-cta-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--terminal-accent);
+  letter-spacing: 0.06em;
+}
+
+.terminal-empty-cta-desc {
+  font-size: 12px;
+  color: var(--terminal-muted);
+  max-width: 360px;
+}
+
+/* ── #5: Mobile hamburger nav ── */
+.terminal-mobile-toggle {
+  display: none;
+  background: none;
+  border: 1px solid var(--terminal-border);
+  color: var(--terminal-text);
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  padding: 0.2rem 0.5rem;
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.terminal-mobile-toggle:hover {
+  border-color: var(--terminal-accent);
+  color: var(--terminal-accent);
+}
+
+.terminal-nav-links {
+  display: contents;
+}
+
+@media (max-width: 768px) {
+  .terminal-mobile-toggle {
+    display: inline-block;
+  }
+
+  .terminal-nav-links {
+    display: none;
+    flex-basis: 100%;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 0.5rem 0;
+    border-top: 1px solid var(--terminal-border);
+  }
+
+  .terminal-nav-links.terminal-nav-open {
+    display: flex;
+  }
+
+  .terminal-nav-links a {
+    padding: 0.4rem 0.5rem;
+  }
+}
+
+/* ── #6: Chart loading skeleton ── */
+.terminal-chart-skeleton {
+  position: relative;
+  height: 200px;
+  background: var(--terminal-bg);
+  overflow: hidden;
+}
+
+.terminal-chart-skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 39px,
+    var(--terminal-border) 39px,
+    var(--terminal-border) 40px
+  );
+  opacity: 0.4;
+}
+
+.terminal-chart-skeleton::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(58, 58, 60, 0.3) 50%,
+    transparent 100%
+  );
+  animation: terminal-skeleton-shimmer 1.8s ease-in-out infinite;
+}
+
+@keyframes terminal-skeleton-shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.terminal-chart-skeleton-label {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 11px;
+  color: var(--terminal-muted);
+  letter-spacing: 0.1em;
+  z-index: 1;
+}
+
+/* ── #7: Leaderboard rank change indicator ── */
+.lb-rank-delta {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 700;
+  margin-left: 0.3rem;
+  vertical-align: middle;
+}
+
+.lb-rank-delta--up {
+  color: var(--terminal-up);
+}
+
+.lb-rank-delta--down {
+  color: var(--terminal-down);
+}
+
+.lb-rank-delta--flat {
+  color: var(--terminal-muted);
+  font-size: 8px;
+}
