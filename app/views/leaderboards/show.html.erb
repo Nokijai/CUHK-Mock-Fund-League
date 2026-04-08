@@ -97,6 +97,13 @@
                     <% else %>
                       #<%= row[:rank] %>
                     <% end %>
+                    <% if row[:rank_delta].present? && row[:rank_delta] != 0 %>
+                      <span class="lb-rank-delta <%= row[:rank_delta] < 0 ? 'lb-rank-delta--up' : 'lb-rank-delta--down' %>">
+                        <%= row[:rank_delta] < 0 ? "▲#{row[:rank_delta].abs}" : "▼#{row[:rank_delta]}" %>
+                      </span>
+                    <% elsif row[:rank_delta] == 0 %>
+                      <span class="lb-rank-delta lb-rank-delta--flat">—</span>
+                    <% end %>
                   </td>
                   <td class="lb-name-cell">
                     <%= entry_name %>
