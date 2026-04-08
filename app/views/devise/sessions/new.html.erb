@@ -1,21 +1,21 @@
-<div style="display: flex; align-items: center; justify-content: center; min-height: calc(100vh - 60px); padding: 2rem;">
-  <div class="terminal-form-shell terminal-form-shell--narrow" style="width: 100%; max-width: 480px;">
+<div class="terminal-auth-page">
+  <div class="terminal-auth-card">
     <div class="terminal-window">
       <div class="terminal-window-title">LOGIN</div>
-      <div style="padding: 1.5rem;">
+      <div class="terminal-auth-body">
         <%= form_for(resource, as: resource_name, url: session_path(resource_name), html: { data: { login_form: true } }) do |f| %>
-          <div style="margin-bottom: 1rem;">
+          <div class="terminal-form-field">
             <%= f.label :email, "EMAIL OR USERNAME", class: "terminal-label" %>
             <%= f.text_field :email, autofocus: true, autocomplete: "username", class: "terminal-input", placeholder: "Email or username" %>
           </div>
 
-          <div style="margin-bottom: 1rem;">
+          <div class="terminal-form-field">
             <%= f.label :password, "PASSWORD", class: "terminal-label" %>
             <%= f.password_field :password, autocomplete: "current-password", class: "terminal-input", placeholder: "Enter your password" %>
           </div>
 
           <% if devise_mapping.rememberable? %>
-            <div style="margin-bottom: 1.5rem;">
+            <div class="terminal-form-field">
               <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 12px; color: var(--terminal-text); cursor: pointer;">
                 <%= f.check_box :remember_me, style: "cursor: pointer;" %>
                 <span>Remember me</span>
@@ -23,7 +23,7 @@
             </div>
           <% end %>
 
-          <div class="terminal-form-actions" style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--terminal-border);">
+          <div class="terminal-form-actions">
             <%= f.button type: "submit", class: "terminal-btn terminal-btn-primary", data: { login_submit: true } do %>
               <span data-login-label>LOG IN</span>
               <span data-login-spinner style="display: none; width: 12px; height: 12px; margin-left: 0.5rem; border: 2px solid currentColor; border-top-color: transparent; border-radius: 50%; vertical-align: middle; animation: login-spinner-rotate 0.8s linear infinite;"></span>

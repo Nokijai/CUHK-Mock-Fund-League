@@ -1,27 +1,25 @@
-<div style="display: flex; align-items: center; justify-content: center; min-height: calc(100vh - 60px); padding: 2rem;">
-  <div class="terminal-form-shell terminal-form-shell--narrow" style="width: 100%; max-width: 480px;">
+<div class="terminal-auth-page">
+  <div class="terminal-auth-card">
     <div class="terminal-window">
       <div class="terminal-window-title">RESET PASSWORD</div>
-      <div style="padding: 1.5rem;">
+      <div class="terminal-auth-body">
         <%= form_for(resource, as: resource_name, url: password_path(resource_name), html: { method: :put }) do |f| %>
           <%= render "devise/shared/error_messages", resource: resource %>
 
           <%= f.hidden_field :reset_password_token %>
 
-          <div style="margin-bottom: 1rem;">
+          <div class="terminal-form-field">
             <%= f.label :password, "NEW PASSWORD", class: "terminal-label" %>
-            <div style="font-size: 10px; color: var(--terminal-muted); margin-top: 0.25rem; margin-bottom: 0.35rem;">
-              Must be at least 8 characters with uppercase, lowercase, number, and special character
-            </div>
+            <div class="terminal-form-hint">Must be at least 8 characters with uppercase, lowercase, number, and special character</div>
             <%= f.password_field :password, autocomplete: "new-password", class: "terminal-input", placeholder: "Enter new password" %>
           </div>
 
-          <div style="margin-bottom: 1rem;">
+          <div class="terminal-form-field">
             <%= f.label :password_confirmation, "CONFIRM NEW PASSWORD", class: "terminal-label" %>
             <%= f.password_field :password_confirmation, autocomplete: "new-password", class: "terminal-input", placeholder: "Re-enter new password" %>
           </div>
 
-          <div class="terminal-form-actions" style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--terminal-border);">
+          <div class="terminal-form-actions">
             <%= f.submit "RESET PASSWORD", class: "terminal-btn terminal-btn-primary" %>
           </div>
         <% end %>
