@@ -76,14 +76,18 @@
 
 <%# Action Buttons %>
 <div class="terminal-actions">
-  <% if current_portfolio = Portfolio.first %>
+  <% if @nav_portfolio %>
     <%= link_to "TRADE THIS STOCK", 
-        new_portfolio_trade_path(current_portfolio, prefill_symbol: @symbol, prefill_price: @price_data[:price]), 
+        new_portfolio_trade_path(@nav_portfolio, prefill_symbol: @symbol, prefill_price: @price_data[:price], league_id: @nav_portfolio.league_id), 
         class: "terminal-btn terminal-btn--primary" %>
+    <%= link_to "← BACK TO TRADING", 
+        new_portfolio_trade_path(@nav_portfolio, league_id: @nav_portfolio.league_id), 
+        class: "terminal-btn" %>
+  <% else %>
+    <%= link_to "← BACK TO TRADING", 
+        trading_path, 
+        class: "terminal-btn" %>
   <% end %>
-  <%= link_to "← BACK TO TRADING", 
-      (current_portfolio ? new_portfolio_trade_path(current_portfolio) : trading_path), 
-      class: "terminal-btn" %>
 </div>
 
 <%# Chart Data Display (if candles exist) %>
