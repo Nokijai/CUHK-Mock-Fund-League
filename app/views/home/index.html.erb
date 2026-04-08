@@ -1,3 +1,19 @@
-<h1>CUHK Mock-Fund League</h1>
-<p>Hello, world!</p>
-<%= render "shared/disclaimer" %>
+<div class="terminal-landing">
+  <div class="terminal-landing-brand">MOCK-FUND LEAGUE</div>
+  <p class="terminal-landing-tagline">
+    CUHK Virtual Trading Competition Platform.<br>
+    Build your portfolio, compete on the leaderboard, and sharpen your investment skills — all with zero risk.
+  </p>
+  <div class="terminal-landing-actions">
+    <% if user_signed_in? %>
+      <%= link_to "GO TO DASHBOARD", root_path, class: "terminal-btn terminal-btn-primary" %>
+    <% else %>
+      <%= link_to "LOGIN", new_user_session_path, class: "terminal-btn terminal-btn-primary" %>
+      <%= link_to "SIGN UP", new_user_registration_path, class: "terminal-btn" %>
+    <% end %>
+  </div>
+  <div class="terminal-landing-footer">
+    VIRTUAL TRADING ONLY · NO REAL FUNDS INVOLVED
+  </div>
+  <%= render "shared/disclaimer" %>
+</div>

@@ -751,6 +751,36 @@ body.terminal-shell main a.terminal-marquee-card {
   filter: brightness(1.08);
 }
 
+/* ── Override the global `main a { color: accent }` rule for buttons ──
+   That rule has specificity 0,1,3 which beats a single class 0,1,0.
+   These selectors use the same pattern to win the cascade. */
+body.terminal-shell main a.terminal-btn {
+  color: var(--terminal-text);
+  text-decoration: none;
+}
+
+body.terminal-shell main a.terminal-btn:hover {
+  color: var(--terminal-accent);
+}
+
+body.terminal-shell main a.terminal-btn-primary,
+body.terminal-shell main a.terminal-btn.terminal-btn-primary {
+  color: var(--terminal-bg);
+  text-decoration: none;
+}
+
+body.terminal-shell main a.terminal-btn-primary:hover,
+body.terminal-shell main a.terminal-btn.terminal-btn-primary:hover {
+  color: var(--terminal-bg);
+}
+
+body.terminal-shell main a.terminal-btn-primary:active,
+body.terminal-shell main a.terminal-btn.terminal-btn-primary:active,
+body.terminal-shell main a.terminal-btn-primary:focus-visible,
+body.terminal-shell main a.terminal-btn.terminal-btn-primary:focus-visible {
+  color: var(--terminal-bg);
+}
+
 .terminal-toolbar,
 .terminal-panel-actions {
   padding: 0.75rem 1rem;
@@ -1099,6 +1129,18 @@ body.terminal-shell #error_explanation ul {
 .terminal-quote-tab--active:hover {
   color: var(--terminal-bg);
   filter: brightness(1.05);
+}
+
+/* ── Active tab: beat all global `main a` overrides (specificity 0,4,3) ──
+   Without this, `body.terminal-shell main a.terminal-btn:hover` (0,3,3)
+   forces accent-colored text onto an accent background → invisible. */
+body.terminal-shell main a.terminal-btn.terminal-quote-tab--active,
+body.terminal-shell main a.terminal-btn.terminal-quote-tab--active:hover,
+body.terminal-shell main a.terminal-btn.terminal-quote-tab--active:focus-visible,
+body.terminal-shell main a.terminal-btn.terminal-quote-tab--active:active {
+  color: var(--terminal-bg);
+  border-color: var(--terminal-accent);
+  outline-color: var(--terminal-bg);
 }
 
 .terminal-quote-interval-view {
