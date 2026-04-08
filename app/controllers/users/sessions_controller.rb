@@ -32,9 +32,9 @@ class Users::SessionsController < Devise::SessionsController
 
       # Prevent session fixation on step-up/bypass authentication.
       reset_session
-      sign_in(resource_name, user)
       remember_requested = ActiveModel::Type::Boolean.new.cast(sign_in_params[:remember_me])
-      remember_me(user) if remember_requested && devise_mapping.rememberable?
+      user.remember_me = remember_requested if devise_mapping.rememberable?
+      sign_in(resource_name, user)
 
       redirect_to after_sign_in_path_for(user), notice: "Logged in successfully."
       return
@@ -47,11 +47,10 @@ class Users::SessionsController < Devise::SessionsController
       session.delete(:pending_otp_user_id)
       session.delete(:pending_otp_remember_me)
 
-      # Prevent session fixation in local admin fast-path.
       reset_session
-      sign_in(resource_name, user)
       remember_requested = ActiveModel::Type::Boolean.new.cast(sign_in_params[:remember_me])
-      remember_me(user) if remember_requested && devise_mapping.rememberable?
+      user.remember_me = remember_requested if devise_mapping.rememberable?
+      sign_in(resource_name, user)
 
       redirect_to after_sign_in_path_for(user), notice: "Logged in successfully."
       return
@@ -82,11 +81,10 @@ class Users::SessionsController < Devise::SessionsController
 
     if @pending_user.verify_login_otp!(code)
       remember_requested = ActiveModel::Type::Boolean.new.cast(session.delete(:pending_otp_remember_me))
-      # Prevent session fixation on successful OTP verification.
       reset_session
 
+      @pending_user.remember_me = remember_requested if devise_mapping.rememberable?
       sign_in(resource_name, @pending_user)
-      remember_me(@pending_user) if remember_requested && devise_mapping.rememberable?
 
       redirect_to after_sign_in_path_for(@pending_user), notice: "Logged in successfully."
     else

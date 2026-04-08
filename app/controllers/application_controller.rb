@@ -9,6 +9,12 @@ class ApplicationController < ActionController::Base
 
   helper_method :show_admin_league_actions?
 
+  protected
+
+  def after_sign_out_path_for(_resource_or_scope)
+    new_user_session_path
+  end
+
   private
 
   def configure_permitted_parameters
