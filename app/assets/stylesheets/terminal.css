@@ -822,6 +822,23 @@ body.terminal-shell main a.terminal-btn.terminal-btn-primary:focus-visible {
   text-transform: uppercase;
 }
 
+/* Portfolio holdings + trading league positions: BUY/SELL as buttons, flush right */
+th.terminal-trade-side-actions {
+  text-align: right;
+}
+
+td.terminal-trade-side-actions {
+  vertical-align: middle;
+}
+
+.terminal-trade-side-btns {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
 .terminal-empty {
   padding: 1rem;
   color: var(--terminal-muted);
@@ -2022,6 +2039,16 @@ body.terminal-shell {
 
 .terminal-btn--danger:hover {
   filter: brightness(1.1);
+  color: var(--terminal-text);
+}
+
+body.terminal-shell main a.terminal-btn.terminal-btn--danger {
+  color: var(--terminal-text);
+  text-decoration: none;
+}
+
+body.terminal-shell main a.terminal-btn.terminal-btn--danger:hover,
+body.terminal-shell main a.terminal-btn.terminal-btn--danger:focus-visible {
   color: var(--terminal-text);
 }
 

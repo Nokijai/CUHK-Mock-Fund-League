@@ -1,0 +1,37 @@
+<%# locals: portfolio:, holdings: (array of Holding) %>
+<% return if holdings.blank? %>
+
+<div class="terminal-window terminal-league-positions-summary">
+  <div class="terminal-window-title">YOUR POSITIONS IN THIS LEAGUE</div>
+  <p class="terminal-stocks-hint">Open positions for the portfolio you are trading. Quick links prefill the order form.</p>
+  <div class="terminal-stocks-scroll" style="max-height: 220px;">
+    <table class="terminal-table terminal-table-compact">
+      <thead>
+        <tr>
+          <th>SYM</th>
+          <th class="num">QTY</th>
+          <th class="num">AVG</th>
+          <th class="terminal-trade-side-actions">TRADE</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% holdings.each do |h| %>
+          <% sp = @holding_stock_prices&.[](h.symbol) %>
+          <% last = sp&.price %>
+          <% prefill = [ last, h.average_cost ].find { |x| x.present? && x.to_f.positive? } %>
+          <tr>
+            <td><strong><%= h.symbol %></strong></td>
+            <td class="num"><%= h.quantity %></td>
+            <td class="num"><%= number_to_currency(h.average_cost, precision: 4) %></td>
+            <td class="terminal-trade-side-actions">
+              <div class="terminal-trade-side-btns">
+                <%= link_to "BUY", new_trade_prefill_path(portfolio, symbol: h.symbol, side: "buy", prefill_price: prefill), class: "terminal-btn terminal-btn-primary terminal-btn--small" %>
+                <%= link_to "SELL", new_trade_prefill_path(portfolio, symbol: h.symbol, side: "sell", prefill_price: prefill), class: "terminal-btn terminal-btn--danger terminal-btn--small" %>
+              </div>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</div>

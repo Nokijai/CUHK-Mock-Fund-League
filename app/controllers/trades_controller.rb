@@ -15,7 +15,16 @@ class TradesController < ApplicationController
     sym = params[:prefill_symbol].to_s.upcase.presence
     pr = params[:prefill_price]
     price = pr.present? ? BigDecimal(pr.to_s) : nil
-    @trade = Trade.new(portfolio: @portfolio, symbol: sym, price: price, order_type: "market")
+    tt = params[:prefill_trade_type].to_s.downcase
+    side = %w[buy sell].include?(tt) ? tt : "buy"
+    @trade = Trade.new(
+      portfolio: @portfolio,
+      symbol: sym,
+      price: price,
+      order_type: "market",
+      trade_type: side
+    )
+    assign_portfolio_holdings_summary
     assign_available_stocks
     assign_focus_quote
   end
@@ -34,6 +43,7 @@ class TradesController < ApplicationController
     else
       flash.now[:alert] = @trade.errors.full_messages.presence&.to_sentence ||
                           "Order could not be processed."
+      assign_portfolio_holdings_summary
       assign_available_stocks
       assign_focus_quote
       render :new, status: :unprocessable_entity
@@ -41,6 +51,13 @@ class TradesController < ApplicationController
   end
 
   private
+
+  # Holdings in the active portfolio (this league) for the trading sidebar summary.
+  def assign_portfolio_holdings_summary
+    @portfolio_holdings = @portfolio.holdings.order(:symbol).to_a
+    syms = @portfolio_holdings.map(&:symbol)
+    @holding_stock_prices = syms.empty? ? {} : StockPrice.where(symbol: syms).index_by(&:symbol)
+  end
 
   # Filters the reference list by optional GET/POST param :q (same semantics as StockPriceService / stocks#search).
   def assign_available_stocks

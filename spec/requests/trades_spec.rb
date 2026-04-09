@@ -40,6 +40,22 @@ RSpec.describe "Trades", type: :request do
       expect(BigDecimal(price_el["value"].to_s)).to eq(BigDecimal("378.5"))
     end
 
+    it "prefills sell side from query params" do
+      get new_portfolio_trade_path(portfolio, prefill_symbol: "AAPL", prefill_trade_type: "sell")
+      doc = Nokogiri::HTML(response.body)
+      side_el = doc.at_css("#trade_trade_type")
+      selected = side_el&.at_css("option[selected]")
+      expect(selected&.[]("value")).to eq("sell")
+    end
+
+    it "shows league positions summary when portfolio has holdings" do
+      create(:holding, portfolio: portfolio)
+
+      get new_portfolio_trade_path(portfolio, league_id: portfolio.league_id)
+      expect(response.body).to include("YOUR POSITIONS IN THIS LEAGUE")
+      expect(response.body).to include("AAPL")
+    end
+
     it "renders one row per market day for 1d historical prices" do
       # Two 1d rows on the same NY market day should collapse to one display row.
       create(

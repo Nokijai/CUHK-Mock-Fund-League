@@ -30,11 +30,13 @@
         <th class="num">LAST</th>
         <th class="num">MKT VALUE</th>
         <th class="num">P&amp;L %</th>
+        <th class="terminal-trade-side-actions">TRADE</th>
       </tr>
     </thead>
     <tbody>
       <% if @rows.any? %>
         <% @rows.each do |r| %>
+          <% prefill_px = [ r[:last], r[:avg] ].find { |x| x.present? && x.to_f.positive? } %>
           <tr>
             <td><%= r[:symbol] %></td>
             <td class="num"><%= r[:qty] %></td>
@@ -42,11 +44,17 @@
             <td class="num"><%= number_to_currency(r[:last], precision: 2) %></td>
             <td class="num"><%= number_to_currency(r[:mkt], precision: 2) %></td>
             <td class="num <%= r[:pnl] >= 0 ? "terminal-text-up" : "terminal-text-down" %>"><%= sprintf("%+.2f", r[:pnl_pct]) %>%</td>
+            <td class="terminal-trade-side-actions">
+              <div class="terminal-trade-side-btns">
+                <%= link_to "BUY", new_trade_prefill_path(@portfolio, symbol: r[:symbol], side: "buy", prefill_price: prefill_px), class: "terminal-btn terminal-btn-primary terminal-btn--small" %>
+                <%= link_to "SELL", new_trade_prefill_path(@portfolio, symbol: r[:symbol], side: "sell", prefill_price: prefill_px), class: "terminal-btn terminal-btn--danger terminal-btn--small" %>
+              </div>
+            </td>
           </tr>
         <% end %>
       <% else %>
         <tr>
-          <td colspan="6">
+          <td colspan="7">
             <div class="terminal-empty-cta">
               <span class="terminal-empty-cta-icon">◇</span>
               <div class="terminal-empty-cta-title">NO POSITIONS</div>
