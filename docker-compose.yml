@@ -20,8 +20,9 @@ services:
     build:
       context: .
       args:
-        BUNDLE_WITHOUT: ""
-    command: ./bin/rails server -b 0.0.0.0 -p 3000
+        # Keep development gems (web-console/debug) but skip heavy test toolchain.
+        BUNDLE_WITHOUT: "test"
+    command: bash -lc "rm -f /rails/tmp/pids/server.pid && ./bin/rails server -b 0.0.0.0 -p 3000"
     # Load runtime env directly from .env so local changes apply in containers.
     env_file:
       - .env
@@ -53,7 +54,8 @@ services:
     build:
       context: .
       args:
-        BUNDLE_WITHOUT: ""
+        # Worker only needs runtime + development gems in local docker.
+        BUNDLE_WITHOUT: "test"
     command: ./bin/jobs
     # Mirror web env loading so worker and app stay in sync.
     env_file:

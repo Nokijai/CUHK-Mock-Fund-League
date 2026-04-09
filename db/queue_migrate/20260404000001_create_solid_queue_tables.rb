@@ -131,11 +131,11 @@ class CreateSolidQueueTables < ActiveRecord::Migration[8.1]
     add_index :solid_queue_semaphores, [ :key, :value ],   name: "index_solid_queue_semaphores_on_key_and_value",   if_not_exists: true
     add_index :solid_queue_semaphores, :key,             name: "index_solid_queue_semaphores_on_key",             unique: true, if_not_exists: true
 
-    add_foreign_key :solid_queue_blocked_executions,   :solid_queue_jobs, column: :job_id, on_delete: :cascade
-    add_foreign_key :solid_queue_claimed_executions,   :solid_queue_jobs, column: :job_id, on_delete: :cascade
-    add_foreign_key :solid_queue_failed_executions,    :solid_queue_jobs, column: :job_id, on_delete: :cascade
-    add_foreign_key :solid_queue_ready_executions,     :solid_queue_jobs, column: :job_id, on_delete: :cascade
-    add_foreign_key :solid_queue_recurring_executions, :solid_queue_jobs, column: :job_id, on_delete: :cascade
-    add_foreign_key :solid_queue_scheduled_executions, :solid_queue_jobs, column: :job_id, on_delete: :cascade
+    add_foreign_key :solid_queue_blocked_executions,   :solid_queue_jobs, column: :job_id, on_delete: :cascade, if_not_exists: true
+    add_foreign_key :solid_queue_claimed_executions,   :solid_queue_jobs, column: :job_id, on_delete: :cascade, if_not_exists: true
+    add_foreign_key :solid_queue_failed_executions,    :solid_queue_jobs, column: :job_id, on_delete: :cascade, if_not_exists: true
+    add_foreign_key :solid_queue_ready_executions,     :solid_queue_jobs, column: :job_id, on_delete: :cascade, if_not_exists: true
+    add_foreign_key :solid_queue_recurring_executions, :solid_queue_jobs, column: :job_id, on_delete: :cascade, if_not_exists: true
+    add_foreign_key :solid_queue_scheduled_executions, :solid_queue_jobs, column: :job_id, on_delete: :cascade, if_not_exists: true
   end
 end
