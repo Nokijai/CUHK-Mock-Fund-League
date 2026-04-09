@@ -15,7 +15,7 @@ class HomeController < ApplicationController
     rank_info = @league && @portfolio ? lightweight_rank(@league, @portfolio) : { rank: 0, total: 0 }
     @rank = rank_info[:rank]
     @total_participants = rank_info[:total]
-    @chart_points = chart_points(@total_value)
+    @chart_points = portfolio_performance_points(@portfolio, valuator)
     @top_holdings = top_holdings_for(@portfolio, valuator)
     @market_movers = cached_market_movers
     # Separate horizontal tickers: tracked stocks vs browseable leagues (not one merged strip).
@@ -67,17 +67,6 @@ class HomeController < ApplicationController
       value = snapshot[:cash] + holdings_market_value_from_positions(snapshot[:positions], valuator)
       { label: date.strftime("%b %-d"), value: value.round(2) }
     end
-  end
-
-  # Synthetic 14-day series for the dashboard sparkline (smooth curve toward current total value).
-  def chart_points(end_value)
-    return default_chart_points(100_000) unless end_value.positive?
-
-    start_v = end_value * 0.93
-    (0..14).map do |i|
-      t = i / 14.0
-      v = start_v + (end_value - start_v) * t + Math.sin(i * 0.7) * 800 + (i % 4) * 120
-      { label: (Date.current - 14 + i).strftime("%b %-d"), value: v.round(2) }
     end
   end
 
@@ -173,17 +162,6 @@ class HomeController < ApplicationController
 
   def mover_name(symbol)
     MOVER_LABELS[symbol] || symbol
-  end
-
-  # Stock-only row hashes for the first dashboard marquee bar.
-  def ticker_stock_items_rows
-    scrolling_stocks_rows.map do |row|
-      {
-        symbol: row[:symbol],
-        name: row[:name],
-        price: row[:price]
-      }
-    end
   end
 
   # League-only row hashes for the second dashboard marquee bar.

@@ -12,6 +12,20 @@ StockPrice.delete_all
 %w[users leagues portfolios holdings trades stock_prices stock_candles].each do |table_name|
   ActiveRecord::Base.connection.reset_pk_sequence!(table_name)
 end
+
+puts "== Seeding stock prices =="
+{
+  "AAPL" => 188.75,
+  "NVDA" => 875.20,
+  "MSFT" => 421.30,
+  "GOOGL" => 168.10,
+  "META" => 515.40,
+  "0700" => 402.75,
+  "AMZN" => 181.10,
+  "TSLA" => 243.80
+}.each do |symbol, price|
+  StockPrice.create!(symbol:, price:)
+end
 admin = User.create!(
   email: "admin@mockfund.com",
   username: "admin",
