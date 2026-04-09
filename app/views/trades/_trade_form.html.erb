@@ -15,7 +15,10 @@
   <%= hidden_field_tag :q, params[:q] if params[:q].present? %>
   <%# Preserve selected chart interval when re-rendering after validation errors. %>
   <%= hidden_field_tag :quote_interval, @quote_interval if defined?(@quote_interval) && @quote_interval.present? %>
-  <%= render "shared/errors", object: trade %>
+  <%# Match successful orders: show validation messages in layout terminal-flash (REJECTED), not only inline. %>
+  <% if flash[:alert].blank? %>
+    <%= render "shared/errors", object: trade %>
+  <% end %>
   <div class="terminal-form-grid">
     <div class="terminal-field">
       <%= f.label :symbol, "SYMBOL", class: "terminal-label" %>

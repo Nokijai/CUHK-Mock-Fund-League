@@ -32,6 +32,8 @@ class TradesController < ApplicationController
         league_id: @portfolio.league_id
       ), notice: msg
     else
+      flash.now[:alert] = @trade.errors.full_messages.presence&.to_sentence ||
+                          "Order could not be processed."
       assign_available_stocks
       assign_focus_quote
       render :new, status: :unprocessable_entity
