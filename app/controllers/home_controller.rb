@@ -163,6 +163,17 @@ class HomeController < ApplicationController
     MOVER_LABELS[symbol] || symbol
   end
 
+  # Stock-only row hashes for the first dashboard marquee bar.
+  def ticker_stock_items_rows
+    scrolling_stocks_rows.map do |row|
+      {
+        symbol: row[:symbol],
+        name: row[:name],
+        price: row[:price]
+      }
+    end
+  end
+
   # League-only row hashes for the second dashboard marquee bar.
   def ticker_league_items_rows
     available_league_rows.map do |row|
