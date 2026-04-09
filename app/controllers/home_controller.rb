@@ -67,7 +67,6 @@ class HomeController < ApplicationController
       value = snapshot[:cash] + holdings_market_value_from_positions(snapshot[:positions], valuator)
       { label: date.strftime("%b %-d"), value: value.round(2) }
     end
-    end
   end
 
   def default_chart_points(base)
