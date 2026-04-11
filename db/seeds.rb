@@ -26,12 +26,15 @@ puts "== Seeding stock prices =="
 }.each do |symbol, price|
   StockPrice.create!(symbol:, price:)
 end
+verified_at = Time.current
 admin = User.create!(
   email: "admin@mockfund.com",
   username: "admin",
   role: "admin",
   password: "Admin123!",
-  password_confirmation: "Admin123!"
+  password_confirmation: "Admin123!",
+  signup_verified_at: verified_at,
+  skip_login_otp: true
 )
 
 users = Array.new(20) do |index|
@@ -40,7 +43,9 @@ users = Array.new(20) do |index|
     username: "user#{index + 1}",
     role: "user",
     password: "User123!",
-    password_confirmation: "User123!"
+    password_confirmation: "User123!",
+    signup_verified_at: verified_at,
+    skip_login_otp: true
   )
 end
 
