@@ -235,7 +235,8 @@ class League < ApplicationRecord
       locals: {
         title: "New league created",
         body: name,
-        league: self
+        league: self,
+        variant: :success
       }
     )
   end
