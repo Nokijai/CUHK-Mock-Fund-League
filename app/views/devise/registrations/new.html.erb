@@ -17,15 +17,25 @@
             <%= f.email_field :email, autofocus: true, autocomplete: "email", class: "terminal-input", placeholder: "user@example.com" %>
           </div>
 
-          <div class="terminal-form-field">
+          <div class="terminal-form-field" data-controller="password-visibility">
             <%= f.label :password, "PASSWORD", class: "terminal-label" %>
             <div class="terminal-form-hint">Must be at least 8 characters with uppercase, lowercase, number, and special character</div>
-            <%= f.password_field :password, autocomplete: "new-password", class: "terminal-input", placeholder: "Enter password" %>
+            <div class="terminal-password-wrap">
+              <%= f.password_field :password, autocomplete: "new-password", class: "terminal-input", placeholder: "Enter password", data: { password_visibility_target: "input" } %>
+              <button type="button" class="terminal-password-toggle" data-action="password-visibility#toggle" aria-label="Toggle password visibility" aria-pressed="false">
+                <span data-password-visibility-target="statusLabel">Show</span>
+              </button>
+            </div>
           </div>
 
-          <div class="terminal-form-field">
+          <div class="terminal-form-field" data-controller="password-visibility">
             <%= f.label :password_confirmation, "CONFIRM PASSWORD", class: "terminal-label" %>
-            <%= f.password_field :password_confirmation, autocomplete: "new-password", class: "terminal-input", placeholder: "Re-enter password" %>
+            <div class="terminal-password-wrap">
+              <%= f.password_field :password_confirmation, autocomplete: "new-password", class: "terminal-input", placeholder: "Re-enter password", data: { password_visibility_target: "input" } %>
+              <button type="button" class="terminal-password-toggle" data-action="password-visibility#toggle" aria-label="Toggle password confirmation visibility" aria-pressed="false">
+                <span data-password-visibility-target="statusLabel">Show</span>
+              </button>
+            </div>
           </div>
 
           <div class="terminal-form-actions">

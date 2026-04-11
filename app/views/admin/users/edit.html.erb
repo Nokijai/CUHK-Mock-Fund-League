@@ -27,14 +27,24 @@
       <%= f.email_field :email, class: "terminal-input", required: true %>
     </div>
 
-    <div class="terminal-form-field">
+    <div class="terminal-form-field" data-controller="password-visibility">
       <%= f.label :password, "PASSWORD", class: "terminal-label" %>
-      <%= f.password_field :password, class: "terminal-input", placeholder: "Leave blank to keep current password" %>
+      <div class="terminal-password-wrap">
+        <%= f.password_field :password, class: "terminal-input", placeholder: "Leave blank to keep current password", data: { password_visibility_target: "input" } %>
+        <button type="button" class="terminal-password-toggle" data-action="password-visibility#toggle" aria-label="Toggle password visibility" aria-pressed="false">
+          <span data-password-visibility-target="statusLabel">Show</span>
+        </button>
+      </div>
     </div>
 
-    <div class="terminal-form-field">
+    <div class="terminal-form-field" data-controller="password-visibility">
       <%= f.label :password_confirmation, "CONFIRM PASSWORD", class: "terminal-label" %>
-      <%= f.password_field :password_confirmation, class: "terminal-input", placeholder: "Leave blank to keep current password" %>
+      <div class="terminal-password-wrap">
+        <%= f.password_field :password_confirmation, class: "terminal-input", placeholder: "Leave blank to keep current password", data: { password_visibility_target: "input" } %>
+        <button type="button" class="terminal-password-toggle" data-action="password-visibility#toggle" aria-label="Toggle password confirmation visibility" aria-pressed="false">
+          <span data-password-visibility-target="statusLabel">Show</span>
+        </button>
+      </div>
     </div>
 
     <div class="terminal-form-field">

@@ -9,9 +9,14 @@
             <%= f.text_field :email, autofocus: true, autocomplete: "username", class: "terminal-input", placeholder: "Email or username" %>
           </div>
 
-          <div class="terminal-form-field">
+          <div class="terminal-form-field" data-controller="password-visibility">
             <%= f.label :password, "PASSWORD", class: "terminal-label" %>
-            <%= f.password_field :password, autocomplete: "current-password", class: "terminal-input", placeholder: "Enter your password" %>
+            <div class="terminal-password-wrap">
+              <%= f.password_field :password, autocomplete: "current-password", class: "terminal-input", placeholder: "Enter your password", data: { password_visibility_target: "input" } %>
+              <button type="button" class="terminal-password-toggle" data-action="password-visibility#toggle" aria-label="Toggle password visibility" aria-pressed="false">
+                <span data-password-visibility-target="statusLabel">Show</span>
+              </button>
+            </div>
           </div>
 
           <% if devise_mapping.rememberable? %>
