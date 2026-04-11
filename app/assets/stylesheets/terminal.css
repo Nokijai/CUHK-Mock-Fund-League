@@ -619,6 +619,29 @@ body.terminal-shell main a.terminal-marquee-card {
   display: block;
 }
 
+.terminal-chart-grid {
+  display: grid;
+  grid-template-columns: 84px 1fr;
+  align-items: stretch;
+  gap: 0.5rem;
+}
+
+.terminal-chart-yaxis {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 200px;
+  padding: 0.5rem 0 2.25rem;
+  font-size: 10px;
+  color: var(--terminal-muted);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.terminal-chart-main {
+  min-width: 0;
+}
+
 .terminal-chart-xaxis {
   position: relative;
   min-height: 1.25rem;
@@ -634,6 +657,16 @@ body.terminal-shell main a.terminal-marquee-card {
   transform: translateX(-50%);
   white-space: nowrap;
   pointer-events: none;
+}
+
+@media (max-width: 640px) {
+  .terminal-chart-grid {
+    grid-template-columns: 68px 1fr;
+  }
+
+  .terminal-chart-yaxis {
+    font-size: 9px;
+  }
 }
 
 .terminal-dash-bottom {

@@ -58,49 +58,35 @@ class HomeController < ApplicationController
 
   def portfolio_performance_points(portfolio, valuator)
     return default_chart_points(@starting) unless portfolio
+    snapshots = portfolio.portfolio_snapshots.ordered.last(14)
+    current_value = valuator.total_value(portfolio).to_f
 
-    trades = portfolio.trades.order(Arel.sql("COALESCE(executed_at, created_at) ASC"), :id).to_a
-    return default_chart_points(@total_value.positive? ? @total_value : @starting) if trades.empty?
+    points = snapshots.map do |snapshot|
+      { date: snapshot.snapshot_date, value: snapshot.total_value.to_f }
+    end
 
-    (Date.current - 14..Date.current).map do |date|
-      snapshot = portfolio_snapshot_at(portfolio, trades, date.end_of_day)
-      value = snapshot[:cash] + holdings_market_value_from_positions(snapshot[:positions], valuator)
-      { label: date.strftime("%b %-d"), value: value.round(2) }
+    if points.last && points.last[:date] == Date.current
+      points[-1][:value] = current_value
+    else
+      points << { date: Date.current, value: current_value }
+    end
+
+    if points.empty?
+      points = [
+        { date: Date.current - 1.day, value: @starting },
+        { date: Date.current, value: current_value.positive? ? current_value : @starting }
+      ]
+    elsif points.size == 1
+      points.unshift(date: points.first[:date] - 1.day, value: @starting)
+    end
+
+    points.last(15).map do |point|
+      { label: point[:date].strftime("%b %-d"), value: point[:value].round(2) }
     end
   end
 
   def default_chart_points(base)
     (0..14).map { |i| { label: (Date.current - 14 + i).strftime("%b %-d"), value: (base * (0.95 + i * 0.004)).round(2) } }
-  end
-
-  def portfolio_snapshot_at(portfolio, trades, cutoff_time)
-    cash = portfolio.league&.starting_capital.to_d
-    cash = 100_000.to_d if cash <= 0
-    positions = Hash.new(0)
-
-    trades.each do |trade|
-      trade_time = trade.executed_at || trade.created_at
-      next if trade_time > cutoff_time
-
-      trade_value = trade.price.to_d * trade.quantity.to_d
-      if trade.trade_type.to_s.downcase == "sell"
-        cash += trade_value
-        positions[trade.symbol] -= trade.quantity.to_i
-      else
-        cash -= trade_value
-        positions[trade.symbol] += trade.quantity.to_i
-      end
-    end
-
-    { cash: cash, positions: positions }
-  end
-
-  def holdings_market_value_from_positions(positions, valuator)
-    positions.sum do |symbol, quantity|
-      next 0.to_d if quantity.to_i <= 0
-
-      valuator.price_for_symbol(symbol) * quantity.to_i
-    end
   end
 
   def top_holdings_for(portfolio, valuator)

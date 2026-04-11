@@ -94,36 +94,53 @@
         </div>
       <% elsif @chart_points.any? %>
         <% vals = @chart_points.map { |p| p[:value] } %>
-        <% max_v = vals.max %>
-        <% min_v = vals.min %>
-        <% range = (max_v - min_v).abs %>
-        <% range = 1.0 if range < 1e-6 %>
+        <% raw_max = vals.max.to_f %>
+        <% raw_min = vals.min.to_f %>
+        <% range = (raw_max - raw_min).abs %>
+        <% if range < 1e-6 %>
+          <% display_max = raw_max + 0.5 %>
+          <% display_min = raw_min - 0.5 %>
+          <% range = 1.0 %>
+        <% else %>
+          <% display_max = raw_max %>
+          <% display_min = raw_min %>
+        <% end %>
+        <% y_ticks = (0..4).map { |i| display_max - (range * i / 4.0) } %>
         <% point_count = [@chart_points.size - 1, 1].max %>
         <% w = 1000.0 %>
         <% h = 200.0 %>
         <% pad = 24.0 %>
         <% point_positions = @chart_points.each_with_index.map do |pt, i| %>
           <% x = pad + (i.to_f / point_count) * (w - pad * 2) %>
-          <% y = pad + h - pad * 2 - ((pt[:value] - min_v) / range) * (h - pad * 2) %>
+          <% y = pad + h - pad * 2 - ((pt[:value] - display_min) / range) * (h - pad * 2) %>
           <% [x, y, pt] %>
         <% end %>
         <% pts = point_positions.map { |x, y, _pt| "#{x.round(1)},#{y.round(1)}" }.join(" ") %>
-        <svg class="terminal-chart-svg" viewBox="0 0 <%= w %> <%= h %>" preserveAspectRatio="xMidYMid meet">
-          <% (0..4).each do |g| %>
-            <% gy = pad + g * (h - pad * 2) / 4.0 %>
-            <line x1="<%= pad %>" y1="<%= gy %>" x2="<%= w - pad %>" y2="<%= gy %>" stroke="#3a3a3c" stroke-width="1"/>
-          <% end %>
-          <polyline fill="none" stroke="#ff9500" stroke-width="2.5" points="<%= pts %>"/>
-          <% point_positions.each do |x, y, _pt| %>
-            <circle cx="<%= x %>" cy="<%= y %>" r="4" fill="#1c1c1e" stroke="#ff9500" stroke-width="2"/>
-          <% end %>
-        </svg>
-        <div class="terminal-chart-xaxis" style="--chart-point-count: <%= point_count %>;">
-          <% point_positions.each_with_index do |(x, _y, pt), i| %>
-            <% if i % 3 == 0 || i == point_positions.size - 1 %>
-              <span class="terminal-chart-label" style="left: <%= (x / w * 100).round(4) %>%;"><%= pt[:label] %></span>
+        <div class="terminal-chart-grid">
+          <div class="terminal-chart-yaxis" aria-label="Portfolio value axis">
+            <% y_ticks.each do |tick| %>
+              <span><%= number_to_currency(tick, precision: 2) %></span>
             <% end %>
-          <% end %>
+          </div>
+          <div class="terminal-chart-main">
+            <svg class="terminal-chart-svg" viewBox="0 0 <%= w %> <%= h %>" preserveAspectRatio="xMidYMid meet">
+              <% (0..4).each do |g| %>
+                <% gy = pad + g * (h - pad * 2) / 4.0 %>
+                <line x1="<%= pad %>" y1="<%= gy %>" x2="<%= w - pad %>" y2="<%= gy %>" stroke="#3a3a3c" stroke-width="1"/>
+              <% end %>
+              <polyline fill="none" stroke="#ff9500" stroke-width="2.5" points="<%= pts %>"/>
+              <% point_positions.each do |x, y, _pt| %>
+                <circle cx="<%= x %>" cy="<%= y %>" r="4" fill="#1c1c1e" stroke="#ff9500" stroke-width="2"/>
+              <% end %>
+            </svg>
+            <div class="terminal-chart-xaxis" style="--chart-point-count: <%= point_count %>;">
+              <% point_positions.each_with_index do |(x, _y, pt), i| %>
+                <% if i % 3 == 0 || i == point_positions.size - 1 %>
+                  <span class="terminal-chart-label" style="left: <%= (x / w * 100).round(4) %>%;"><%= pt[:label] %></span>
+                <% end %>
+              <% end %>
+            </div>
+          </div>
         </div>
       <% else %>
         <div class="terminal-chart-skeleton">
