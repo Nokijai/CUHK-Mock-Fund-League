@@ -9,8 +9,24 @@
     <% if @league %>
       <div class="terminal-league-pill">
         <span class="terminal-league-pill-label">CURRENT LEAGUE</span>
-        <span class="terminal-league-pill-name"><%= @league.name %></span>
-        <span class="terminal-badge-active">ACTIVE</span>
+        <% if @joined_leagues.size > 1 %>
+          <%= select_tag(
+                "dashboard_league",
+                options_from_collection_for_select(@joined_leagues, :id, :name, @league.id),
+                id: "dashboard-league-select",
+                class: "terminal-league-pill-select",
+                aria: { label: "Switch dashboard league" },
+                data: {
+                  controller: "league-dashboard-select",
+                  league_dashboard_select_root_url_value: root_path,
+                  action: "change->league-dashboard-select#visit"
+                }
+              ) %>
+          <span class="terminal-badge-active">ACTIVE</span>
+        <% else %>
+          <span class="terminal-league-pill-name"><%= @league.name %></span>
+          <span class="terminal-badge-active">ACTIVE</span>
+        <% end %>
       </div>
     <% end %>
   </div>
@@ -26,11 +42,15 @@
               <% 2.times do |seg_idx| %>
                 <div class="terminal-marquee-segment"<% if seg_idx == 1 %> aria-hidden="true"<% end %>>
                   <% @ticker_stock_items.each do |item| %>
-                    <%= link_to stock_path(item[:symbol]), class: "terminal-marquee-card", title: "#{item[:symbol]} quote" do %>
-                      <span class="terminal-marquee-pill terminal-marquee-pill-stock">STOCK</span>
-                      <span class="terminal-marquee-main"><%= item[:symbol] %></span>
-                      <span class="terminal-marquee-meta terminal-marquee-ellipsis-soft"><%= item[:name] %></span>
-                      <span class="terminal-marquee-price"><%= number_to_currency(item[:price], precision: 2) %></span>
+                    <%= link_to stock_path(item[:symbol]), class: "terminal-marquee-card terminal-marquee-card--stock", title: "#{item[:symbol]} quote" do %>
+                      <div class="terminal-marquee-card-top">
+                        <span class="terminal-marquee-pill terminal-marquee-pill-stock">STOCK</span>
+                        <span class="terminal-marquee-price terminal-marquee-price--stock-corner"><%= number_to_currency(item[:price], precision: 2) %></span>
+                      </div>
+                      <div class="terminal-marquee-card-mid">
+                        <span class="terminal-marquee-main terminal-marquee-stock-symbol"><%= item[:symbol] %></span>
+                        <span class="terminal-marquee-meta terminal-marquee-ellipsis-soft"><%= item[:name] %></span>
+                      </div>
                     <% end %>
                   <% end %>
                 </div>
@@ -47,11 +67,15 @@
               <% 2.times do |seg_idx| %>
                 <div class="terminal-marquee-segment"<% if seg_idx == 1 %> aria-hidden="true"<% end %>>
                   <% @ticker_league_items.each do |item| %>
-                    <%= link_to league_path(item[:id]), class: "terminal-marquee-card", title: "#{item[:name]} details" do %>
+                    <%= link_to league_path(item[:id]), class: "terminal-marquee-card terminal-marquee-card--league", title: "#{item[:name]} details" do %>
                       <span class="terminal-marquee-pill terminal-marquee-pill-league">LEAGUE</span>
-                      <span class="terminal-marquee-main terminal-marquee-ellipsis-soft"><%= item[:name] %></span>
-                      <span class="terminal-marquee-meta"><%= item[:members_count] %> members</span>
-                      <span class="terminal-marquee-price"><%= number_to_currency(item[:starting_capital], precision: 0) %></span>
+                      <div class="terminal-marquee-card-mid">
+                        <span class="terminal-marquee-main terminal-marquee-ellipsis-soft"><%= item[:name] %></span>
+                      </div>
+                      <div class="terminal-marquee-card-footer">
+                        <span class="terminal-marquee-meta terminal-marquee-ellipsis-soft"><%= item[:members_count] %> members</span>
+                        <span class="terminal-marquee-price"><%= number_to_currency(item[:starting_capital], precision: 0) %></span>
+                      </div>
                     <% end %>
                   <% end %>
                 </div>

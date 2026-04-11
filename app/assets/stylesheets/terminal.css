@@ -283,6 +283,54 @@ body.terminal-shell main a.terminal-realtime-notice-link:hover {
   color: var(--terminal-text);
 }
 
+/* Turbo-inserted league-created notices: match layout flash strip. */
+#realtime-notifications .terminal-realtime-flash {
+  margin-left: 0;
+  margin-right: 0;
+}
+
+/* League-created row: "View" as neutral chip + up-colored border/text (link for Turbo). */
+.terminal-realtime-flash .terminal-flash-text {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.5rem;
+}
+
+/* View: neutral body; up color on border + label only (no green fill). */
+.terminal-realtime-flash a.terminal-realtime-view-btn,
+#realtime-notifications a.terminal-realtime-view-btn {
+  margin-left: 0;
+  flex-shrink: 0;
+  color: var(--terminal-up);
+  background: var(--terminal-zebra);
+  border: 1px solid var(--terminal-up);
+  text-decoration: none;
+  font-weight: 700;
+}
+
+#realtime-notifications a.terminal-realtime-view-btn:hover,
+#realtime-notifications a.terminal-realtime-view-btn:focus-visible {
+  color: var(--terminal-up);
+  background: var(--terminal-panel);
+  border-color: var(--terminal-up);
+  filter: brightness(1.12);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+}
+
+/* Realtime rail sits outside <main>; keep View link styling consistent. */
+#realtime-notifications a.terminal-realtime-notice-link {
+  color: var(--terminal-up);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+#realtime-notifications a.terminal-realtime-notice-link:hover {
+  color: var(--terminal-text);
+}
+
 body.terminal-shell .disclaimer {
   margin-top: 0.75rem;
   font-size: 11px;
@@ -356,6 +404,26 @@ body.terminal-shell .disclaimer {
   font-size: 13px;
   font-weight: 600;
   color: var(--terminal-text);
+}
+
+.terminal-league-pill-select {
+  width: 100%;
+  max-width: 280px;
+  margin-top: 0.15rem;
+  padding: 0.4rem 0.5rem;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--terminal-text);
+  background: var(--terminal-panel);
+  border: 1px solid var(--terminal-border);
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.terminal-league-pill-select:focus {
+  outline: 1px solid var(--terminal-accent);
+  outline-offset: 1px;
 }
 
 .terminal-badge-active {
@@ -457,7 +525,7 @@ body.terminal-shell .disclaimer {
 /* Fixed-height strip: content never grows the dashboard layout; long text clips inside chips. */
 .terminal-marquee-viewport {
   /* Single knob if you want a taller/shorter ticker strip (cards stay inside this box). */
-  --terminal-marquee-bar-height: 100px;
+  --terminal-marquee-bar-height: 110px;
   height: var(--terminal-marquee-bar-height);
   min-height: var(--terminal-marquee-bar-height);
   max-height: var(--terminal-marquee-bar-height);
@@ -468,6 +536,20 @@ body.terminal-shell .disclaimer {
   align-items: center;
 }
 
+/*
+ * Marquee speed: keyframes move translateX(-50%), i.e. one full "segment" width per loop.
+ * The stock strip holds ~30 cards vs ~10 league cards, so the same duration makes stocks look
+ * much faster (more pixels per second). Set --terminal-marquee-loop-sec on each window so
+ * duration scales with typical content width (~3:1 → stock duration ≈ 3× league).
+ */
+.terminal-marquee-window--stocks {
+  --terminal-marquee-loop-sec: 200s;
+}
+
+.terminal-marquee-window--leagues {
+  --terminal-marquee-loop-sec: 70s;
+}
+
 /* Outer strip: two segments in one row; -50% shift equals exactly one segment width. */
 .terminal-marquee-roll {
   display: flex;
@@ -475,13 +557,8 @@ body.terminal-shell .disclaimer {
   flex-wrap: nowrap;
   align-items: center;
   width: max-content;
-  animation: terminal-marquee-slide 50s linear infinite;
+  animation: terminal-marquee-slide var(--terminal-marquee-loop-sec, 90s) linear infinite;
   will-change: transform;
-}
-
-/* Slightly slower league strip so the two bars do not scroll in perfect lockstep. */
-.terminal-marquee-roll--leagues {
-  animation-duration: 58s;
 }
 
 /* One copy of the ticker items as a non-wrapping horizontal flex row. */
@@ -505,23 +582,112 @@ body.terminal-shell .disclaimer {
 
 .terminal-marquee-card {
   flex: 0 0 auto;
-  min-width: 210px;
-  max-width: 280px;
-  height: 82px;
-  min-height: 82px;
-  max-height: 82px;
+  min-width: 220px;
+  max-width: 300px;
+  width: 260px;
+  height: 92px;
+  min-height: 92px;
+  max-height: 92px;
   box-sizing: border-box;
   border: 1px solid var(--terminal-border);
   border-radius: 2px;
   background: var(--terminal-panel);
-  padding: 0.4rem 0.6rem;
+  padding: 0.45rem 0.65rem;
   text-decoration: none;
   color: var(--terminal-text);
   display: flex;
   flex-direction: column;
   gap: 0.15rem;
   justify-content: center;
+  align-items: stretch;
   overflow: hidden;
+}
+
+/* Stock ticker: top row (pill + price), large symbol, company name pinned to bottom. */
+.terminal-marquee-card--stock {
+  justify-content: flex-start;
+}
+
+.terminal-marquee-card-top {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.35rem;
+  width: 100%;
+  min-width: 0;
+}
+
+.terminal-marquee-price--stock-corner {
+  margin-top: 0;
+  text-align: right;
+  flex-shrink: 0;
+  line-height: 1.2;
+}
+
+/* Symbol + company name: vertically centered in space below the top bar, text centered. */
+.terminal-marquee-card-mid {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  width: 100%;
+  gap: 0.1rem;
+}
+
+.terminal-marquee-card--stock .terminal-marquee-stock-symbol {
+  font-size: 17px;
+  letter-spacing: 0.04em;
+  line-height: 1.1;
+  width: 100%;
+  text-align: center;
+}
+
+.terminal-marquee-card--stock .terminal-marquee-card-mid .terminal-marquee-meta {
+  width: 100%;
+  text-align: center;
+}
+
+/* League ticker: title centered in mid band; members + starting capital on bottom row (price bottom-right). */
+.terminal-marquee-card--league {
+  justify-content: flex-start;
+}
+
+.terminal-marquee-card--league .terminal-marquee-card-mid .terminal-marquee-main {
+  width: 100%;
+  text-align: center;
+}
+
+.terminal-marquee-card--league .terminal-marquee-card-footer {
+  margin-top: 0;
+  flex-shrink: 0;
+}
+
+.terminal-marquee-card-footer {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 0.35rem;
+  width: 100%;
+  margin-top: auto;
+  min-width: 0;
+}
+
+.terminal-marquee-card-footer .terminal-marquee-meta {
+  flex: 1 1 auto;
+  min-width: 0;
+  text-align: left;
+}
+
+.terminal-marquee-card-footer .terminal-marquee-price {
+  flex-shrink: 0;
+  margin-top: 0;
+  text-align: right;
+  line-height: 1.2;
 }
 
 /* Beat main link accent so the card reads as a panel, not a wall of orange links. */
@@ -552,8 +718,6 @@ body.terminal-shell main a.terminal-marquee-card {
 }
 
 .terminal-marquee-card .terminal-marquee-price {
-  flex-shrink: 0;
-  margin-top: 0;
   line-height: 1.2;
 }
 
@@ -564,10 +728,10 @@ body.terminal-shell main a.terminal-marquee-card {
 
 .terminal-marquee-pill {
   width: fit-content;
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: 0.08em;
   font-weight: 700;
-  padding: 0.12rem 0.35rem;
+  padding: 0.14rem 0.4rem;
   border: 1px solid var(--terminal-border);
   border-radius: 2px;
 }
@@ -581,18 +745,18 @@ body.terminal-shell main a.terminal-marquee-card {
 }
 
 .terminal-marquee-main {
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 700;
 }
 
 .terminal-marquee-meta {
-  font-size: 10px;
+  font-size: 12px;
   color: var(--terminal-muted);
 }
 
 .terminal-marquee-price {
   margin-top: 0.1rem;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--terminal-accent);
 }
@@ -1744,6 +1908,40 @@ body.terminal-shell {
 
 .terminal-form-field {
   margin-bottom: 1rem;
+}
+
+.terminal-password-wrap {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 0.35rem;
+}
+
+.terminal-password-wrap .terminal-input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.terminal-password-toggle {
+  flex: 0 0 auto;
+  align-self: stretch;
+  padding: 0 0.55rem;
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--terminal-accent);
+  background: var(--terminal-panel);
+  border: 1px solid var(--terminal-border);
+  border-radius: 2px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.terminal-password-toggle:hover {
+  color: var(--terminal-text);
+  border-color: var(--terminal-accent);
 }
 
 .terminal-form-hint {
