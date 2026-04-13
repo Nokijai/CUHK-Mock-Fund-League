@@ -9,11 +9,83 @@
     <% if @league %>
       <div class="terminal-league-pill">
         <span class="terminal-league-pill-label">CURRENT LEAGUE</span>
-        <span class="terminal-league-pill-name"><%= @league.name %></span>
-        <span class="terminal-badge-active">ACTIVE</span>
+        <% if @joined_leagues.size > 1 %>
+          <%= select_tag(
+                "dashboard_league",
+                options_from_collection_for_select(@joined_leagues, :id, :name, @league.id),
+                id: "dashboard-league-select",
+                class: "terminal-league-pill-select",
+                aria: { label: "Switch dashboard league" },
+                data: {
+                  controller: "league-dashboard-select",
+                  league_dashboard_select_root_url_value: root_path,
+                  action: "change->league-dashboard-select#visit"
+                }
+              ) %>
+          <span class="terminal-badge-active">ACTIVE</span>
+        <% else %>
+          <span class="terminal-league-pill-name"><%= @league.name %></span>
+          <span class="terminal-badge-active">ACTIVE</span>
+        <% end %>
       </div>
     <% end %>
   </div>
+
+  <% if @ticker_stock_items.any? || @ticker_league_items.any? %>
+    <div class="terminal-marquee-stack">
+      <% if @ticker_stock_items.any? %>
+        <div class="terminal-window terminal-marquee-window terminal-marquee-window--stocks">
+          <div class="terminal-window-title">LIVE STOCKS</div>
+          <div class="terminal-marquee-viewport" aria-label="Live stock quotes">
+            <%# Classic seamless loop: two identical flex segments; animate roll by -50% width. %>
+            <div class="terminal-marquee-roll">
+              <% 2.times do |seg_idx| %>
+                <div class="terminal-marquee-segment"<% if seg_idx == 1 %> aria-hidden="true"<% end %>>
+                  <% @ticker_stock_items.each do |item| %>
+                    <%= link_to stock_path(item[:symbol]), class: "terminal-marquee-card terminal-marquee-card--stock", title: "#{item[:symbol]} quote" do %>
+                      <div class="terminal-marquee-card-top">
+                        <span class="terminal-marquee-pill terminal-marquee-pill-stock">STOCK</span>
+                        <span class="terminal-marquee-price terminal-marquee-price--stock-corner"><%= number_to_currency(item[:price], precision: 2) %></span>
+                      </div>
+                      <div class="terminal-marquee-card-mid">
+                        <span class="terminal-marquee-main terminal-marquee-stock-symbol"><%= item[:symbol] %></span>
+                        <span class="terminal-marquee-meta terminal-marquee-ellipsis-soft"><%= item[:name] %></span>
+                      </div>
+                    <% end %>
+                  <% end %>
+                </div>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      <% end %>
+      <% if @ticker_league_items.any? %>
+        <div class="terminal-window terminal-marquee-window terminal-marquee-window--leagues">
+          <div class="terminal-window-title">AVAILABLE LEAGUES</div>
+          <div class="terminal-marquee-viewport" aria-label="Available leagues to join">
+            <div class="terminal-marquee-roll terminal-marquee-roll--leagues">
+              <% 2.times do |seg_idx| %>
+                <div class="terminal-marquee-segment"<% if seg_idx == 1 %> aria-hidden="true"<% end %>>
+                  <% @ticker_league_items.each do |item| %>
+                    <%= link_to league_path(item[:id]), class: "terminal-marquee-card terminal-marquee-card--league", title: "#{item[:name]} details" do %>
+                      <span class="terminal-marquee-pill terminal-marquee-pill-league">LEAGUE</span>
+                      <div class="terminal-marquee-card-mid">
+                        <span class="terminal-marquee-main terminal-marquee-ellipsis-soft"><%= item[:name] %></span>
+                      </div>
+                      <div class="terminal-marquee-card-footer">
+                        <span class="terminal-marquee-meta terminal-marquee-ellipsis-soft"><%= item[:members_count] %> members</span>
+                        <span class="terminal-marquee-price"><%= number_to_currency(item[:starting_capital], precision: 0) %></span>
+                      </div>
+                    <% end %>
+                  <% end %>
+                </div>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
 
   <div class="terminal-stats-row">
     <div class="terminal-stat-card">
@@ -40,34 +112,63 @@
   <div class="terminal-window terminal-chart-window">
     <div class="terminal-window-title">PORTFOLIO PERFORMANCE</div>
     <div class="terminal-chart-wrap">
-      <% if @chart_points.any? %>
+      <% if @chart_points.nil? %>
+        <div class="terminal-chart-skeleton">
+          <span class="terminal-chart-skeleton-label">LOADING CHART DATA...</span>
+        </div>
+      <% elsif @chart_points.any? %>
         <% vals = @chart_points.map { |p| p[:value] } %>
-        <% max_v = vals.max %>
-        <% min_v = vals.min %>
-        <% range = (max_v - min_v).abs %>
-        <% range = 1.0 if range < 1e-6 %>
+        <% raw_max = vals.max.to_f %>
+        <% raw_min = vals.min.to_f %>
+        <% range = (raw_max - raw_min).abs %>
+        <% if range < 1e-6 %>
+          <% display_max = raw_max + 0.5 %>
+          <% display_min = raw_min - 0.5 %>
+          <% range = 1.0 %>
+        <% else %>
+          <% display_max = raw_max %>
+          <% display_min = raw_min %>
+        <% end %>
+        <% y_ticks = (0..4).map { |i| display_max - (range * i / 4.0) } %>
+        <% point_count = [@chart_points.size - 1, 1].max %>
         <% w = 1000.0 %>
         <% h = 200.0 %>
         <% pad = 24.0 %>
-        <% pts = @chart_points.each_with_index.map { |pt, i| x = pad + (i / 14.0) * (w - pad * 2); y = pad + h - pad * 2 - ((pt[:value] - min_v) / range) * (h - pad * 2); "#{x.round(1)},#{y.round(1)}" }.join(" ") %>
-        <svg class="terminal-chart-svg" viewBox="0 0 <%= w %> <%= h %>" preserveAspectRatio="xMidYMid meet">
-          <% (0..4).each do |g| %>
-            <% gy = pad + g * (h - pad * 2) / 4.0 %>
-            <line x1="<%= pad %>" y1="<%= gy %>" x2="<%= w - pad %>" y2="<%= gy %>" stroke="#3a3a3c" stroke-width="1"/>
-          <% end %>
-          <polyline fill="none" stroke="#ff9500" stroke-width="2.5" points="<%= pts %>"/>
-          <% @chart_points.each_with_index do |pt, i| %>
-            <% x = pad + (i / 14.0) * (w - pad * 2) %>
-            <% y = pad + h - pad * 2 - ((pt[:value] - min_v) / range) * (h - pad * 2) %>
-            <circle cx="<%= x %>" cy="<%= y %>" r="4" fill="#1c1c1e" stroke="#ff9500" stroke-width="2"/>
-          <% end %>
-        </svg>
-        <div class="terminal-chart-xaxis">
-          <% @chart_points.each_with_index do |pt, i| %>
-            <% if i % 3 == 0 || i == 14 %>
-              <span><%= pt[:label] %></span>
+        <% point_positions = @chart_points.each_with_index.map do |pt, i| %>
+          <% x = pad + (i.to_f / point_count) * (w - pad * 2) %>
+          <% y = pad + h - pad * 2 - ((pt[:value] - display_min) / range) * (h - pad * 2) %>
+          <% [x, y, pt] %>
+        <% end %>
+        <% pts = point_positions.map { |x, y, _pt| "#{x.round(1)},#{y.round(1)}" }.join(" ") %>
+        <div class="terminal-chart-grid">
+          <div class="terminal-chart-yaxis" aria-label="Portfolio value axis">
+            <% y_ticks.each do |tick| %>
+              <span><%= number_to_currency(tick, precision: 2) %></span>
             <% end %>
-          <% end %>
+          </div>
+          <div class="terminal-chart-main">
+            <svg class="terminal-chart-svg" viewBox="0 0 <%= w %> <%= h %>" preserveAspectRatio="xMidYMid meet">
+              <% (0..4).each do |g| %>
+                <% gy = pad + g * (h - pad * 2) / 4.0 %>
+                <line x1="<%= pad %>" y1="<%= gy %>" x2="<%= w - pad %>" y2="<%= gy %>" stroke="#3a3a3c" stroke-width="1"/>
+              <% end %>
+              <polyline fill="none" stroke="#ff9500" stroke-width="2.5" points="<%= pts %>"/>
+              <% point_positions.each do |x, y, _pt| %>
+                <circle cx="<%= x %>" cy="<%= y %>" r="4" fill="#1c1c1e" stroke="#ff9500" stroke-width="2"/>
+              <% end %>
+            </svg>
+            <div class="terminal-chart-xaxis" style="--chart-point-count: <%= point_count %>;">
+              <% point_positions.each_with_index do |(x, _y, pt), i| %>
+                <% if i % 3 == 0 || i == point_positions.size - 1 %>
+                  <span class="terminal-chart-label" style="left: <%= (x / w * 100).round(4) %>%;"><%= pt[:label] %></span>
+                <% end %>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      <% else %>
+        <div class="terminal-chart-skeleton">
+          <span class="terminal-chart-skeleton-label">NO CHART DATA YET</span>
         </div>
       <% end %>
     </div>

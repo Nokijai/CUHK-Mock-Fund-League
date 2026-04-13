@@ -1,10 +1,11 @@
 class Admin::UsersController < Admin::BaseController
-  before_action :set_user, only: [ :edit, :update, :destroy ]
+  before_action :set_user, only: [ :edit, :update, :destroy, :approve_signup ]
 
   def index
     @users = User.search_and_paginate(
       params[:search],
-      %w[name email],
+      # Users are now username-first; keep searching email too for admin workflows.
+      %w[username email],
       page: params[:page],
       per_page: 10
     )
@@ -52,6 +53,17 @@ class Admin::UsersController < Admin::BaseController
     end
   end
 
+  # POST /admin/users/:id/approve_signup
+  def approve_signup
+    unless @user.signup_pending?
+      redirect_to admin_users_path, notice: "User is already verified."
+      return
+    end
+
+    @user.approve_signup!
+    redirect_to admin_users_path, notice: "User approved (verification bypassed)."
+  end
+
   private
 
   def set_user
@@ -59,7 +71,8 @@ class Admin::UsersController < Admin::BaseController
   end
 
   def user_params
-    params.require(:user).permit(:name, :email, :password, :password_confirmation)
+    # Role is assigned explicitly (see assign_role_from_params) to avoid broad mass-assignment.
+    params.require(:user).permit(:username, :email, :password, :password_confirmation)
   end
 
   def assign_role_from_params(user)

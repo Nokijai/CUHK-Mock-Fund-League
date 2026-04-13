@@ -23,6 +23,7 @@ gem "bcrypt", "~> 3.1", ">= 3.1.22"
 # User authentication
 gem "devise", ">= 5.0.3"
 gem "rack", ">= 3.2.5"
+gem "rack-attack"
 gem "nokogiri", ">= 1.19.1"
 gem "action_text-trix", ">= 2.1.18"
 
@@ -30,7 +31,8 @@ gem "action_text-trix", ">= 2.1.18"
 gem "kaminari"
 
 # Load environment variables from .env
-gem "dotenv", require: false, group: :development
+# Keep dotenv in test too so local test runs can load .env values when needed.
+gem "dotenv", require: false, group: [ :development, :test ]
 
 # Testing
 gem "rspec-rails", "~> 7.0", group: [ :development, :test ]
@@ -60,6 +62,8 @@ gem "thruster", require: false
 gem "image_processing", "~> 1.2"
 
 group :development, :test do
+  gem "dotenv-rails"
+
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
   gem "debug", platforms: %i[ mri windows ], require: "debug/prelude"
 

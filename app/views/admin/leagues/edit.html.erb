@@ -4,12 +4,57 @@
   <div class="terminal-page-meta"><%= @league.name %></div>
 </div>
 
-<% if @league.errors.any? %>
-  <div class="terminal-window" style="max-width: 600px; background: rgba(255, 50, 50, 0.1); border-left: 4px solid var(--terminal-down);">
-    <div style="color: var(--terminal-down); font-weight: bold; margin-bottom: 0.5rem;">
-      ⚠️ <%= pluralize(@league.errors.count, "error") %> prevented this league from being saved:
+<% if @league.team_mode? %>
+  <div class="terminal-window" style="max-width: 900px; margin-top: 1rem;">
+    <div class="terminal-window-title">TEAM ROSTERS (ADMIN)</div>
+    <div style="padding: 0.75rem;">
+      <p class="terminal-form-hint">Remove players from teams if needed (e.g., wrong team, moderation).</p>
+
+      <% teams = @league.teams.sort_by(&:id) %>
+      <% if teams.empty? %>
+        <p class="terminal-form-hint">No teams created for this league yet.</p>
+      <% else %>
+        <div class="terminal-team-grid">
+          <% teams.each do |team| %>
+            <div class="terminal-window terminal-team-card">
+              <div class="terminal-team-header">
+                <div>
+                  <strong><%= team.name %></strong>
+                  <span class="terminal-muted-cell" style="margin-left: 0.5rem;">(<%= team.team_memberships_count.to_i %>)</span>
+                </div>
+              </div>
+              <div class="terminal-team-members">
+                <% memberships = team.team_memberships.sort_by { |m| m.user.username.to_s.downcase } %>
+                <% if memberships.empty? %>
+                  <p class="terminal-form-hint">No members.</p>
+                <% else %>
+                  <% memberships.each do |membership| %>
+                    <div class="terminal-team-member-row">
+                      <span class="terminal-muted-cell">
+                        <%= membership.user.username.presence || membership.user.email %>
+                        <span style="opacity: 0.7;">(user_id=<%= membership.user_id %>)</span>
+                      </span>
+                      <%= button_to "REMOVE",
+                                    admin_league_team_membership_path(@league, team, membership),
+                                    method: :delete,
+                                    class: "terminal-btn terminal-btn--small",
+                                    data: { turbo_confirm: "Remove this user from the team?" } %>
+                    </div>
+                  <% end %>
+                <% end %>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      <% end %>
     </div>
-    <ul style="margin: 0.5rem 0 0 1.5rem; line-height: 1.8; color: var(--terminal-text);">
+  </div>
+<% end %>
+
+<% if @league.errors.any? %>
+  <div class="terminal-admin-error-panel">
+    <strong><%= pluralize(@league.errors.count, "error") %> prevented this league from being saved:</strong>
+    <ul>
       <% @league.errors.full_messages.each do |message| %>
         <li><%= message %></li>
       <% end %>
@@ -17,38 +62,62 @@
   </div>
 <% end %>
 
-<div class="terminal-window" style="max-width: 600px;">
+<div class="terminal-window terminal-admin-form-card">
   <%= form_with model: @league, url: admin_league_path(@league), method: :patch, class: "terminal-form" do |f| %>
-
     <div class="terminal-form-field">
-      <%= f.label :name, "LEAGUE NAME" %>
+      <%= f.label :name, "LEAGUE NAME", class: "terminal-label" %>
       <%= f.text_field :name, class: "terminal-input", required: true %>
     </div>
 
     <div class="terminal-form-field">
-      <%= f.label :description, "DESCRIPTION" %>
-      <%= f.text_area :description, class: "terminal-input", rows: 4 %>
+      <%= f.label :description, "DESCRIPTION", class: "terminal-label" %>
+      <%= f.text_area :description, class: "terminal-input terminal-textarea", rows: 4 %>
     </div>
 
     <div class="terminal-form-field">
-      <%= f.label :starting_capital, "STARTING CAPITAL ($)" %>
-      <%= f.number_field :starting_capital, class: "terminal-input", required: true, step: "0.01" %>
+      <span class="terminal-label">STARTING CAPITAL (LOCKED AFTER CREATION)</span>
+      <p class="terminal-form-hint" style="font-size: 13px; color: var(--terminal-text);"><%= number_to_currency(@league.starting_capital, precision: 2) %></p>
     </div>
 
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+    <div class="terminal-form-row">
       <div class="terminal-form-field">
-        <%= f.label :start_date, "START DATE & TIME" %>
+        <%= f.label :start_date, "START DATE & TIME", class: "terminal-label" %>
         <%= f.datetime_local_field :start_date, class: "terminal-input", required: true %>
       </div>
-
       <div class="terminal-form-field">
-        <%= f.label :end_date, "END DATE & TIME" %>
+        <%= f.label :end_date, "END DATE & TIME", class: "terminal-label" %>
         <%= f.datetime_local_field :end_date, class: "terminal-input", required: true %>
       </div>
     </div>
 
-    <div style="display: flex; gap: 1rem; margin-top: 2rem;">
-      <%= f.submit "UPDATE LEAGUE", class: "terminal-btn terminal-btn-primary", style: "color: var(--terminal-bg);" %>
+    <div class="terminal-form-field">
+      <span class="terminal-label">RULES (LOCKED AFTER CREATION)</span>
+      <% if @league.rules.present? %>
+        <p class="terminal-form-hint" style="font-size: 12px; color: var(--terminal-text);">
+          <% rendered_rule_line = false %>
+          <% if @league.max_participants.present? %>
+            Max participants: <%= @league.max_participants %><br>
+            <% rendered_rule_line = true %>
+          <% end %>
+          <% if @league.handling_fee_rule_configured? %>
+            Handling fee: <%= number_to_percentage(@league.handling_fee_proportion * 100, precision: 2) %><br>
+            <% rendered_rule_line = true %>
+          <% end %>
+          <% if @league.minimum_final_balance.present? %>
+            Minimum final balance: <%= number_to_currency(@league.minimum_final_balance) %>
+            <% rendered_rule_line = true %>
+          <% end %>
+          <% unless rendered_rule_line %>
+            <%= @league.rules.is_a?(Hash) ? @league.rules.to_json : @league.rules %>
+          <% end %>
+        </p>
+      <% else %>
+        <p class="terminal-form-hint">No league-specific rules stored.</p>
+      <% end %>
+    </div>
+
+    <div class="terminal-form-actions">
+      <%= f.submit "UPDATE LEAGUE", class: "terminal-btn terminal-btn-primary" %>
       <%= link_to "CANCEL", admin_leagues_path, class: "terminal-btn" %>
     </div>
   <% end %>

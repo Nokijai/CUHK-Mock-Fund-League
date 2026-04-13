@@ -1,0 +1,54 @@
+<div class="terminal-auth-page">
+  <div class="terminal-auth-card">
+    <div class="terminal-window">
+      <div class="terminal-window-title">VERIFY LOGIN</div>
+      <div class="terminal-auth-body">
+        <% resend_wait_seconds = @pending_user.login_otp_resend_wait_seconds %>
+        <p class="terminal-form-hint" style="font-size: 12px; margin-bottom: 1rem;">
+          Enter the 6-digit verification code sent to your email.
+        </p>
+
+        <%= form_with url: users_otp_authenticate_path, method: :post, local: true, data: { controller: "otp-code", otp_code_length_value: 6 } do |f| %>
+          <div class="terminal-form-field">
+            <%= f.label :otp_code, "VERIFICATION CODE", class: "terminal-label" %>
+            <%= f.text_field :otp_code,
+                autofocus: true,
+                autocomplete: "one-time-code",
+                inputmode: "numeric",
+                enterkeyhint: "done",
+                maxlength: 6,
+                pattern: "[0-9]{6}",
+                class: "terminal-input",
+                placeholder: "123456",
+                data: { otp_code_target: "input", action: "input->otp-code#onInput paste->otp-code#onPaste" } %>
+          </div>
+
+          <div class="terminal-form-actions">
+            <%= f.submit "VERIFY & LOG IN", class: "terminal-btn terminal-btn-primary", disabled: true, data: { otp_code_target: "submit" } %>
+          </div>
+        <% end %>
+
+        <div class="terminal-form-divider">
+          <p><%= link_to "Back to login", users_cancel_otp_login_path %></p>
+        </div>
+
+        <div data-controller="resend-cooldown"
+             data-resend-cooldown-seconds-left-value="<%= resend_wait_seconds %>">
+          <%= form_with url: users_resend_login_otp_path, method: :post, local: true, html: { style: "display: inline-block;" } do %>
+            <%= button_tag "Resend verification code",
+                type: "submit",
+                class: "terminal-btn terminal-btn--small",
+                disabled: resend_wait_seconds.positive?,
+                data: {
+                  resend_cooldown_target: "button",
+                  base_label: "Resend verification code",
+                  ready_label: "Resend verification code"
+                } %>
+          <% end %>
+
+          <div class="terminal-form-hint" data-resend-cooldown-target="help"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

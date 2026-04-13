@@ -1,6 +1,7 @@
 module Api
   module V1
-    class StockPricesController < ApplicationController
+    class StocksController < BaseController
+      # GET /api/v1/stocks/:symbol
       def show
         sym = params[:symbol].to_s.upcase
         payload = StockPriceService.new.get_price(sym)

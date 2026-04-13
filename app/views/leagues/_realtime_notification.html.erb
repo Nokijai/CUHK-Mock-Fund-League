@@ -1,0 +1,19 @@
+<%# Lightweight card / flash-style row for Turbo Stream inserts (league created, reminders). %>
+<% variant = local_assigns.fetch(:variant, :default) %>
+<% if variant == :success %>
+  <div class="terminal-flash terminal-flash--success terminal-realtime-flash" role="status">
+    <span class="terminal-flash-icon">LIVE</span>
+    <span class="terminal-flash-text">
+      <strong><%= title.presence || "League notice" %>:</strong>
+      <%= body.presence || league.name %>
+      <%= link_to "View", leagues_path(anchor: "league-#{league.id}"), class: "terminal-btn terminal-btn--small terminal-realtime-view-btn" %>
+    </span>
+    <button class="terminal-flash-close" type="button" onclick="this.parentElement.remove()" aria-label="Dismiss">&times;</button>
+  </div>
+<% else %>
+  <article class="terminal-realtime-notice" role="status">
+    <strong class="terminal-realtime-notice-title"><%= title.presence || "League notice" %>:</strong>
+    <span class="terminal-realtime-notice-body"><%= body.presence || league.name %></span>
+    <%= link_to "View", leagues_path(anchor: "league-#{league.id}"), class: "terminal-realtime-notice-link" %>
+  </article>
+<% end %>

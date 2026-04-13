@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap");
 
 :root {
   --terminal-bg: #1c1c1e;
@@ -21,11 +21,26 @@
 body.terminal-shell {
   margin: 0;
   min-height: 100vh;
-  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-family: "JetBrains Mono", "IBM Plex Mono", ui-monospace, monospace;
   font-size: 13px;
   background: var(--terminal-bg);
   color: var(--terminal-text);
   line-height: 1.4;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Accessibility: consistent keyboard focus ring across interactive elements. */
+body.terminal-shell a:focus-visible,
+body.terminal-shell button:focus-visible,
+body.terminal-shell input:focus-visible,
+body.terminal-shell select:focus-visible,
+body.terminal-shell textarea:focus-visible {
+  outline: 2px solid var(--terminal-accent);
+  outline-offset: 2px;
+}
+
+.terminal-btn:focus-visible {
+  border-color: var(--terminal-accent);
 }
 
 .terminal-topbar {
@@ -94,16 +109,41 @@ body.terminal-shell {
   box-shadow: 0 0 8px rgba(255, 149, 0, 0.3);
 }
 
+.terminal-topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
 .terminal-market-live {
   font-size: 11px;
   color: var(--terminal-accent);
-  margin-left: auto;
   animation: terminal-blink 1.2s step-end infinite;
 }
 
 @keyframes terminal-blink {
   50% {
     opacity: 0.35;
+  }
+}
+
+/* Accessibility: respect reduced motion preferences (avoid blinking + long-running marquees). */
+@media (prefers-reduced-motion: reduce) {
+  .terminal-market-live {
+    animation: none;
+  }
+
+  .terminal-marquee-roll {
+    animation: none;
+    transform: none;
+  }
+
+  .terminal-stock-row,
+  .terminal-stock-link,
+  .terminal-stock-name-link {
+    transition: none;
   }
 }
 
@@ -207,6 +247,90 @@ body.terminal-shell .alert {
   border-color: var(--terminal-down);
 }
 
+/* Shared live-notification rail for Turbo Stream inserts (league-created events). */
+.terminal-realtime-notifications {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin: 0.5rem 1rem 0;
+}
+
+.terminal-realtime-notice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 12px;
+  border: 1px solid var(--terminal-border);
+  border-left: 3px solid var(--terminal-accent);
+  border-radius: 2px;
+  color: var(--terminal-text);
+  background: var(--terminal-panel);
+}
+
+.terminal-realtime-notice-title {
+  color: var(--terminal-accent);
+  font-weight: 700;
+}
+
+body.terminal-shell main a.terminal-realtime-notice-link {
+  color: var(--terminal-up);
+  text-decoration: none;
+}
+
+body.terminal-shell main a.terminal-realtime-notice-link:hover {
+  color: var(--terminal-text);
+}
+
+/* Turbo-inserted league-created notices: match layout flash strip. */
+#realtime-notifications .terminal-realtime-flash {
+  margin-left: 0;
+  margin-right: 0;
+}
+
+/* League-created row: "View" as neutral chip + up-colored border/text (link for Turbo). */
+.terminal-realtime-flash .terminal-flash-text {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.5rem;
+}
+
+/* View: neutral body; up color on border + label only (no green fill). */
+.terminal-realtime-flash a.terminal-realtime-view-btn,
+#realtime-notifications a.terminal-realtime-view-btn {
+  margin-left: 0;
+  flex-shrink: 0;
+  color: var(--terminal-up);
+  background: var(--terminal-zebra);
+  border: 1px solid var(--terminal-up);
+  text-decoration: none;
+  font-weight: 700;
+}
+
+#realtime-notifications a.terminal-realtime-view-btn:hover,
+#realtime-notifications a.terminal-realtime-view-btn:focus-visible {
+  color: var(--terminal-up);
+  background: var(--terminal-panel);
+  border-color: var(--terminal-up);
+  filter: brightness(1.12);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+}
+
+/* Realtime rail sits outside <main>; keep View link styling consistent. */
+#realtime-notifications a.terminal-realtime-notice-link {
+  color: var(--terminal-up);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+#realtime-notifications a.terminal-realtime-notice-link:hover {
+  color: var(--terminal-text);
+}
+
 body.terminal-shell .disclaimer {
   margin-top: 0.75rem;
   font-size: 11px;
@@ -280,6 +404,26 @@ body.terminal-shell .disclaimer {
   font-size: 13px;
   font-weight: 600;
   color: var(--terminal-text);
+}
+
+.terminal-league-pill-select {
+  width: 100%;
+  max-width: 280px;
+  margin-top: 0.15rem;
+  padding: 0.4rem 0.5rem;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--terminal-text);
+  background: var(--terminal-panel);
+  border: 1px solid var(--terminal-border);
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.terminal-league-pill-select:focus {
+  outline: 1px solid var(--terminal-accent);
+  outline-offset: 1px;
 }
 
 .terminal-badge-active {
@@ -366,6 +510,267 @@ body.terminal-shell .disclaimer {
   margin-top: 0.25rem;
 }
 
+/* Dashboard marquees: two stacked bars (stocks bar, then leagues bar). */
+.terminal-marquee-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin-bottom: 0.25rem;
+}
+
+.terminal-marquee-window .terminal-window-title {
+  font-size: 12px;
+}
+
+/* Fixed-height strip: content never grows the dashboard layout; long text clips inside chips. */
+.terminal-marquee-viewport {
+  /* Single knob if you want a taller/shorter ticker strip (cards stay inside this box). */
+  --terminal-marquee-bar-height: 110px;
+  height: var(--terminal-marquee-bar-height);
+  min-height: var(--terminal-marquee-bar-height);
+  max-height: var(--terminal-marquee-bar-height);
+  overflow: hidden;
+  border-top: 1px solid var(--terminal-border);
+  background: var(--terminal-bg);
+  display: flex;
+  align-items: center;
+}
+
+/*
+ * Marquee speed: keyframes move translateX(-50%), i.e. one full "segment" width per loop.
+ * The stock strip holds ~30 cards vs ~10 league cards, so the same duration makes stocks look
+ * much faster (more pixels per second). Set --terminal-marquee-loop-sec on each window so
+ * duration scales with typical content width (~3:1 → stock duration ≈ 3× league).
+ */
+.terminal-marquee-window--stocks {
+  --terminal-marquee-loop-sec: 200s;
+}
+
+.terminal-marquee-window--leagues {
+  --terminal-marquee-loop-sec: 70s;
+}
+
+/* Outer strip: two segments in one row; -50% shift equals exactly one segment width. */
+.terminal-marquee-roll {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  width: max-content;
+  animation: terminal-marquee-slide var(--terminal-marquee-loop-sec, 90s) linear infinite;
+  will-change: transform;
+}
+
+/* One copy of the ticker items as a non-wrapping horizontal flex row. */
+.terminal-marquee-segment {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  flex: 0 0 auto;
+  gap: 0.65rem;
+  /* Horizontal padding only so vertical space is fully controlled by the viewport height. */
+  padding: 0 0.65rem;
+}
+
+/* Pause on hover only for precise desktop pointers; avoid accidental freeze elsewhere. */
+@media (hover: hover) and (pointer: fine) {
+  .terminal-marquee-viewport:hover .terminal-marquee-roll {
+    animation-play-state: paused;
+  }
+}
+
+.terminal-marquee-card {
+  flex: 0 0 auto;
+  min-width: 220px;
+  max-width: 300px;
+  width: 260px;
+  height: 92px;
+  min-height: 92px;
+  max-height: 92px;
+  box-sizing: border-box;
+  border: 1px solid var(--terminal-border);
+  border-radius: 2px;
+  background: var(--terminal-panel);
+  padding: 0.45rem 0.65rem;
+  text-decoration: none;
+  color: var(--terminal-text);
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  justify-content: center;
+  align-items: stretch;
+  overflow: hidden;
+}
+
+/* Stock ticker: top row (pill + price), large symbol, company name pinned to bottom. */
+.terminal-marquee-card--stock {
+  justify-content: flex-start;
+}
+
+.terminal-marquee-card-top {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.35rem;
+  width: 100%;
+  min-width: 0;
+}
+
+.terminal-marquee-price--stock-corner {
+  margin-top: 0;
+  text-align: right;
+  flex-shrink: 0;
+  line-height: 1.2;
+}
+
+/* Symbol + company name: vertically centered in space below the top bar, text centered. */
+.terminal-marquee-card-mid {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  width: 100%;
+  gap: 0.1rem;
+}
+
+.terminal-marquee-card--stock .terminal-marquee-stock-symbol {
+  font-size: 17px;
+  letter-spacing: 0.04em;
+  line-height: 1.1;
+  width: 100%;
+  text-align: center;
+}
+
+.terminal-marquee-card--stock .terminal-marquee-card-mid .terminal-marquee-meta {
+  width: 100%;
+  text-align: center;
+}
+
+/* League ticker: title centered in mid band; members + starting capital on bottom row (price bottom-right). */
+.terminal-marquee-card--league {
+  justify-content: flex-start;
+}
+
+.terminal-marquee-card--league .terminal-marquee-card-mid .terminal-marquee-main {
+  width: 100%;
+  text-align: center;
+}
+
+.terminal-marquee-card--league .terminal-marquee-card-footer {
+  margin-top: 0;
+  flex-shrink: 0;
+}
+
+.terminal-marquee-card-footer {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 0.35rem;
+  width: 100%;
+  margin-top: auto;
+  min-width: 0;
+}
+
+.terminal-marquee-card-footer .terminal-marquee-meta {
+  flex: 1 1 auto;
+  min-width: 0;
+  text-align: left;
+}
+
+.terminal-marquee-card-footer .terminal-marquee-price {
+  flex-shrink: 0;
+  margin-top: 0;
+  text-align: right;
+  line-height: 1.2;
+}
+
+/* Beat main link accent so the card reads as a panel, not a wall of orange links. */
+body.terminal-shell main a.terminal-marquee-card {
+  color: var(--terminal-text);
+}
+
+/* Ellipsis inside marquee cards (avoid global .terminal-ellipsis max-width fighting flex). */
+.terminal-marquee-ellipsis-soft {
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.terminal-marquee-card .terminal-marquee-main,
+.terminal-marquee-card .terminal-marquee-meta {
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.terminal-marquee-card .terminal-marquee-pill {
+  flex-shrink: 0;
+}
+
+.terminal-marquee-card .terminal-marquee-price {
+  line-height: 1.2;
+}
+
+.terminal-marquee-card:hover {
+  border-color: var(--terminal-accent);
+  color: var(--terminal-text);
+}
+
+.terminal-marquee-pill {
+  width: fit-content;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  padding: 0.14rem 0.4rem;
+  border: 1px solid var(--terminal-border);
+  border-radius: 2px;
+}
+
+.terminal-marquee-pill-stock {
+  color: var(--terminal-up);
+}
+
+.terminal-marquee-pill-league {
+  color: var(--terminal-accent);
+}
+
+.terminal-marquee-main {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.terminal-marquee-meta {
+  font-size: 12px;
+  color: var(--terminal-muted);
+}
+
+.terminal-marquee-price {
+  margin-top: 0.1rem;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--terminal-accent);
+}
+
+@keyframes terminal-marquee-slide {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    /* Two identical segments: moving half the total width loops seamlessly. */
+    transform: translateX(-50%);
+  }
+}
+
 .terminal-chart-wrap {
   padding: 0.75rem 1rem 0.5rem;
   background: var(--terminal-bg);
@@ -378,14 +783,54 @@ body.terminal-shell .disclaimer {
   display: block;
 }
 
-.terminal-chart-xaxis {
+.terminal-chart-grid {
+  display: grid;
+  grid-template-columns: 84px 1fr;
+  align-items: stretch;
+  gap: 0.5rem;
+}
+
+.terminal-chart-yaxis {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem 1.5rem;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 200px;
+  padding: 0.5rem 0 2.25rem;
+  font-size: 10px;
+  color: var(--terminal-muted);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.terminal-chart-main {
+  min-width: 0;
+}
+
+.terminal-chart-xaxis {
+  position: relative;
+  min-height: 1.25rem;
   padding: 0.5rem 0 0.75rem;
   font-size: 10px;
   color: var(--terminal-muted);
   border-top: 1px solid var(--terminal-border);
+}
+
+.terminal-chart-label {
+  position: absolute;
+  top: 0.5rem;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+@media (max-width: 640px) {
+  .terminal-chart-grid {
+    grid-template-columns: 68px 1fr;
+  }
+
+  .terminal-chart-yaxis {
+    font-size: 9px;
+  }
 }
 
 .terminal-dash-bottom {
@@ -509,6 +954,36 @@ body.terminal-shell .disclaimer {
   filter: brightness(1.08);
 }
 
+/* ── Override the global `main a { color: accent }` rule for buttons ──
+   That rule has specificity 0,1,3 which beats a single class 0,1,0.
+   These selectors use the same pattern to win the cascade. */
+body.terminal-shell main a.terminal-btn {
+  color: var(--terminal-text);
+  text-decoration: none;
+}
+
+body.terminal-shell main a.terminal-btn:hover {
+  color: var(--terminal-accent);
+}
+
+body.terminal-shell main a.terminal-btn-primary,
+body.terminal-shell main a.terminal-btn.terminal-btn-primary {
+  color: var(--terminal-bg);
+  text-decoration: none;
+}
+
+body.terminal-shell main a.terminal-btn-primary:hover,
+body.terminal-shell main a.terminal-btn.terminal-btn-primary:hover {
+  color: var(--terminal-bg);
+}
+
+body.terminal-shell main a.terminal-btn-primary:active,
+body.terminal-shell main a.terminal-btn.terminal-btn-primary:active,
+body.terminal-shell main a.terminal-btn-primary:focus-visible,
+body.terminal-shell main a.terminal-btn.terminal-btn-primary:focus-visible {
+  color: var(--terminal-bg);
+}
+
 .terminal-toolbar,
 .terminal-panel-actions {
   padding: 0.75rem 1rem;
@@ -542,6 +1017,23 @@ body.terminal-shell .disclaimer {
   font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
+}
+
+/* Portfolio holdings + trading league positions: BUY/SELL as buttons, flush right */
+th.terminal-trade-side-actions {
+  text-align: right;
+}
+
+td.terminal-trade-side-actions {
+  vertical-align: middle;
+}
+
+.terminal-trade-side-btns {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
 }
 
 .terminal-empty {
@@ -658,6 +1150,21 @@ body.terminal-shell #error_explanation ul {
   font-size: 12px;
   color: var(--terminal-down);
   border-radius: 2px;
+}
+
+.terminal-errors ul {
+  margin: 0.35rem 0 0 1.25rem;
+  padding: 0;
+  color: var(--terminal-text);
+}
+
+.terminal-errors ul li {
+  margin-bottom: 0.2rem;
+}
+
+.terminal-errors strong {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
 }
 
 /* Main trading page layout: LEFT = trading grid, RIGHT = stock info */
@@ -842,6 +1349,18 @@ body.terminal-shell #error_explanation ul {
 .terminal-quote-tab--active:hover {
   color: var(--terminal-bg);
   filter: brightness(1.05);
+}
+
+/* ── Active tab: beat all global `main a` overrides (specificity 0,4,3) ──
+   Without this, `body.terminal-shell main a.terminal-btn:hover` (0,3,3)
+   forces accent-colored text onto an accent background → invisible. */
+body.terminal-shell main a.terminal-btn.terminal-quote-tab--active,
+body.terminal-shell main a.terminal-btn.terminal-quote-tab--active:hover,
+body.terminal-shell main a.terminal-btn.terminal-quote-tab--active:focus-visible,
+body.terminal-shell main a.terminal-btn.terminal-quote-tab--active:active {
+  color: var(--terminal-bg);
+  border-color: var(--terminal-accent);
+  outline-color: var(--terminal-bg);
 }
 
 .terminal-quote-interval-view {
@@ -1147,6 +1666,16 @@ body.terminal-shell #error_explanation ul {
   color: #000;
 }
 
+body.terminal-shell main a.terminal-btn--primary {
+  color: #000;
+  text-decoration: none;
+}
+
+body.terminal-shell main a.terminal-btn--primary:hover,
+body.terminal-shell main a.terminal-btn--primary:focus-visible {
+  color: #000;
+}
+
 /* Historical prices table on trading page (right side, below chart) */
 .terminal-historical-prices {
   margin-top: 1.5rem;
@@ -1274,4 +1803,891 @@ body.terminal-shell #error_explanation ul {
   opacity: 0.7;
   cursor: default;
   pointer-events: none;
+}
+
+/* Trading confirmation modal: blocks background interactions until user confirms/cancels. */
+body.terminal-shell.terminal-modal-open {
+  overflow: hidden;
+}
+
+.terminal-trade-confirm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 15000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.72);
+}
+
+/* Respect hidden attribute so modal does not flash on initial render. */
+.terminal-trade-confirm-overlay[hidden] {
+  display: none;
+}
+
+.terminal-trade-confirm-modal {
+  width: min(560px, 95vw);
+}
+
+.terminal-trade-confirm-body {
+  padding: 0.85rem 1rem 0.7rem;
+}
+
+.terminal-trade-confirm-grid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.4rem 0.9rem;
+  margin: 0.8rem 0;
+  font-size: 12px;
+}
+
+.terminal-trade-confirm-label {
+  color: var(--terminal-muted);
+  letter-spacing: 0.06em;
+}
+
+.terminal-trade-confirm-actions {
+  justify-content: flex-end;
+}
+
+/* ── Dark scrollbar for consistent terminal look ── */
+body.terminal-shell ::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+body.terminal-shell ::-webkit-scrollbar-track {
+  background: var(--terminal-bg);
+}
+
+body.terminal-shell ::-webkit-scrollbar-thumb {
+  background: var(--terminal-border);
+  border-radius: 3px;
+}
+
+body.terminal-shell ::-webkit-scrollbar-thumb:hover {
+  background: var(--terminal-muted);
+}
+
+body.terminal-shell {
+  scrollbar-color: var(--terminal-border) var(--terminal-bg);
+  scrollbar-width: thin;
+}
+
+/* ── Badge: inactive / pending state ── */
+.terminal-badge-inactive {
+  display: inline-block;
+  margin-top: 0.35rem;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 0.2rem 0.5rem;
+  background: var(--terminal-border);
+  color: var(--terminal-muted);
+  border-radius: 2px;
+  width: fit-content;
+}
+
+/* ── Auth pages: centered form layout ── */
+.terminal-auth-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 60px);
+  padding: 2rem;
+}
+
+.terminal-auth-card {
+  width: 100%;
+  max-width: 480px;
+}
+
+.terminal-auth-body {
+  padding: 1.5rem;
+}
+
+.terminal-form-field {
+  margin-bottom: 1rem;
+}
+
+.terminal-password-wrap {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 0.35rem;
+}
+
+.terminal-password-wrap .terminal-input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.terminal-password-toggle {
+  flex: 0 0 auto;
+  align-self: stretch;
+  padding: 0 0.55rem;
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--terminal-accent);
+  background: var(--terminal-panel);
+  border: 1px solid var(--terminal-border);
+  border-radius: 2px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.terminal-password-toggle:hover {
+  color: var(--terminal-text);
+  border-color: var(--terminal-accent);
+}
+
+.terminal-form-hint {
+  font-size: 10px;
+  color: var(--terminal-muted);
+  margin-top: 0.25rem;
+  margin-bottom: 0.35rem;
+}
+
+.terminal-form-divider {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--terminal-border);
+}
+
+/* Devise shared links inside auth forms */
+.terminal-auth-body .devise-links,
+.terminal-auth-body p {
+  font-size: 11px;
+  margin: 0.5rem 0;
+}
+
+.terminal-auth-body .devise-links a,
+.terminal-auth-body p a {
+  color: var(--terminal-accent);
+  text-decoration: none;
+}
+
+.terminal-auth-body .devise-links a:hover,
+.terminal-auth-body p a:hover {
+  color: var(--terminal-text);
+}
+
+/* ── Navigation: extracted inline styles ── */
+.terminal-topbar-user {
+  font-size: 11px;
+  color: var(--terminal-muted);
+  letter-spacing: 0.06em;
+}
+
+.terminal-topbar-logout {
+  background: none;
+  border: 1px solid var(--terminal-border);
+  padding: 0.25rem 0.5rem;
+  font-size: 11px;
+  color: var(--terminal-text);
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  border-radius: 2px;
+  margin-left: 0.5rem;
+}
+
+.terminal-topbar-logout:hover {
+  color: var(--terminal-down);
+  border-color: var(--terminal-down);
+}
+
+.terminal-topbar-login {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--terminal-accent);
+  text-decoration: none;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--terminal-border);
+  border-radius: 2px;
+}
+
+.terminal-topbar-login:hover {
+  border-color: var(--terminal-accent);
+  color: var(--terminal-text);
+}
+
+.terminal-topbar-signup {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--terminal-bg);
+  background: var(--terminal-accent);
+  text-decoration: none;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--terminal-accent);
+  border-radius: 2px;
+}
+
+.terminal-topbar-signup:hover {
+  filter: brightness(1.1);
+  color: var(--terminal-bg);
+}
+
+/* ── Admin: inline-action buttons (approve, delete text-style) ── */
+.terminal-action-link {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.terminal-action-link--approve {
+  color: var(--terminal-up);
+}
+
+.terminal-action-link--approve:hover {
+  color: var(--terminal-text);
+}
+
+.terminal-action-link--delete {
+  color: var(--terminal-down);
+}
+
+.terminal-action-link--delete:hover {
+  color: var(--terminal-text);
+}
+
+.terminal-action-link--disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ── Pagination bar ── */
+.terminal-pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.terminal-pagination-info {
+  color: var(--terminal-muted);
+  font-size: 12px;
+}
+
+.terminal-btn--ghost {
+  opacity: 0.3;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* ── Empty state block ── */
+.terminal-empty-state {
+  text-align: center;
+  padding: 2rem;
+  color: var(--terminal-muted);
+  font-size: 12px;
+}
+
+/* ── Landing page (unauthenticated home) ── */
+.terminal-landing {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 120px);
+  text-align: center;
+  gap: 1.5rem;
+  padding: 2rem;
+}
+
+.terminal-landing-brand {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--terminal-accent);
+  letter-spacing: 0.08em;
+}
+
+.terminal-landing-tagline {
+  font-size: 14px;
+  color: var(--terminal-muted);
+  max-width: 520px;
+  line-height: 1.6;
+}
+
+.terminal-landing-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.terminal-landing-footer {
+  font-size: 11px;
+  color: var(--terminal-border);
+  letter-spacing: 0.04em;
+  margin-top: 2rem;
+}
+
+/* ── Admin form styles ── */
+.terminal-form {
+  padding: 1.5rem;
+}
+
+.terminal-form .terminal-form-field {
+  margin-bottom: 1.25rem;
+}
+
+.terminal-form .terminal-form-field label,
+.terminal-form .terminal-form-field .terminal-label {
+  display: block;
+  font-size: 10px;
+  color: var(--terminal-accent);
+  letter-spacing: 0.08em;
+  margin-bottom: 0.35rem;
+  font-weight: 600;
+}
+
+.terminal-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+@media (max-width: 560px) {
+  .terminal-form-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.terminal-admin-form-card {
+  max-width: 600px;
+}
+
+.terminal-admin-error-panel {
+  max-width: 600px;
+  background: rgba(255, 69, 58, 0.08);
+  border-left: 3px solid var(--terminal-down);
+  margin-bottom: 1rem;
+  padding: 1rem 1.25rem;
+  border-radius: 2px;
+}
+
+.terminal-admin-error-panel strong {
+  color: var(--terminal-down);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.terminal-admin-error-panel ul {
+  margin: 0.5rem 0 0 1.5rem;
+  line-height: 1.8;
+  color: var(--terminal-text);
+  font-size: 12px;
+}
+
+/* ── Admin: search box ── */
+.terminal-search-box {
+  margin-bottom: 1rem;
+  padding: 1rem;
+}
+
+.terminal-search-wrap {
+  position: relative;
+}
+
+.terminal-search-clear {
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--terminal-muted);
+  cursor: pointer;
+  font-size: 1.2rem;
+  padding: 0.25rem;
+}
+
+.terminal-search-clear:hover {
+  color: var(--terminal-text);
+}
+
+/* ── Delete confirmation modal (admin) ── */
+.terminal-modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.72);
+  z-index: 10000;
+  align-items: center;
+  justify-content: center;
+}
+
+.terminal-modal-card {
+  max-width: 500px;
+  margin: 2rem;
+}
+
+.terminal-modal-body {
+  padding: 1.5rem;
+}
+
+.terminal-modal-title {
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  color: var(--terminal-accent);
+  letter-spacing: 0.06em;
+}
+
+.terminal-modal-message {
+  margin-bottom: 1.5rem;
+  color: var(--terminal-text);
+  font-size: 12px;
+}
+
+.terminal-modal-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+}
+
+.terminal-btn--danger {
+  background: var(--terminal-down);
+  color: var(--terminal-text);
+  border-color: var(--terminal-down);
+}
+
+.terminal-btn--danger:hover {
+  filter: brightness(1.1);
+  color: var(--terminal-text);
+}
+
+body.terminal-shell main a.terminal-btn.terminal-btn--danger {
+  color: var(--terminal-text);
+  text-decoration: none;
+}
+
+body.terminal-shell main a.terminal-btn.terminal-btn--danger:hover,
+body.terminal-shell main a.terminal-btn.terminal-btn--danger:focus-visible {
+  color: var(--terminal-text);
+}
+
+/* ── Team roster grid in admin ── */
+.terminal-team-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+  margin-top: 0.65rem;
+}
+
+.terminal-team-card {
+  padding: 0.75rem 0.85rem;
+}
+
+.terminal-team-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.terminal-team-members {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.6rem;
+}
+
+.terminal-team-member-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* ── Responsive: header wrap for narrow viewports ── */
+@media (max-width: 768px) {
+  .terminal-topbar {
+    gap: 0.35rem 0.75rem;
+    padding: 0.4rem 0.6rem;
+    min-height: auto;
+  }
+
+  .terminal-topbar a {
+    font-size: 10px;
+    padding: 0.2rem 0.25rem;
+  }
+
+  .terminal-brand {
+    font-size: 10px;
+  }
+
+  .terminal-topbar-user {
+    font-size: 10px;
+  }
+
+  .terminal-main {
+    padding: 0.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .terminal-topbar {
+    flex-wrap: wrap;
+  }
+
+  .terminal-topbar-right {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.35rem;
+  }
+
+  .terminal-auth-page {
+    padding: 1rem;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   UX ENHANCEMENTS
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── #1: Flash notice / alert banner ── */
+.terminal-flash {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0.5rem 1rem;
+  padding: 0.6rem 0.85rem;
+  font-size: 12px;
+  border-radius: 2px;
+  animation: terminal-flash-in 0.35s ease-out;
+}
+
+.terminal-flash--success {
+  color: var(--terminal-up);
+  border: 1px solid var(--terminal-up);
+  background: rgba(48, 209, 88, 0.08);
+}
+
+.terminal-flash--error {
+  color: var(--terminal-down);
+  border: 1px solid var(--terminal-down);
+  background: rgba(255, 69, 58, 0.08);
+}
+
+.terminal-flash-icon {
+  font-weight: 700;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  padding: 0.15rem 0.45rem;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.terminal-flash--success .terminal-flash-icon {
+  background: var(--terminal-up);
+  color: var(--terminal-bg);
+}
+
+.terminal-flash--error .terminal-flash-icon {
+  background: var(--terminal-down);
+  color: var(--terminal-bg);
+}
+
+.terminal-flash-text {
+  flex: 1;
+  color: var(--terminal-text);
+}
+
+.terminal-flash-close {
+  background: none;
+  border: none;
+  color: var(--terminal-muted);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 0 0.25rem;
+  flex-shrink: 0;
+}
+
+.terminal-flash-close:hover {
+  color: var(--terminal-text);
+}
+
+@keyframes terminal-flash-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Auto-dismiss flash after 8 seconds */
+.terminal-flash {
+  animation: terminal-flash-in 0.35s ease-out, terminal-flash-out 0.5s ease-in 8s forwards;
+}
+
+@keyframes terminal-flash-out {
+  to {
+    opacity: 0;
+    max-height: 0;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+  }
+}
+
+/* ── #2: Value change flash animation ── */
+@keyframes terminal-value-flash-up {
+  0% { background: rgba(48, 209, 88, 0.25); }
+  100% { background: transparent; }
+}
+
+@keyframes terminal-value-flash-down {
+  0% { background: rgba(255, 69, 58, 0.25); }
+  100% { background: transparent; }
+}
+
+.terminal-flash-up {
+  animation: terminal-value-flash-up 1.2s ease-out;
+}
+
+.terminal-flash-down {
+  animation: terminal-value-flash-down 1.2s ease-out;
+}
+
+/* ── #3: Nav link "no league" hint ── */
+.terminal-nav-hint {
+  color: var(--terminal-muted);
+  cursor: help;
+  border-bottom: 1px dashed var(--terminal-border);
+  position: relative;
+}
+
+.terminal-nav-hint:hover {
+  color: var(--terminal-muted);
+}
+
+.terminal-nav-hint::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: 6px;
+  padding: 0.35rem 0.55rem;
+  font-size: 10px;
+  font-weight: 400;
+  white-space: nowrap;
+  color: var(--terminal-text);
+  background: var(--terminal-bg);
+  border: 1px solid var(--terminal-border);
+  border-radius: 2px;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 50;
+  transition: opacity 0.15s;
+}
+
+.terminal-nav-hint:hover::after {
+  opacity: 1;
+}
+
+/* ── #4: Empty portfolio CTA ── */
+.terminal-empty-cta {
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.terminal-empty-cta-icon {
+  font-size: 28px;
+  color: var(--terminal-border);
+  line-height: 1;
+}
+
+.terminal-empty-cta-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--terminal-accent);
+  letter-spacing: 0.06em;
+}
+
+.terminal-empty-cta-desc {
+  font-size: 12px;
+  color: var(--terminal-muted);
+  max-width: 360px;
+}
+
+/* ── #5: Mobile hamburger nav ── */
+.terminal-mobile-toggle {
+  display: none;
+  background: none;
+  border: 1px solid var(--terminal-border);
+  color: var(--terminal-text);
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  padding: 0.2rem 0.5rem;
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.terminal-mobile-toggle:hover {
+  border-color: var(--terminal-accent);
+  color: var(--terminal-accent);
+}
+
+.terminal-nav-links {
+  display: contents;
+}
+
+/* Admin has 7 nav items — collapse earlier at 1180px */
+@media (max-width: 1180px) {
+  .terminal-topbar--admin .terminal-mobile-toggle {
+    display: inline-block;
+  }
+
+  .terminal-topbar--admin .terminal-nav-links {
+    display: none;
+    flex-basis: 100%;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 0.5rem 0;
+    border-top: 1px solid var(--terminal-border);
+    order: 99;
+  }
+
+  .terminal-topbar--admin .terminal-nav-links.terminal-nav-open {
+    display: flex;
+  }
+
+  .terminal-topbar--admin .terminal-nav-links a {
+    padding: 0.4rem 0.5rem;
+  }
+}
+
+/* Regular users collapse at 768px */
+@media (max-width: 768px) {
+  .terminal-mobile-toggle {
+    display: inline-block;
+  }
+
+  .terminal-nav-links {
+    display: none;
+    flex-basis: 100%;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 0.5rem 0;
+    border-top: 1px solid var(--terminal-border);
+    order: 99;
+  }
+
+  .terminal-nav-links.terminal-nav-open {
+    display: flex;
+  }
+
+  .terminal-nav-links a {
+    padding: 0.4rem 0.5rem;
+  }
+
+  .terminal-topbar-right {
+    gap: 0.4rem;
+  }
+
+  .terminal-topbar-user {
+    display: none;
+  }
+}
+
+/* ── #6: Chart loading skeleton ── */
+.terminal-chart-skeleton {
+  position: relative;
+  height: 200px;
+  background: var(--terminal-bg);
+  overflow: hidden;
+}
+
+.terminal-chart-skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 39px,
+    var(--terminal-border) 39px,
+    var(--terminal-border) 40px
+  );
+  opacity: 0.4;
+}
+
+.terminal-chart-skeleton::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(58, 58, 60, 0.3) 50%,
+    transparent 100%
+  );
+  animation: terminal-skeleton-shimmer 1.8s ease-in-out infinite;
+}
+
+@keyframes terminal-skeleton-shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.terminal-chart-skeleton-label {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 11px;
+  color: var(--terminal-muted);
+  letter-spacing: 0.1em;
+  z-index: 1;
+}
+
+/* ── #7: Leaderboard rank change indicator ── */
+.lb-rank-delta {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 700;
+  margin-left: 0.3rem;
+  vertical-align: middle;
+}
+
+.lb-rank-delta--up {
+  color: var(--terminal-up);
+}
+
+.lb-rank-delta--down {
+  color: var(--terminal-down);
+}
+
+.lb-rank-delta--flat {
+  color: var(--terminal-muted);
+  font-size: 8px;
 }

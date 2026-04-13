@@ -1,0 +1,38 @@
+<div class="terminal-auth-page">
+  <div class="terminal-auth-card">
+    <div class="terminal-window">
+      <div class="terminal-window-title">CHANGE PASSWORD</div>
+      <div class="terminal-auth-body">
+        <%= form_for(resource, as: resource_name, url: registration_path(resource_name), html: { method: :put }) do |f| %>
+          <%= render "devise/shared/error_messages", resource: resource %>
+
+          <div class="terminal-form-field">
+            <%= f.label :current_password, "CURRENT PASSWORD", class: "terminal-label" %>
+            <%= f.password_field :current_password, autocomplete: "current-password", class: "terminal-input", placeholder: "Enter current password" %>
+          </div>
+
+          <div class="terminal-form-field">
+            <%= f.label :password, "NEW PASSWORD", class: "terminal-label" %>
+            <div class="terminal-form-hint">Must be at least 8 characters with uppercase, lowercase, number, and special character</div>
+            <%= f.password_field :password, autocomplete: "new-password", class: "terminal-input", placeholder: "Enter new password" %>
+          </div>
+
+          <div class="terminal-form-field">
+            <%= f.label :password_confirmation, "CONFIRM NEW PASSWORD", class: "terminal-label" %>
+            <%= f.password_field :password_confirmation, autocomplete: "new-password", class: "terminal-input", placeholder: "Re-enter new password" %>
+          </div>
+
+          <div class="terminal-form-actions">
+            <%= f.submit "UPDATE PASSWORD", class: "terminal-btn terminal-btn-primary" %>
+          </div>
+        <% end %>
+
+        <div class="terminal-form-divider">
+          <p>
+            <%= link_to "Back to dashboard", root_path %>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

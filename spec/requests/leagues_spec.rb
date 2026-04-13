@@ -137,6 +137,24 @@ RSpec.describe "Api::V1::Leagues", type: :request do
             headers: headers
       expect(response).to have_http_status(:unprocessable_entity)
     end
+
+    it "does not change rules via PATCH (ignored at strong params)" do
+      league.update_column(:rules, { "max_participants" => 5 })
+      patch "/api/v1/leagues/#{league.id}",
+            params: { league: { name: league.name, rules: { "max_participants" => 99 } } }.to_json,
+            headers: headers
+      expect(response).to have_http_status(:ok)
+      expect(league.reload.rules["max_participants"]).to eq(5)
+    end
+
+    it "does not change starting_capital via PATCH (ignored at strong params)" do
+      original = league.starting_capital
+      patch "/api/v1/leagues/#{league.id}",
+            params: { league: { name: league.name, starting_capital: 999_999 } }.to_json,
+            headers: headers
+      expect(response).to have_http_status(:ok)
+      expect(league.reload.starting_capital).to eq(original)
+    end
   end
 
   # ─────────────────────────────────────────────────────────────
@@ -160,15 +178,23 @@ RSpec.describe "Api::V1::Leagues", type: :request do
   end
 
   # ─────────────────────────────────────────────────────────────
-  # POST /api/v1/leagues/:id/join
+  # POST /api/v1/leagues/:league_id/memberships
   # ─────────────────────────────────────────────────────────────
-  describe "POST /api/v1/leagues/:id/join" do
-    let!(:league) { create(:league, starting_capital: 100_000) }
+  describe "POST /api/v1/leagues/:league_id/memberships" do
+    let!(:league) do
+      create(:league, starting_capital: 100_000).tap do |open_league|
+        # Membership join tests assume an active join window by default.
+        open_league.update!(
+          start_date: 1.day.ago,
+          end_date: 1.day.from_now
+        )
+      end
+    end
     let!(:user)   { create(:user) }
 
     it "creates a membership and a portfolio, returns 201" do
       expect {
-        post "/api/v1/leagues/#{league.id}/join",
+        post "/api/v1/leagues/#{league.id}/memberships",
              params: { user_id: user.id }.to_json,
              headers: headers
       }.to change(LeagueMembership, :count).by(1)
@@ -180,11 +206,11 @@ RSpec.describe "Api::V1::Leagues", type: :request do
     end
 
     it "does not create a duplicate membership" do
-      post "/api/v1/leagues/#{league.id}/join",
+      post "/api/v1/leagues/#{league.id}/memberships",
            params: { user_id: user.id }.to_json,
            headers: headers
       expect {
-        post "/api/v1/leagues/#{league.id}/join",
+        post "/api/v1/leagues/#{league.id}/memberships",
              params: { user_id: user.id }.to_json,
              headers: headers
       }.not_to change(LeagueMembership, :count)
@@ -192,33 +218,63 @@ RSpec.describe "Api::V1::Leagues", type: :request do
     end
 
     it "returns 404 when user does not exist" do
-      post "/api/v1/leagues/#{league.id}/join",
+      post "/api/v1/leagues/#{league.id}/memberships",
            params: { user_id: 0 }.to_json,
            headers: headers
       expect(response).to have_http_status(:not_found)
     end
 
     it "returns 404 when league does not exist" do
-      post "/api/v1/leagues/0/join",
+      post "/api/v1/leagues/0/memberships",
            params: { user_id: user.id }.to_json,
            headers: headers
       expect(response).to have_http_status(:not_found)
     end
+
+    it "rejects join when league has not opened yet" do
+      scheduled_league = create(
+        :league,
+        start_date: 2.days.from_now,
+        end_date: 3.days.from_now,
+        starting_capital: 100_000
+      )
+
+      post "/api/v1/leagues/#{scheduled_league.id}/memberships",
+           params: { user_id: user.id }.to_json,
+           headers: headers
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(JSON.parse(response.body)["errors"]).to include("League has not opened yet")
+    end
+
+    it "rejects join when league has expired" do
+      expired_league = create(:league, starting_capital: 100_000)
+      # Update after create to model an already-finished league window.
+      expired_league.update!(
+        start_date: 3.days.ago,
+        end_date: 1.day.ago
+      )
+
+      post "/api/v1/leagues/#{expired_league.id}/memberships",
+           params: { user_id: user.id }.to_json,
+           headers: headers
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(JSON.parse(response.body)["errors"]).to include("League has expired")
+    end
   end
 
   # ─────────────────────────────────────────────────────────────
-  # DELETE /api/v1/leagues/:id/leave
+  # DELETE /api/v1/leagues/:league_id/memberships/:user_id
   # ─────────────────────────────────────────────────────────────
-  describe "DELETE /api/v1/leagues/:id/leave" do
+  describe "DELETE /api/v1/leagues/:league_id/memberships/:user_id" do
     let!(:league)     { create(:league) }
     let!(:user)       { create(:user) }
     let!(:membership) { create(:league_membership, user: user, league: league) }
 
     it "removes the membership and returns 200" do
       expect {
-        delete "/api/v1/leagues/#{league.id}/leave",
-               params: { user_id: user.id }.to_json,
-               headers: headers
+        delete "/api/v1/leagues/#{league.id}/memberships/#{user.id}", headers: headers
       }.to change(LeagueMembership, :count).by(-1)
       expect(response).to have_http_status(:ok)
       expect(JSON.parse(response.body)["message"]).to eq("Left league")
@@ -226,27 +282,23 @@ RSpec.describe "Api::V1::Leagues", type: :request do
 
     it "returns 404 when user is not a member" do
       other = create(:user)
-      delete "/api/v1/leagues/#{league.id}/leave",
-             params: { user_id: other.id }.to_json,
-             headers: headers
+      delete "/api/v1/leagues/#{league.id}/memberships/#{other.id}", headers: headers
       expect(response).to have_http_status(:not_found)
     end
 
     it "returns 404 when league does not exist" do
-      delete "/api/v1/leagues/0/leave",
-             params: { user_id: user.id }.to_json,
-             headers: headers
+      delete "/api/v1/leagues/0/memberships/#{user.id}", headers: headers
       expect(response).to have_http_status(:not_found)
     end
   end
 
   # ─────────────────────────────────────────────────────────────
-  # GET /api/v1/leagues/:id/leaderboard
+  # GET /api/v1/leagues/:league_id/leaderboard
   # ─────────────────────────────────────────────────────────────
-  describe "GET /api/v1/leagues/:id/leaderboard" do
+  describe "GET /api/v1/leagues/:league_id/leaderboard" do
     let!(:league) { create(:league) }
-    let!(:user1)  { create(:user, name: "Alice") }
-    let!(:user2)  { create(:user, name: "Bob") }
+    let!(:user1)  { create(:user, username: "alice") }
+    let!(:user2)  { create(:user, username: "bob") }
     let!(:p1) { create(:portfolio, user: user1, league: league, total_value: 120_000) }
     let!(:p2) { create(:portfolio, user: user2, league: league, total_value: 95_000) }
 
@@ -258,7 +310,7 @@ RSpec.describe "Api::V1::Leagues", type: :request do
       standings = json["standings"]
       expect(standings).to be_an(Array)
       expect(standings.first["rank"]).to eq(1)
-      expect(standings.map { |s| s["name"] }).to include("Alice", "Bob")
+      expect(standings.map { |s| s["name"] }).to include("alice", "bob")
     end
 
     it "returns standings in descending value order" do

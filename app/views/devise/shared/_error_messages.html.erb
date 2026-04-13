@@ -1,12 +1,9 @@
 <% if resource.errors.any? %>
-  <div id="error_explanation" style="border: 1px solid var(--terminal-down); padding: 0.75rem 1rem; margin-bottom: 1rem; font-size: 12px; border-radius: 2px;">
-    <h2 style="font-size: 12px; color: var(--terminal-down); margin: 0 0 0.5rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;">
-      <%= I18n.t("errors.messages.not_saved",
-                 count: resource.errors.count,
-                 resource: resource.class.model_name.human.downcase)
-       %>
-    </h2>
-    <ul style="margin: 0; padding-left: 1.25rem; color: var(--terminal-text);">
+  <div class="terminal-errors" role="alert">
+    <strong><%= I18n.t("errors.messages.not_saved",
+               count: resource.errors.count,
+               resource: resource.class.model_name.human.downcase) %></strong>
+    <ul>
       <% resource.errors.full_messages.each do |message| %>
         <li><%= message %></li>
       <% end %>

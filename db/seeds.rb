@@ -13,22 +13,39 @@ StockPrice.delete_all
   ActiveRecord::Base.connection.reset_pk_sequence!(table_name)
 end
 
-
+puts "== Seeding stock prices =="
+{
+  "AAPL" => 188.75,
+  "NVDA" => 875.20,
+  "MSFT" => 421.30,
+  "GOOGL" => 168.10,
+  "META" => 515.40,
+  "0700" => 402.75,
+  "AMZN" => 181.10,
+  "TSLA" => 243.80
+}.each do |symbol, price|
+  StockPrice.create!(symbol:, price:)
+end
+verified_at = Time.current
 admin = User.create!(
   email: "admin@mockfund.com",
-  name: "Admin User",
+  username: "admin",
   role: "admin",
   password: "Admin123!",
-  password_confirmation: "Admin123!"
+  password_confirmation: "Admin123!",
+  signup_verified_at: verified_at,
+  skip_login_otp: true
 )
 
 users = Array.new(20) do |index|
   User.create!(
     email: "user#{index + 1}@mockfund.com",
-    name: "User #{index + 1}",
+    username: "user#{index + 1}",
     role: "user",
     password: "User123!",
-    password_confirmation: "User123!"
+    password_confirmation: "User123!",
+    signup_verified_at: verified_at,
+    skip_login_otp: true
   )
 end
 
@@ -65,4 +82,5 @@ leagues.each do |league|
 end
 
 puts "Seeded #{User.count} users (including admin), #{League.count} leagues."
+# In development, admin skips email OTP after password (see Users::SessionsController#create).
 puts "Admin login: admin@mockfund.com / Admin123!"

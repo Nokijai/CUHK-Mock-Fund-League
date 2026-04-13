@@ -1,8 +1,15 @@
 #!/bin/bash -e
 
-# If running the rails server then create or migrate existing database
-if [ "${@: -2:1}" == "./bin/rails" ] && [ "${@: -1:1}" == "server" ]; then
-  ./bin/rails db:prepare
+# If running the app server, ensure both app + queue schemas are ready.
+# Keep this bootstrapping in a single service to avoid concurrent migration races.
+if [ "$1" = "./bin/rails" ] && [ "$2" = "server" ]; then
+  # Avoid `db:prepare` in dev containers: it may create/recreate DBs (and can appear as "data loss"
+  # when the Postgres volume was reset). For day-to-day development we only apply migrations.
+  #
+  # If you intentionally want a from-scratch bootstrap (create DB + load schema + seed),
+  # run it manually:
+  #   docker compose exec web bin/rails db:prepare
+  ./bin/rails db:migrate db:migrate:queue
 fi
 
 exec "${@}"

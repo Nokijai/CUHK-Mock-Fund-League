@@ -120,9 +120,11 @@
           aria-label="Candlestick chart"></canvas>
         <%# OHLCV near cursor (see trading_quote_controller.js hit-test). %>
         <div class="terminal-quote-candle-tooltip" data-trading-quote-target="candleTooltip" hidden role="tooltip"></div>
-        <p class="terminal-quote-chart-empty" data-trading-quote-target="empty"<% if chart_payload.any? %> hidden<% end %>>
-          No chart data — run market refresh jobs.
-        </p>
+        <div class="terminal-quote-chart-empty" data-trading-quote-target="empty"<% if chart_payload.any? %> hidden<% end %>>
+          <div class="terminal-chart-skeleton" style="height: 160px;">
+            <span class="terminal-chart-skeleton-label">NO CHART DATA</span>
+          </div>
+        </div>
       </div>
       <p class="terminal-quote-chart-fullscreen-hint" data-trading-quote-target="fsHint" hidden>Press Esc to exit expanded chart.</p>
     </div>

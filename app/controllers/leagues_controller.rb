@@ -2,9 +2,17 @@ class LeaguesController < ApplicationController
   before_action :set_league, only: [ :show, :edit, :update, :destroy ]
 
   def index
-    @leagues = League.includes(:league_memberships).order(start_date: :asc, id: :asc)
-    # Build quick lookup maps for current user membership/action rendering on index cards.
-    @membership_by_league_id = current_user.league_memberships.where(league_id: @leagues.map(&:id)).index_by(&:league_id)
+    # Use counter cache via left_joins + select to avoid loading all membership rows.
+    @leagues = League
+      .left_joins(:league_memberships)
+      .group("leagues.id")
+      .select("leagues.*, COUNT(league_memberships.id) AS memberships_count")
+      .order(start_date: :asc, id: :asc)
+      # Preload users through memberships so "My team members" can render without N+1 queries.
+      .preload(teams: { team_memberships: :user })
+    # Reuse preloaded memberships from ApplicationController nav context.
+    @membership_by_league_id = current_user.league_memberships.index_by(&:league_id)
+    @team_membership_by_league_id = TeamMembership.where(user_id: current_user.id).index_by(&:league_id)
   end
 
   def show
@@ -21,6 +29,8 @@ class LeaguesController < ApplicationController
 
   def create
     @league = League.new(league_params)
+    # League leader is the user who created the league (even though UI creation is typically admin-only).
+    @league.creator = current_user
     if @league.save
       redirect_to @league, notice: "League was successfully created."
     else
@@ -48,6 +58,10 @@ class LeaguesController < ApplicationController
   end
 
   def league_params
-    params.require(:league).permit(:name, :description, :starting_capital, :start_date, :end_date, :rules)
+    if action_name == "create"
+      params.require(:league).permit(:name, :description, :starting_capital, :start_date, :end_date, :rules)
+    else
+      params.require(:league).permit(:name, :description, :start_date, :end_date)
+    end
   end
 end

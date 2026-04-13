@@ -1,0 +1,16 @@
+Dear <%= @user.username.presence || @user.email %>,
+
+Thank you for registering with Mock-Fund League.
+
+To complete your signup, please use the verification code below:
+
+<%= @code %>
+
+This code expires in <%= @expires_in_minutes %> minutes.
+For your security, please do not share this code with anyone.
+
+If you did not attempt to create an account, no further action is required.
+
+--
+Mock-Fund League
+Automated Notification (No Reply)

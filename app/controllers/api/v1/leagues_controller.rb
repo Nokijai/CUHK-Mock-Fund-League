@@ -1,7 +1,7 @@
 module Api
   module V1
     class LeaguesController < BaseController
-      before_action :set_league, only: [ :show, :update, :destroy, :join, :leave, :leaderboard ]
+      before_action :set_league, only: [ :show, :update, :destroy ]
 
       # GET /api/v1/leagues
       def index
@@ -17,6 +17,8 @@ module Api
       # POST /api/v1/leagues
       def create
         league = League.new(league_params)
+        # League leader is the authenticated API user creating the league.
+        league.creator = current_user
         if league.save
           render json: league_detail(league), status: :created
         else
@@ -37,60 +39,6 @@ module Api
       def destroy
         @league.destroy
         render json: { message: "League deleted" }
-      end
-
-      # POST /api/v1/leagues/:id/join
-      # Body: { user_id: 1 }
-      def join
-        user_id = params[:user_id].to_i
-        user = User.find_by(id: user_id)
-        return render json: { errors: [ "User not found" ] }, status: :not_found unless user
-
-        membership = LeagueMembership.new(user: user, league: @league)
-        begin
-          saved = membership.save
-        rescue ActiveRecord::RecordNotUnique
-          return render json: { errors: [ "Already a member of this league" ] }, status: :unprocessable_entity
-        end
-
-        if saved
-          # Provision a portfolio for this user in the league if one doesn't exist yet
-          portfolio = Portfolio.find_or_create_by(user: user, league: @league) do |p|
-            p.cash_balance = @league.starting_capital
-            p.total_value  = @league.starting_capital
-          end
-          render json: {
-            message:      "Joined league",
-            membership_id: membership.id,
-            portfolio_id:  portfolio.id,
-            cash_balance:  portfolio.cash_balance
-          }, status: :created
-        else
-          render json: { errors: membership.errors.full_messages }, status: :unprocessable_entity
-        end
-      end
-
-      # DELETE /api/v1/leagues/:id/leave
-      # Body: { user_id: 1 }
-      def leave
-        user_id = params[:user_id].to_i
-        membership = @league.league_memberships.find_by(user_id: user_id)
-        return render json: { errors: [ "Membership not found" ] }, status: :not_found unless membership
-
-        membership.destroy
-        render json: { message: "Left league" }
-      end
-
-      # GET /api/v1/leagues/:id/leaderboard
-      def leaderboard
-        standings = LeaderboardService.new(@league).compute
-        render json: {
-          league_id: @league.id,
-          league_name: @league.name,
-          standings: standings.each_with_index.map { |entry, idx|
-            entry.merge(rank: idx + 1)
-          }
-        }
       end
 
       private
@@ -124,12 +72,17 @@ module Api
           end_date:         league.end_date,
           rules:            league.rules,
           member_count:     league.league_memberships.count,
-          members:          league.users.map { |u| { id: u.id, name: u.name, email: u.email } }
+          members:          league.users.map { |u| { id: u.id, username: u.username, email: u.email } }
         }
       end
 
       def league_params
-        params.require(:league).permit(:name, :description, :starting_capital, :start_date, :end_date, rules: {})
+        # Rules + starting_capital fixed at creation; PATCH only allows descriptive/schedule fields.
+        if action_name == "create"
+          params.require(:league).permit(:name, :description, :starting_capital, :start_date, :end_date, rules: {})
+        else
+          params.require(:league).permit(:name, :description, :start_date, :end_date)
+        end
       end
     end
   end

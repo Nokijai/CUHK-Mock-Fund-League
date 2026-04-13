@@ -1,4 +1,19 @@
 module TradesHelper
+  def new_trade_prefill_path(portfolio, symbol:, side: "buy", prefill_price: nil)
+    sym = symbol.to_s.upcase
+    side = side.to_s.downcase
+    side = "buy" unless Trade::SIDE_TYPES.include?(side)
+
+    h = {
+      league_id: portfolio.league_id,
+      prefill_symbol: sym,
+      prefill_trade_type: side
+    }
+    px = prefill_price
+    h[:prefill_price] = px if px.present? && px.to_f.positive?
+    new_portfolio_trade_path(portfolio, h)
+  end
+
   def stock_name_for(symbol)
     MarketData::NestakTop30::DISPLAY_NAMES[symbol.to_s] || symbol.to_s
   end
@@ -25,6 +40,10 @@ module TradesHelper
 
   # Fingerprint for JS polling: last change to quote or any candle row for this symbol.
   def quote_revision_for(symbol)
+    # Prefer controller-computed revision when candles/quote are already loaded.
+    precomputed = @quote_revision.to_s
+    return precomputed if precomputed.present?
+
     sym = symbol.to_s.upcase
     sp = StockPrice.find_by(symbol: sym)
     return "" unless sp
@@ -55,7 +74,8 @@ module TradesHelper
       quote_interval: interval,
       q: c[:q].presence,
       prefill_symbol: c[:prefill_symbol].presence,
-      prefill_price: c[:prefill_price].presence
+      prefill_price: c[:prefill_price].presence,
+      prefill_trade_type: c[:prefill_trade_type].presence
     }.compact
   end
 

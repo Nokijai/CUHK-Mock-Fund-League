@@ -2,8 +2,13 @@
 <%= render "shared/league_selector", page_type: :trading %>
 <div class="terminal-page-head">
   <h1 class="terminal-page-title">NEW TRADE</h1>
-  <div class="terminal-page-meta"><%= @portfolio.user&.name %> · <%= @portfolio.league&.name %> · Cash <%= number_to_currency(@portfolio.cash_balance, precision: 2) %></div>
+  <%# Support both auth schemas: username-first, then legacy name, then email. %>
+  <div class="terminal-page-meta"><%= (current_user&.respond_to?(:username) ? current_user&.username : nil).presence || current_user&.try(:name).presence || current_user&.email %> · <%= @selected_league&.name || @portfolio.league&.name %> · Cash <%= number_to_currency(@portfolio.cash_balance, precision: 2) %></div>
 </div>
+
+<% if @portfolio_holdings&.any? %>
+  <%= render "league_positions_summary", portfolio: @portfolio, holdings: @portfolio_holdings %>
+<% end %>
 
 <%# Main layout container: LEFT = trading grid, RIGHT = stock info %>
 <div class="terminal-trading-layout">

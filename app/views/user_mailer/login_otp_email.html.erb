@@ -1,0 +1,54 @@
+<!-- Formal OTP email card with inline styles for broad email-client compatibility. -->
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 0; padding: 28px 0; background-color: #f4f7fb; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1f2937;">
+  <tr>
+    <td align="center" style="padding: 0 16px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width: 620px; background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden;">
+        <tr>
+          <td style="padding: 24px 28px; background: linear-gradient(135deg, #0f172a, #1e3a8a); color: #ffffff;">
+            <p style="margin: 0; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.9;">Mock-Fund League</p>
+            <h1 style="margin: 8px 0 0; font-size: 22px; line-height: 1.3; font-weight: 700;">Login Verification</h1>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding: 28px;">
+            <p style="margin: 0 0 14px; font-size: 15px; line-height: 1.6;">
+              Dear <strong><%= @user.username.presence || @user.email %></strong>,
+            </p>
+            <p style="margin: 0 0 14px; font-size: 15px; line-height: 1.6;">
+              We received a request to sign in to your Mock-Fund League account. Please use the verification code below:
+            </p>
+
+            <!-- Centered OTP block to improve readability and reduce copy errors. -->
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 20px 0;">
+              <tr>
+                <td align="center">
+                  <div style="display: inline-block; padding: 14px 22px; border: 1px dashed #9ca3af; border-radius: 10px; background-color: #f8fafc; font-size: 32px; line-height: 1; letter-spacing: 0.24em; font-weight: 700; color: #0f172a;">
+                    <%= @code %>
+                  </div>
+                </td>
+              </tr>
+            </table>
+
+            <p style="margin: 0 0 8px; font-size: 14px; line-height: 1.6; color: #374151;">
+              This code will expire in <strong><%= @expires_in_minutes %> minutes</strong>.
+            </p>
+            <p style="margin: 0 0 18px; font-size: 14px; line-height: 1.6; color: #374151;">
+              For your security, do not share this code with anyone.
+            </p>
+
+            <p style="margin: 0; font-size: 13px; line-height: 1.6; color: #6b7280;">
+              If you did not attempt to sign in, you may safely ignore this email.
+            </p>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding: 16px 28px 20px; border-top: 1px solid #e5e7eb; background-color: #fafafa;">
+            <p style="margin: 0; font-size: 12px; line-height: 1.6; color: #6b7280;">
+              This is an automated message from Mock-Fund League. Please do not reply to this email.
+            </p>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>

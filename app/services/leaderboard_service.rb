@@ -8,9 +8,12 @@ class LeaderboardService
   def compute
     portfolios = @league.portfolios
       .includes(:user, :holdings, :trades, :portfolio_snapshots)
+    # Preload all symbols once to prevent per-holding quote lookups per portfolio.
+    @valuator.preload_symbols(portfolios.flat_map { |p| p.holdings.map(&:symbol) })
 
     entries = portfolios.map { |p| build_entry(p) }
-    entries.sort_by! { |e| -e[:portfolio_value] }
+    # Enforce minimum-final-balance rule by ranking eligible portfolios first.
+    entries.sort_by! { |e| [ e[:eligible_for_final_ranking] ? 0 : 1, -e[:portfolio_value] ] }
 
     entries.each_with_index do |e, i|
       e[:rank] = i + 1
@@ -24,12 +27,15 @@ class LeaderboardService
   private
 
   def build_entry(portfolio)
-    total_value = @valuator.total_value(portfolio).to_f
+    # Compute holdings value once; total value derives from cash + holdings.
     holdings_value = @valuator.holdings_market_value(portfolio).to_f
+    total_value = portfolio.cash_balance.to_f + holdings_value
     cash = portfolio.cash_balance.to_f
     return_pct = @starting_capital.positive? ? ((total_value - @starting_capital) / @starting_capital * 100.0) : 0.0
     trades = portfolio.trades.to_a
     snapshots = portfolio.portfolio_snapshots.ordered.to_a
+    minimum_final_balance = @league.minimum_final_balance
+    eligible_for_final_ranking = minimum_final_balance.blank? || total_value >= minimum_final_balance.to_f
 
     {
       user_id: portfolio.user_id,
@@ -45,13 +51,16 @@ class LeaderboardService
       starting_balance: @starting_capital,
       current_cash: cash.round(2),
       current_equity: holdings_value.round(2),
-      highest_rank: portfolio.best_rank
+      highest_rank: portfolio.best_rank,
+      minimum_final_balance: minimum_final_balance&.to_f,
+      eligible_for_final_ranking: eligible_for_final_ranking
     }
   end
 
   def display_name(user)
     return "Unknown" unless user
-    user.name.presence || user.email
+    # Support both auth schemas: username-first, then legacy name, then email.
+    (user.respond_to?(:username) ? user.username : nil).presence || user.try(:name).presence || user.email
   end
 
   def compute_daily_change(current_value, snapshots)

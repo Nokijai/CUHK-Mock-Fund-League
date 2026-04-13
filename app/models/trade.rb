@@ -19,9 +19,10 @@ class Trade < ApplicationRecord
   validate :validate_creation_constraints, on: :create
 
   # Attempts to execute pending limit orders against latest DB prices.
-  # Called from read/write paths so pending orders eventually settle.
-  def self.process_pending_limits!(symbols: nil)
+  # Accepts optional portfolio: and symbols: scopes to avoid scanning global pending orders.
+  def self.process_pending_limits!(symbols: nil, portfolio: nil)
     relation = pending_limits.order(:created_at)
+    relation = relation.where(portfolio_id: portfolio.id) if portfolio.present?
     relation = relation.where(symbol: Array(symbols).map(&:to_s).map(&:upcase)) if symbols.present?
 
     relation.find_each do |trade|
@@ -83,6 +84,20 @@ class Trade < ApplicationRecord
   end
 
   def validate_creation_constraints
+    if portfolio&.league&.team_mode?
+      # Team-mode leagues require a team that meets the minimum eligibility rule.
+      membership = TeamMembership.find_by(user_id: portfolio.user_id, league_id: portfolio.league_id)
+      if membership.blank?
+        errors.add(:base, "You must join a team before trading in this league")
+        return
+      end
+
+      unless portfolio.league.team_eligible?(membership.team)
+        errors.add(:base, "Your team is not eligible yet (needs more participants)")
+        return
+      end
+    end
+
     if market_order? && latest_price.blank?
       errors.add(:price, "is unavailable because latest market price was not found")
       return
@@ -122,18 +137,21 @@ class Trade < ApplicationRecord
   def apply_execution!(execution_price)
     p = execution_price.to_d
     qty = quantity.to_i
+    fee_rate = handling_fee_rate
     holding = portfolio.holdings.lock.find_or_initialize_by(symbol: symbol)
     holding.quantity ||= 0
     holding.average_cost ||= 0
 
     if trade_type == "buy"
-      total_cost = p * qty
-      portfolio.cash_balance = portfolio.cash_balance.to_d - total_cost
+      gross_cost = p * qty
+      handling_fee = gross_cost * fee_rate
+      total_debit = gross_cost + handling_fee
+      portfolio.cash_balance = portfolio.cash_balance.to_d - total_debit
 
       old_qty = holding.quantity.to_i
       old_avg = holding.average_cost.to_d
       new_qty = old_qty + qty
-      weighted_cost = (old_avg * old_qty) + total_cost
+      weighted_cost = (old_avg * old_qty) + gross_cost
 
       holding.quantity = new_qty
       holding.average_cost = new_qty.positive? ? (weighted_cost / new_qty) : 0
@@ -142,8 +160,10 @@ class Trade < ApplicationRecord
       holding_qty = holding.quantity.to_i
       raise ActiveRecord::RecordInvalid, self if holding_qty < qty
 
-      proceeds = p * qty
-      portfolio.cash_balance = portfolio.cash_balance.to_d + proceeds
+      gross_proceeds = p * qty
+      handling_fee = gross_proceeds * fee_rate
+      net_proceeds = gross_proceeds - handling_fee
+      portfolio.cash_balance = portfolio.cash_balance.to_d + net_proceeds
 
       remaining = holding_qty - qty
       if remaining.zero?
@@ -163,11 +183,15 @@ class Trade < ApplicationRecord
   def executable_with_price?(execution_price)
     px = execution_price.to_d
     qty = quantity.to_i
+    fee_rate = handling_fee_rate
 
     if trade_type == "buy"
-      total_cost = px * qty
-      if portfolio.cash_balance.to_d < total_cost
-        errors.add(:base, "Insufficient cash balance for this order")
+      gross_cost = px * qty
+      handling_fee = gross_cost * fee_rate
+      total_debit = gross_cost + handling_fee
+      if portfolio.cash_balance.to_d < total_debit
+        # Surface fee impact so users understand why balance checks failed.
+        errors.add(:base, "Insufficient cash balance for this order including handling fee")
         return false
       end
     else
@@ -179,6 +203,11 @@ class Trade < ApplicationRecord
     end
 
     true
+  end
+
+  # League-specific handling fee defaults to zero when no rule is configured.
+  def handling_fee_rate
+    portfolio&.league&.handling_fee_proportion.to_d
   end
 
   def limit_triggered_by?(market_price)

@@ -2,7 +2,8 @@
 <%= render "shared/league_selector", page_type: :portfolio %>
 <div class="terminal-page-head">
   <h1 class="terminal-page-title">PORTFOLIO</h1>
-  <div class="terminal-page-meta"><%= @portfolio.user&.name %> · <%= @portfolio.league&.name %></div>
+  <%# Support both auth schemas: username-first, then legacy name, then email. %>
+  <div class="terminal-page-meta"><%= (@portfolio.user&.respond_to?(:username) ? @portfolio.user&.username : nil).presence || @portfolio.user&.try(:name).presence || @portfolio.user&.email %> · <%= @portfolio.league&.name %></div>
 </div>
 <div class="terminal-stats-row terminal-stats-row--tight">
   <div class="terminal-stat-card">
@@ -29,17 +30,38 @@
         <th class="num">LAST</th>
         <th class="num">MKT VALUE</th>
         <th class="num">P&amp;L %</th>
+        <th class="terminal-trade-side-actions">TRADE</th>
       </tr>
     </thead>
     <tbody>
-      <% @rows.each do |r| %>
+      <% if @rows.any? %>
+        <% @rows.each do |r| %>
+          <% prefill_px = [ r[:last], r[:avg] ].find { |x| x.present? && x.to_f.positive? } %>
+          <tr>
+            <td><%= r[:symbol] %></td>
+            <td class="num"><%= r[:qty] %></td>
+            <td class="num"><%= number_to_currency(r[:avg], precision: 2) %></td>
+            <td class="num"><%= number_to_currency(r[:last], precision: 2) %></td>
+            <td class="num"><%= number_to_currency(r[:mkt], precision: 2) %></td>
+            <td class="num <%= r[:pnl] >= 0 ? "terminal-text-up" : "terminal-text-down" %>"><%= sprintf("%+.2f", r[:pnl_pct]) %>%</td>
+            <td class="terminal-trade-side-actions">
+              <div class="terminal-trade-side-btns">
+                <%= link_to "BUY", new_trade_prefill_path(@portfolio, symbol: r[:symbol], side: "buy", prefill_price: prefill_px), class: "terminal-btn terminal-btn-primary terminal-btn--small" %>
+                <%= link_to "SELL", new_trade_prefill_path(@portfolio, symbol: r[:symbol], side: "sell", prefill_price: prefill_px), class: "terminal-btn terminal-btn--danger terminal-btn--small" %>
+              </div>
+            </td>
+          </tr>
+        <% end %>
+      <% else %>
         <tr>
-          <td><%= r[:symbol] %></td>
-          <td class="num"><%= r[:qty] %></td>
-          <td class="num"><%= number_to_currency(r[:avg], precision: 2) %></td>
-          <td class="num"><%= number_to_currency(r[:last], precision: 2) %></td>
-          <td class="num"><%= number_to_currency(r[:mkt], precision: 2) %></td>
-          <td class="num <%= r[:pnl] >= 0 ? "terminal-text-up" : "terminal-text-down" %>"><%= sprintf("%+.2f", r[:pnl_pct]) %>%</td>
+          <td colspan="7">
+            <div class="terminal-empty-cta">
+              <span class="terminal-empty-cta-icon">◇</span>
+              <div class="terminal-empty-cta-title">NO POSITIONS</div>
+              <div class="terminal-empty-cta-desc">Your portfolio is empty. Buy your first stock to start building your holdings.</div>
+              <%= link_to "BUY YOUR FIRST STOCK →", new_portfolio_trade_path(@portfolio, league_id: @portfolio.league_id), class: "terminal-btn terminal-btn-primary" %>
+            </div>
+          </td>
         </tr>
       <% end %>
     </tbody>

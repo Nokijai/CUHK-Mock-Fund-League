@@ -1,6 +1,6 @@
 <% content_for :title, "Leaderboard — #{@league.name}" %>
 
-<div class="lb-page" data-current-user-id="<%= @current_user_id %>"
+<div class="lb-page" data-current-user-id="<%= @current_entry_id %>"
      data-end-time="<%= @league.end_date&.to_time&.end_of_day&.to_i&.*(1000) %>">
 
   <%# ── League Selector Bar ── %>
@@ -50,12 +50,12 @@
       <% end %>
     </div>
     <div class="lb-status-item">
-      <span class="lb-status-label">CONTESTANTS</span>
+      <span class="lb-status-label"><%= @league.team_mode? ? "TEAMS" : "CONTESTANTS" %></span>
       <span class="lb-status-value"><%= @rankings.size %></span>
     </div>
     <div class="lb-status-item">
       <span class="lb-status-label"><%= @league.end_date && @league.end_date < Date.current ? "FINAL" : "CURRENT" %> LEADER</span>
-      <span class="lb-status-value lb-status-leader"><%= @rankings.first&.dig(:name) || "—" %></span>
+      <span class="lb-status-value lb-status-leader"><%= @rankings.first&.dig(@league.team_mode? ? :team_name : :name) || "—" %></span>
     </div>
     <div class="lb-status-item lb-status-update">
       <span class="lb-status-label">UPDATES EVERY</span>
@@ -76,7 +76,7 @@
             <thead>
               <tr>
                 <th class="num lb-col-rank">RANK</th>
-                <th class="lb-col-name">NAME</th>
+                <th class="lb-col-name"><%= @league.team_mode? ? "TEAM" : "NAME" %></th>
                 <th class="num lb-col-return">RETURN %</th>
                 <th class="num lb-col-value">PORTFOLIO VALUE</th>
                 <th class="lb-col-trend">TREND</th>
@@ -84,28 +84,48 @@
             </thead>
             <tbody id="lb-table-body">
               <% @rankings.each do |row| %>
-                <tr class="lb-row <%= 'lb-row-top3' if row[:rank] <= 3 %> <%= 'lb-row-self' if row[:user_id] == @current_user_id %>"
-                    data-user-id="<%= row[:user_id] %>"
-                    onclick="window.lbSelectUser(<%= row[:user_id] %>)">
+                <% entry_id = @league.team_mode? ? row[:team_id] : row[:user_id] %>
+                <% entry_name = @league.team_mode? ? row[:team_name] : row[:name] %>
+                <% entry_return = @league.team_mode? ? row[:avg_return_pct] : row[:total_return_pct] %>
+                <% entry_value = @league.team_mode? ? row[:avg_portfolio_value] : row[:portfolio_value] %>
+                <tr class="lb-row <%= 'lb-row-top3' if row[:rank] <= 3 %> <%= 'lb-row-self' if entry_id == @current_entry_id %>"
+                    data-user-id="<%= entry_id %>"
+                    onclick="window.lbSelectUser(<%= entry_id %>)">
                   <td class="num lb-rank-cell">
                     <% if row[:rank] <= 3 %>
                       <span class="lb-medal lb-medal-<%= row[:rank] %>">#<%= row[:rank] %></span>
                     <% else %>
                       #<%= row[:rank] %>
                     <% end %>
+                    <% if row[:rank_delta].present? && row[:rank_delta] != 0 %>
+                      <span class="lb-rank-delta <%= row[:rank_delta] < 0 ? 'lb-rank-delta--up' : 'lb-rank-delta--down' %>">
+                        <%= row[:rank_delta] < 0 ? "▲#{row[:rank_delta].abs}" : "▼#{row[:rank_delta]}" %>
+                      </span>
+                    <% elsif row[:rank_delta] == 0 %>
+                      <span class="lb-rank-delta lb-rank-delta--flat">—</span>
+                    <% end %>
                   </td>
-                  <td class="lb-name-cell"><%= row[:name] %></td>
-                  <td class="num <%= row[:total_return_pct] >= 0 ? 'terminal-text-up' : 'terminal-text-down' %>">
-                    <%= sprintf("%+.2f%%", row[:total_return_pct]) %>
+                  <td class="lb-name-cell">
+                    <%= entry_name %>
+                    <% if @league.team_mode? %>
+                      <% if row[:eligible_for_final_ranking] %>
+                        <span class="terminal-badge-active" style="margin-left: 0.4rem;">ELIGIBLE</span>
+                      <% else %>
+                        <span class="terminal-badge-inactive" style="margin-left: 0.4rem;">NOT ELIGIBLE</span>
+                      <% end %>
+                    <% end %>
                   </td>
-                  <td class="num"><%= number_to_currency(row[:portfolio_value], precision: 2) %></td>
+                  <td class="num <%= entry_return >= 0 ? 'terminal-text-up' : 'terminal-text-down' %>">
+                    <%= sprintf("%+.2f%%", entry_return) %>
+                  </td>
+                  <td class="num"><%= number_to_currency(entry_value, precision: 2) %></td>
                   <td class="lb-trend-cell">
                     <svg class="lb-sparkline" viewBox="0 0 70 20" preserveAspectRatio="none">
                       <% vals = row[:trend] %>
                       <% mn = vals.min.to_f; mx = vals.max.to_f; rng = mx - mn; rng = 1 if rng < 1 %>
                       <% pts = vals.each_with_index.map { |v, j| x = (j.to_f / (vals.size - 1) * 68 + 1).round(1); y = (18 - (v - mn) / rng * 16).round(1); "#{x},#{y}" }.join(" ") %>
                       <polyline fill="none"
-                                stroke="<%= row[:total_return_pct] >= 0 ? '#30d158' : '#ff453a' %>"
+                                stroke="<%= entry_return >= 0 ? '#30d158' : '#ff453a' %>"
                                 stroke-width="1.5"
                                 points="<%= pts %>" />
                     </svg>
@@ -117,17 +137,23 @@
         </div>
 
         <%# ── Sticky Self Row ── %>
-        <% self_row = @rankings.find { |r| r[:user_id] == @current_user_id } %>
-        <% if self_row %>
+        <% self_row = if @league.team_mode?
+          @rankings.find { |r| r[:team_id] == @current_entry_id }
+        else
+          @rankings.find { |r| r[:user_id] == @current_entry_id }
+        end %>
+        <% if self_row && @current_entry_id.to_i > 0 %>
           <div class="lb-sticky-self" id="lb-sticky-self">
             <div class="lb-sticky-self-inner">
-              <span class="lb-sticky-label">YOUR POSITION</span>
+              <span class="lb-sticky-label"><%= @league.team_mode? ? "YOUR TEAM" : "YOUR POSITION" %></span>
               <span class="lb-sticky-rank">#<%= self_row[:rank] %></span>
-              <span class="lb-sticky-name"><%= self_row[:name] %></span>
-              <span class="lb-sticky-return <%= self_row[:total_return_pct] >= 0 ? 'terminal-text-up' : 'terminal-text-down' %>">
-                <%= sprintf("%+.2f%%", self_row[:total_return_pct]) %>
+              <span class="lb-sticky-name"><%= @league.team_mode? ? self_row[:team_name] : self_row[:name] %></span>
+              <% sticky_return = @league.team_mode? ? self_row[:avg_return_pct] : self_row[:total_return_pct] %>
+              <span class="lb-sticky-return <%= sticky_return >= 0 ? 'terminal-text-up' : 'terminal-text-down' %>">
+                <%= sprintf("%+.2f%%", sticky_return) %>
               </span>
-              <span class="lb-sticky-value"><%= number_to_currency(self_row[:portfolio_value], precision: 2) %></span>
+              <% sticky_value = @league.team_mode? ? self_row[:avg_portfolio_value] : self_row[:portfolio_value] %>
+              <span class="lb-sticky-value"><%= number_to_currency(sticky_value, precision: 2) %></span>
             </div>
           </div>
         <% end %>
@@ -142,59 +168,41 @@
       </div>
 
       <% @rankings.each do |row| %>
-        <div class="lb-detail-card" id="lb-detail-<%= row[:user_id] %>" style="display:none">
+        <% entry_id = @league.team_mode? ? row[:team_id] : row[:user_id] %>
+        <% entry_name = @league.team_mode? ? row[:team_name] : row[:name] %>
+        <% entry_return = @league.team_mode? ? row[:avg_return_pct] : row[:total_return_pct] %>
+        <% entry_value = @league.team_mode? ? row[:avg_portfolio_value] : row[:portfolio_value] %>
+        <div class="lb-detail-card" id="lb-detail-<%= entry_id %>" style="display:none">
           <div class="lb-detail-header">
             <div class="lb-detail-rank-badge">#<%= row[:rank] %></div>
             <div>
-              <div class="lb-detail-name"><%= row[:name] %></div>
-              <div class="lb-detail-sub">Highest rank: #<%= row[:highest_rank] %></div>
+              <div class="lb-detail-name"><%= entry_name %></div>
+              <% if @league.team_mode? %>
+                <div class="lb-detail-sub">Members: <%= row[:member_count] %></div>
+              <% else %>
+                <div class="lb-detail-sub">Highest rank: #<%= row[:highest_rank] %></div>
+              <% end %>
             </div>
           </div>
 
           <div class="lb-detail-stats">
             <div class="lb-detail-stat">
               <span class="lb-detail-stat-label">STARTING BALANCE</span>
-              <span class="lb-detail-stat-value"><%= number_to_currency(row[:starting_balance], precision: 0) %></span>
-            </div>
-            <div class="lb-detail-stat">
-              <span class="lb-detail-stat-label">CURRENT EQUITY</span>
-              <span class="lb-detail-stat-value"><%= number_to_currency(row[:current_equity], precision: 0) %></span>
-            </div>
-            <div class="lb-detail-stat">
-              <span class="lb-detail-stat-label">CURRENT CASH</span>
-              <span class="lb-detail-stat-value"><%= number_to_currency(row[:current_cash], precision: 0) %></span>
+              <span class="lb-detail-stat-value"><%= number_to_currency(@league.starting_capital.to_f, precision: 0) %></span>
             </div>
             <div class="lb-detail-stat">
               <span class="lb-detail-stat-label">PORTFOLIO VALUE</span>
-              <span class="lb-detail-stat-value"><%= number_to_currency(row[:portfolio_value], precision: 0) %></span>
+              <span class="lb-detail-stat-value"><%= number_to_currency(entry_value, precision: 0) %></span>
             </div>
             <div class="lb-detail-stat">
               <span class="lb-detail-stat-label">TOTAL RETURN</span>
-              <span class="lb-detail-stat-value <%= row[:total_return_pct] >= 0 ? 'terminal-text-up' : 'terminal-text-down' %>">
-                <%= sprintf("%+.2f%%", row[:total_return_pct]) %>
+              <span class="lb-detail-stat-value <%= entry_return >= 0 ? 'terminal-text-up' : 'terminal-text-down' %>">
+                <%= sprintf("%+.2f%%", entry_return) %>
               </span>
-            </div>
-            <div class="lb-detail-stat">
-              <span class="lb-detail-stat-label">DAILY CHANGE</span>
-              <span class="lb-detail-stat-value <%= row[:daily_change_pct] >= 0 ? 'terminal-text-up' : 'terminal-text-down' %>">
-                <%= sprintf("%+.2f%%", row[:daily_change_pct]) %>
-              </span>
-            </div>
-            <div class="lb-detail-stat">
-              <span class="lb-detail-stat-label">WIN RATE</span>
-              <span class="lb-detail-stat-value"><%= sprintf("%.1f%%", row[:win_rate]) %></span>
-            </div>
-            <div class="lb-detail-stat">
-              <span class="lb-detail-stat-label">TRADES</span>
-              <span class="lb-detail-stat-value"><%= row[:trade_count] %></span>
-            </div>
-            <div class="lb-detail-stat">
-              <span class="lb-detail-stat-label">MAX DRAWDOWN</span>
-              <span class="lb-detail-stat-value terminal-text-down"><%= sprintf("%.2f%%", row[:max_drawdown_pct]) %></span>
             </div>
             <div class="lb-detail-stat">
               <span class="lb-detail-stat-label">GAIN / LOSS</span>
-              <% gain = row[:portfolio_value] - row[:starting_balance] %>
+              <% gain = entry_value - @league.starting_capital.to_f %>
               <span class="lb-detail-stat-value <%= gain >= 0 ? 'terminal-text-up' : 'terminal-text-down' %>">
                 <%= number_to_currency(gain, precision: 0) %>
               </span>
@@ -219,16 +227,16 @@
                   <svg class="lb-detail-chart-svg" viewBox="0 0 280 100" preserveAspectRatio="none">
                     <% step_x = 280.0 / (vals.size - 1) %>
                     <% area_pts = vals.each_with_index.map { |v, j| "#{(j * step_x).round(1)},#{(95 - (v - mn) / rng * 85).round(1)}" } %>
-                    <polygon fill="<%= row[:total_return_pct] >= 0 ? 'rgba(48,209,88,0.12)' : 'rgba(255,69,58,0.12)' %>"
+                    <polygon fill="<%= entry_return >= 0 ? 'rgba(48,209,88,0.12)' : 'rgba(255,69,58,0.12)' %>"
                              points="0,95 <%= area_pts.join(' ') %> 280,95" />
                     <polyline fill="none"
-                              stroke="<%= row[:total_return_pct] >= 0 ? '#30d158' : '#ff453a' %>"
+                              stroke="<%= entry_return >= 0 ? '#30d158' : '#ff453a' %>"
                               stroke-width="2"
                               points="<%= area_pts.join(' ') %>" />
                     <% vals.each_with_index do |v, j| %>
                       <% x = (j * step_x).round(1); y = (95 - (v - mn) / rng * 85).round(1) %>
                       <circle cx="<%= x %>" cy="<%= y %>" r="3"
-                              fill="<%= row[:total_return_pct] >= 0 ? '#30d158' : '#ff453a' %>"
+                              fill="<%= entry_return >= 0 ? '#30d158' : '#ff453a' %>"
                               stroke="#1c1c1e" stroke-width="1"/>
                     <% end %>
                   </svg>

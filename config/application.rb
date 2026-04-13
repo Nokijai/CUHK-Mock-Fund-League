@@ -37,6 +37,9 @@ module CuhkMockFundLeague
     config.active_record.default_timezone = :local
     # config.eager_load_paths << Rails.root.join("extras")
 
+    # Request throttling for auth endpoints (see config/initializers/rack_attack.rb).
+    config.middleware.use Rack::Attack
+
     # Don't generate system test files.
     config.generators.system_tests = nil
   end

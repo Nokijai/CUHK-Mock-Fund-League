@@ -1,7 +1,54 @@
 # This file is copied to spec/ when you run 'rails generate rspec:install'
 require 'spec_helper'
 ENV['RAILS_ENV'] ||= 'test'
+
+# Local test runs may load `.env` (dotenv-rails) which can contain Docker service hostnames
+# like `db`. When not running inside Docker, rewrite those URLs to localhost so RSpec can boot.
+unless File.exist?("/.dockerenv") || ENV["CI"] == "true"
+  begin
+    require "uri"
+
+    if ENV["PGHOST"].to_s == "db"
+      ENV["PGHOST"] = "localhost"
+    end
+
+    %w[DATABASE_URL QUEUE_DATABASE_URL CACHE_DATABASE_URL CABLE_DATABASE_URL].each do |key|
+      raw = ENV[key].to_s
+      next if raw.empty?
+
+      uri = URI.parse(raw)
+      next unless uri.host == "db"
+
+      uri.host = "localhost"
+      ENV[key] = uri.to_s
+    end
+  rescue URI::InvalidURIError
+    # If env vars are not valid URIs, leave them as-is and let ActiveRecord report errors.
+  end
+end
+
 require_relative '../config/environment'
+
+# dotenv-rails may have loaded `.env` during boot. Re-apply local overrides for non-Docker tests.
+unless File.exist?("/.dockerenv") || ENV["CI"] == "true"
+  begin
+    require "uri"
+
+    ENV["PGHOST"] = "localhost" if ENV["PGHOST"].to_s == "db"
+
+    %w[DATABASE_URL QUEUE_DATABASE_URL CACHE_DATABASE_URL CABLE_DATABASE_URL].each do |key|
+      raw = ENV[key].to_s
+      next if raw.empty?
+
+      uri = URI.parse(raw)
+      next unless uri.host == "db"
+
+      uri.host = "localhost"
+      ENV[key] = uri.to_s
+    end
+  rescue URI::InvalidURIError
+  end
+end
 # Prevent database truncation if the environment is production
 abort("The Rails environment is running in production mode!") if Rails.env.production?
 # Uncomment the line below in case you have `--require rails_helper` in the `.rspec` file
@@ -10,6 +57,11 @@ abort("The Rails environment is running in production mode!") if Rails.env.produ
 require 'rspec/rails'
 require 'devise'
 # Add additional requires below this line. Rails is not loaded until this point!
+
+# Request specs use Rack::Test default User-Agent ("Rack::Test"), which can be rejected by
+# `allow_browser versions: :modern`. Force a modern UA so request specs exercise controllers
+# instead of the browser gate returning 403.
+Rails.application.env_config["HTTP_USER_AGENT"] ||= "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 
 # Requires supporting ruby files with custom matchers and macros, etc, in
 # spec/support/ and its subdirectories. Files matching `spec/**/*_spec.rb` are
