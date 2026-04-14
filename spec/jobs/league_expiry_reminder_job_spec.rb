@@ -52,6 +52,38 @@ RSpec.describe LeagueExpiryReminderJob, type: :job do
         Rails.cache.read("league_started_notice/#{league.id}/#{user.id}")
       })
     end
+
+    it "emails each member once when the league opens" do
+      league = create(:league, start_date: now - 30.seconds, end_date: now + 2.weeks)
+      user = create(:user)
+      create(:league_membership, user: user, league: league)
+
+      expect { described_class.perform_now(now: now) }.to change(ActionMailer::Base.deliveries, :size).by(1)
+
+      mail = ActionMailer::Base.deliveries.last
+      expect(mail.to).to eq([ user.email ])
+      expect(mail.subject).to include(league.name)
+
+      expect { described_class.perform_now(now: now) }.not_to(change(ActionMailer::Base.deliveries, :size))
+    end
+  end
+
+  describe "league ended emails" do
+    let(:now) { Time.zone.parse("2026-07-01 18:00:00") }
+
+    it "emails each member once after end_date passes" do
+      league = create(:league, start_date: now - 2.weeks, end_date: now - 20.seconds)
+      user = create(:user)
+      create(:league_membership, user: user, league: league)
+
+      expect { described_class.perform_now(now: now) }.to change(ActionMailer::Base.deliveries, :size).by(1)
+
+      mail = ActionMailer::Base.deliveries.last
+      expect(mail.to).to eq([ user.email ])
+      expect(mail.subject).to include("has closed")
+
+      expect { described_class.perform_now(now: now) }.not_to(change(ActionMailer::Base.deliveries, :size))
+    end
   end
 
   describe "#due_end_checkpoint (window math)" do

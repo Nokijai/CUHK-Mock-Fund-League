@@ -1,0 +1,30 @@
+Mock-Fund League — <%= @league.name %> has closed
+==================================================
+
+Dear <%= @user.username.presence || @user.email %>,
+
+The scheduled end time for "<%= @league.name %>" has passed. The official trading window for this league is now closed. Thank you for participating.
+
+<% if @league_description_plain.present? -%>
+About this league:
+<%= @league_description_plain %>
+
+<% end -%>
+Schedule & rules snapshot
+-------------------------
+Started:          <%= @league.start_date.in_time_zone.strftime("%a %d %b %Y, %H:%M %Z") %>
+Ended:            <%= @league.end_date.in_time_zone.strftime("%a %d %b %Y, %H:%M %Z") %>
+Starting capital: <%= number_to_currency(@league.starting_capital, precision: 0) %> USD (virtual)
+Participants:    <%= @participant_count %><% if @league.max_participants.present? %> (cap <%= @league.max_participants %>)<% end %>
+Team mode:        <%= @league.team_mode? ? "Yes" : "No" %>
+<% if @league.handling_fee_rule_configured? -%>
+Handling fee:     <%= number_to_percentage((@league.handling_fee_proportion * 100).to_f, precision: 4, strip_insignificant_zeros: true) %>
+<% end -%>
+<% if @league.minimum_final_balance.present? -%>
+Min final balance: <%= number_to_currency(@league.minimum_final_balance, precision: 2) %> USD
+<% end -%>
+
+Leaderboard:    <%= @leaderboard_url %>
+League page:    <%= @league_url %>
+
+This is an automated message from Mock-Fund League. Please do not reply to this email.

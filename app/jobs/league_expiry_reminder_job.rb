@@ -14,14 +14,16 @@ class LeagueExpiryReminderJob < ApplicationJob
   MAX_END_LOOKAHEAD = 1.day + CHECK_WINDOW
   MEMBER_TOAST_MS = 10_000
 
+  # Recurring job: live toasts near end, plus lifecycle emails when a league opens or officially closes.
   def perform(now: Time.current)
     deliver_league_started_to_members(now)
+    deliver_league_ended_emails_to_members(now)
     deliver_end_reminders_to_members(now)
   end
 
   private
 
-  # When start_date enters the recent past, tell joined users the league is live (10s toast).
+  # When start_date enters the recent past, tell joined users the league is live (10s toast) and email them once.
   def deliver_league_started_to_members(now)
     League
       .where(start_date: (now - CHECK_WINDOW)..now)
@@ -31,16 +33,37 @@ class LeagueExpiryReminderJob < ApplicationJob
         league.league_memberships.each do |membership|
           user = membership.user
           next unless user
-          next unless claim_started_slot(league.id, user.id)
 
-          broadcast_member_card(
-            user,
-            league,
-            title: "League started",
-            body: "\"#{league.name}\" is now open for trading.",
-            notification_id: "league-started-#{league.id}-#{user.id}",
-            auto_dismiss_ms: MEMBER_TOAST_MS
-          )
+          if claim_started_toast_slot(league.id, user.id)
+            broadcast_member_card(
+              user,
+              league,
+              title: "League started",
+              body: "\"#{league.name}\" is now open for trading.",
+              notification_id: "league-started-#{league.id}-#{user.id}",
+              auto_dismiss_ms: MEMBER_TOAST_MS
+            )
+          end
+
+          next unless claim_started_email_slot(league.id, user.id)
+
+          LeagueMailer.league_opened(user, league).deliver_now
+        end
+      end
+  end
+
+  # After end_date passes, email every member once so they know the league window is officially closed.
+  def deliver_league_ended_emails_to_members(now)
+    League
+      .where(end_date: (now - CHECK_WINDOW)..now)
+      .includes(league_memberships: :user)
+      .find_each do |league|
+        league.league_memberships.each do |membership|
+          user = membership.user
+          next unless user
+          next unless claim_ended_email_slot(league.id, user.id)
+
+          LeagueMailer.league_closed(user, league).deliver_now
         end
       end
   end
@@ -82,8 +105,21 @@ class LeagueExpiryReminderJob < ApplicationJob
     end
   end
 
-  def claim_started_slot(league_id, user_id)
+  # Toast dedupe key (independent from email so both channels can fire together once).
+  def claim_started_toast_slot(league_id, user_id)
     key = "league_started_notice/#{league_id}/#{user_id}"
+    Rails.cache.write(key, true, expires_in: 2.days, unless_exist: true)
+  end
+
+  # Email dedupe: same 1-minute window as the toast, but its own key so we never double-send after a restart.
+  def claim_started_email_slot(league_id, user_id)
+    key = "league_started_email/#{league_id}/#{user_id}"
+    Rails.cache.write(key, true, expires_in: 2.days, unless_exist: true)
+  end
+
+  # One closure email per member; relies on Solid Queue recurring tick (see config/recurring.yml).
+  def claim_ended_email_slot(league_id, user_id)
+    key = "league_ended_email/#{league_id}/#{user_id}"
     Rails.cache.write(key, true, expires_in: 2.days, unless_exist: true)
   end
 
