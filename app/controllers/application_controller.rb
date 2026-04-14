@@ -119,6 +119,9 @@ class ApplicationController < ActionController::Base
     when "league_teams", "team_memberships"
       # Team-mode join/create flows must work before a membership row exists.
       true
+    when "users/onboarding"
+      # OAuth users must be able to set username before joining a league.
+      true
     else
       false
     end

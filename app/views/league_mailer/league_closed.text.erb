@@ -5,6 +5,9 @@ Dear <%= @user.username.presence || @user.email %>,
 
 The scheduled end time for "<%= @league.name %>" has passed. The official trading window for this league is now closed. Thank you for participating.
 
+Your final account balance (as of <%= @league.end_date.in_time_zone.strftime("%a %d %b %Y, %H:%M %Z") %>): <%= number_to_currency(@final_balance.to_f, precision: 2) %> USD
+PDF certificate: Attached to this email.
+
 <% if @league_description_plain.present? -%>
 About this league:
 <%= @league_description_plain %>

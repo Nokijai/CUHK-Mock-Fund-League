@@ -257,6 +257,35 @@ Devise.setup do |config|
   # Add a new OmniAuth provider. Check the wiki for more information on setting
   # up on your models and hooks.
   # config.omniauth :github, 'APP_ID', 'APP_SECRET', scope: 'user,public_repo'
+  #
+  # Social login providers.
+  #
+  # Required ENV:
+  # - GOOGLE_OAUTH_CLIENT_ID / GOOGLE_OAUTH_CLIENT_SECRET
+  # - GITHUB_OAUTH_CLIENT_ID / GITHUB_OAUTH_CLIENT_SECRET
+  #
+  # Note: callback URLs are handled by Devise at `/users/auth/:provider/callback`.
+  config.omniauth(
+    :google_oauth2,
+    ENV.fetch("GOOGLE_OAUTH_CLIENT_ID", nil),
+    ENV.fetch("GOOGLE_OAUTH_CLIENT_SECRET", nil),
+    {
+      prompt: "select_account",
+      access_type: "online"
+    }
+  )
+
+  config.omniauth(
+    :github,
+    ENV.fetch("GITHUB_OAUTH_CLIENT_ID", nil),
+    ENV.fetch("GITHUB_OAUTH_CLIENT_SECRET", nil),
+    {
+      scope: "user:email",
+      # GitHub will otherwise reuse the currently logged-in GitHub browser session,
+      # which makes it hard to switch accounts during testing.
+      authorize_params: { prompt: "login" }
+    }
+  )
 
   # ==> Warden configuration
   # If you want to use other strategies, that are not supported by Devise, or

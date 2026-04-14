@@ -22,10 +22,19 @@ gem "bcrypt", "~> 3.1", ">= 3.1.22"
 
 # User authentication
 gem "devise", ">= 5.0.3"
+# Social login (OAuth) via OmniAuth + Devise.
+# These providers keep sign-in friction low for league invites.
+gem "omniauth", "~> 2.1"
+gem "omniauth-rails_csrf_protection", "~> 1.0"
+gem "omniauth-google-oauth2", "~> 1.2"
+gem "omniauth-github", "~> 2.0"
 gem "rack", ">= 3.2.5"
 gem "rack-attack"
 gem "nokogiri", ">= 1.19.1"
 gem "action_text-trix", ">= 2.1.18"
+
+# PDF generation (league certificates attached to lifecycle emails)
+gem "prawn", "~> 2.5"
 
 # Pagination
 gem "kaminari"

@@ -72,6 +72,46 @@
       </tbody>
     </table>
   </div>
+
+  <%# Ticker news (external API; cached) %>
+  <div class="terminal-window">
+    <div class="terminal-window-title">NEWS</div>
+    <% if @news_items.present? %>
+      <div class="terminal-stocks-scroll" style="max-height: 400px;">
+        <table class="terminal-table terminal-table-compact">
+          <thead>
+            <tr>
+              <th>TIME</th>
+              <th>HEADLINE</th>
+              <th>SOURCE</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @news_items.each do |item| %>
+              <tr>
+                <td>
+                  <%# Items may have missing timestamps; show placeholder gracefully. %>
+                  <%= item[:published_at] ? user_local_time(item[:published_at]) : "—" %>
+                </td>
+                <td>
+                  <%= link_to item[:headline], item[:url], target: "_blank", rel: "noopener noreferrer", class: "terminal-link" %>
+                  <% if item[:summary].present? %>
+                    <div class="terminal-form-hint"><%= item[:summary] %></div>
+                  <% end %>
+                </td>
+                <td><%= item[:source].presence || "—" %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% else %>
+      <div class="terminal-form-hint" style="margin-top: 0.5rem;">
+        <%# Empty state: either no recent items or the API key isn't configured. %>
+        No recent news (or news API not configured).
+      </div>
+    <% end %>
+  </div>
 </div>
 
 <%# Action Buttons %>

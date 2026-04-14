@@ -1,7 +1,9 @@
 Rails.application.routes.draw do
   devise_for :users, controllers: {
     sessions: "users/sessions",
-    registrations: "users/registrations"
+    registrations: "users/registrations",
+    # OAuth callbacks live under Users::OmniauthCallbacksController.
+    omniauth_callbacks: "users/omniauth_callbacks"
   }
 
   devise_scope :user do
@@ -17,6 +19,10 @@ Rails.application.routes.draw do
     get "users/verify_signup_otp/cancel", to: "users/registrations#cancel_otp_signup", as: :users_cancel_otp_signup
     post "users/verify_signup_otp/resend", to: "users/registrations#resend_otp", as: :users_resend_signup_otp
   end
+
+  # OAuth onboarding: pick a username before entering the app.
+  get "users/onboarding/username", to: "users/onboarding#edit_username", as: :edit_users_onboarding_username
+  patch "users/onboarding/username", to: "users/onboarding#update_username", as: :users_onboarding_username
 
   get "up" => "rails/health#show", as: :rails_health_check
 
@@ -57,6 +63,8 @@ Rails.application.routes.draw do
 
   get "stocks/search", to: "stocks#search"
   get "stocks/:symbol", to: "stocks#show", as: :stock
+  # Ticker news feed (external API, cached). HTML view uses this indirectly too.
+  get "stocks/:symbol/news", to: "stocks#news", as: :stock_news
 
   namespace :api do
     namespace :v1 do

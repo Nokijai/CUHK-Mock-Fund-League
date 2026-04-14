@@ -14,13 +14,16 @@ class User < ApplicationRecord
   # Include default devise modules. Others available are:
   # :confirmable, :lockable, :timeoutable, :trackable and :omniauthable
   devise :database_authenticatable, :registerable,
-         :recoverable, :rememberable, :validatable
+         :recoverable, :rememberable, :validatable,
+         # Social login providers are configured in `config/initializers/devise.rb`.
+         :omniauthable, omniauth_providers: %i[google_oauth2 github]
 
   has_many :league_memberships, dependent: :destroy
   has_many :leagues, through: :league_memberships
   has_many :portfolios, dependent: :destroy
   has_many :team_memberships, dependent: :destroy
   has_many :teams, through: :team_memberships
+  has_many :user_identities, dependent: :destroy
 
   # Username validations
   validates :username, presence: true, uniqueness: { case_sensitive: false }
@@ -38,6 +41,48 @@ class User < ApplicationRecord
     elsif conditions.has_key?(:username) || conditions.has_key?(:email)
       where(conditions).first
     end
+  end
+
+  # Build or locate a user for OAuth sign-in.
+  #
+  # Design constraints:
+  # - Our app requires a unique `username`; OAuth users may not have one yet.
+  # - OAuth identities should link to the same account when the email matches.
+  # - OAuth sign-ins should not be forced through email OTP flows (skip login OTP).
+  def self.from_omniauth(auth)
+    provider = auth.provider.to_s
+    uid = auth.uid.to_s
+    email = auth.dig(:info, :email).to_s.downcase.presence
+    name = auth.dig(:info, :name).to_s.presence || auth.dig(:info, :nickname).to_s.presence
+
+    # Preferred: identity lookup by provider+uid.
+    identity = UserIdentity.find_by(provider:, uid:)
+    user = identity&.user
+
+    # Otherwise: link to an existing user by email (the user's requirement).
+    user ||= find_by(email:) if email.present?
+
+    new_user = user.nil?
+    user ||= new(email: email || "oauth-#{provider}-#{uid}@example.invalid")
+
+    # Attach/refresh identity record.
+    identity ||= user.user_identities.build(provider:, uid:)
+    identity.email = email if email.present?
+    identity.name = name if name.present?
+
+    # Ensure required fields are present; OAuth users don't need to know a password.
+    # But our app enforces password complexity, so generate one that always passes.
+    user.password ||= oauth_compliant_password
+    user.username ||= generate_available_username(name: name, email: email, fallback: "#{provider}_#{uid}")
+
+    # Treat OAuth as verified/trusted for onboarding (avoid signup OTP + login OTP friction).
+    user.signup_verified_at ||= Time.current
+    user.skip_login_otp = true
+    # New OAuth users must pick a username; redirect flow handles this.
+    user.username_finalized = false if new_user && user.respond_to?(:username_finalized)
+
+    user.save!
+    user
   end
 
   def admin?
@@ -157,6 +202,41 @@ class User < ApplicationRecord
   end
 
   private
+
+  # Devise tokens don't guarantee our local complexity constraints (e.g. special chars).
+  # Keep this deterministic so OAuth sign-in never fails on validation.
+  def self.oauth_compliant_password
+    # Ensure: lowercase, uppercase, digit, special, plus random tail.
+    "Aa1!#{SecureRandom.hex(16)}"
+  end
+
+  # Produce a username candidate that satisfies:
+  # - no spaces (our validation)
+  # - uniqueness
+  def self.generate_available_username(name:, email:, fallback:)
+    base =
+      if name.present?
+        name.downcase.gsub(/[^a-z0-9_]/, "_").gsub(/_+/, "_").gsub(/\A_+|_+\z/, "")
+      elsif email.present?
+        email.split("@").first.to_s.downcase.gsub(/[^a-z0-9_]/, "_").gsub(/_+/, "_").gsub(/\A_+|_+\z/, "")
+      else
+        fallback.to_s.downcase.gsub(/[^a-z0-9_]/, "_")
+      end
+
+    base = fallback.to_s.downcase.gsub(/[^a-z0-9_]/, "_") if base.blank?
+    base = base.first(24)
+
+    # If taken, append _2, _3, ... (bounded to keep loops safe).
+    return base unless exists?(username: base)
+
+    2.upto(200) do |n|
+      candidate = "#{base}_#{n}"
+      return candidate unless exists?(username: candidate)
+    end
+
+    # Extremely unlikely; fall back to a random suffix.
+    "#{base}_#{SecureRandom.hex(3)}"
+  end
 
   def set_default_role
     self.role ||= "user"

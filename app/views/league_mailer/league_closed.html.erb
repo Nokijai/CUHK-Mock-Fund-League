@@ -27,6 +27,26 @@
               </p>
             <% end %>
 
+            <!-- Final account balance at league close, computed once in mailer for consistency with PDF -->
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 18px 0 0; border: 1px solid #e5e7eb; border-radius: 10px; overflow: hidden;">
+              <tr>
+                <td style="padding: 12px 16px; background-color: #f8fafc; font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: #475569; font-weight: 700;">
+                  Your final balance
+                </td>
+              </tr>
+              <tr>
+                <td style="padding: 14px 16px; font-size: 14px; color: #111827;">
+                  <span style="color: #6b7280; font-weight: 600;">As of</span>
+                  <span style="font-weight: 700;"><%= @league.end_date.in_time_zone.strftime("%a %d %b %Y, %H:%M %Z") %></span>
+                  <span style="color: #6b7280; font-weight: 600;">your account balance is</span>
+                  <span style="font-weight: 800;"><%= number_to_currency(@final_balance.to_f, precision: 2) %> USD</span>.
+                  <div style="margin-top: 10px; font-size: 13px; color: #4b5563;">
+                    A PDF certificate is attached to this email for your records.
+                  </div>
+                </td>
+              </tr>
+            </table>
+
             <%= render "league_fact_sheet" %>
 
             <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin: 26px 0 6px;">

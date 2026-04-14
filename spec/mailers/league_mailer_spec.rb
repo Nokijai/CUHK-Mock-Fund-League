@@ -34,11 +34,18 @@ RSpec.describe LeagueMailer, type: :mailer do
   end
 
   describe "#league_closed" do
+    let!(:portfolio) { create(:portfolio, user: user, league: league, cash_balance: 123_456, total_value: 123_456) }
     let(:mail) { described_class.league_closed(user, league) }
 
     it "renders closed copy" do
       expect(mail.subject).to include("has closed")
       expect(mail.body.encoded).to include("closed")
+    end
+
+    it "includes final balance and attaches a PDF certificate" do
+      expect(mail.body.encoded).to include("123,456")
+      expect(mail.attachments.map(&:filename)).to include("league-certificate-#{league.id}.pdf")
+      expect(mail.attachments.first.mime_type).to start_with("application/pdf")
     end
   end
 end

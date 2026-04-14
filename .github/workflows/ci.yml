@@ -136,7 +136,10 @@ jobs:
           pip install -r requirements.txt
 
       - name: Setup database
-        run: bin/rails db:create db:schema:load
+        run: |
+          bin/rails db:create db:schema:load
+          # Solid Queue tables live in the queue DB schema.
+          bin/rails db:schema:load:queue
 
       - name: Run RSpec tests
         run: bundle exec rspec

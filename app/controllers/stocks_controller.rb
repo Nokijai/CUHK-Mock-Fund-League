@@ -4,6 +4,14 @@ class StocksController < ApplicationController
     render json: @results
   end
 
+  def news
+    sym = params[:symbol].to_s.upcase
+
+    # News is optional; if the API key isn't configured we return an empty list.
+    items = StockNewsService.new.news_for(sym)
+    render json: { symbol: sym, items: items }
+  end
+
   def show
     sym = params[:symbol].to_s.upcase
     # Poll endpoint is a natural place to settle pending limit orders for this symbol.
@@ -68,6 +76,8 @@ class StocksController < ApplicationController
         @price_data = payload
         @candles = candles
         @interval = interval
+        # Cached external API call; safe to show empty state when unconfigured.
+        @news_items = StockNewsService.new.news_for(sym)
         render :show
       }
     end
