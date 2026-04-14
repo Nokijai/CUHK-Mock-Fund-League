@@ -17,6 +17,9 @@ default: &default
   encoding: unicode
   # Use explicit PGUSER when provided; otherwise default to current OS user.
   username: <%= ENV.fetch("PGUSER", ENV.fetch("USER", "postgres")) %>
+  # Use PGPASSWORD when set (e.g. docker-compose default postgres:postgres).
+  # Local Postgres setups often use peer auth, so leaving this blank is fine.
+  password: <%= ENV["PGPASSWORD"] %>
   # For details on connection pooling, see Rails configuration guide
   # https://guides.rubyonrails.org/configuring.html#database-pooling
   max_connections: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>

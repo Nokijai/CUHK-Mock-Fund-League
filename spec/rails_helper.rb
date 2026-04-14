@@ -1,6 +1,10 @@
 # This file is copied to spec/ when you run 'rails generate rspec:install'
 require 'spec_helper'
-ENV['RAILS_ENV'] ||= 'test'
+# Force test env even when dotenv/docker sets RAILS_ENV=development.
+# If RSpec boots in development, it can:
+# - connect to / truncate the wrong database
+# - fail request specs due to HostAuthorization and other env-specific middleware
+ENV['RAILS_ENV'] = 'test'
 
 # Local test runs may load `.env` (dotenv-rails) which can contain Docker service hostnames
 # like `db`. When not running inside Docker, rewrite those URLs to localhost so RSpec can boot.

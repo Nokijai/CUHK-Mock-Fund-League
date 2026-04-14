@@ -1,5 +1,7 @@
 class ApplicationController < ActionController::Base
-  allow_browser versions: :modern
+  # Browser gating is helpful in production, but it can interfere with request specs (which
+  # often use Rack::Test and synthetic user agents). Keep CI/test stable by disabling it.
+  allow_browser versions: :modern unless Rails.env.test?
   stale_when_importmap_changes
 
   before_action :redirect_pending_otp_user

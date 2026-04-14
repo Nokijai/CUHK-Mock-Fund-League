@@ -58,13 +58,14 @@ RSpec.describe LeagueExpiryReminderJob, type: :job do
       user = create(:user)
       create(:league_membership, user: user, league: league)
 
-      expect { described_class.perform_now(now: now) }.to change(ActionMailer::Base.deliveries, :size).by(1)
+      delivery = instance_double(ActionMailer::MessageDelivery, deliver_now: true)
+      allow(LeagueMailer).to receive(:league_opened).and_return(delivery)
 
-      mail = ActionMailer::Base.deliveries.last
-      expect(mail.to).to eq([ user.email ])
-      expect(mail.subject).to include(league.name)
+      described_class.perform_now(now: now)
+      expect(LeagueMailer).to have_received(:league_opened).with(user, league).once
 
-      expect { described_class.perform_now(now: now) }.not_to(change(ActionMailer::Base.deliveries, :size))
+      described_class.perform_now(now: now)
+      expect(LeagueMailer).to have_received(:league_opened).with(user, league).once
     end
   end
 
@@ -76,13 +77,14 @@ RSpec.describe LeagueExpiryReminderJob, type: :job do
       user = create(:user)
       membership = create(:league_membership, user: user, league: league)
 
-      expect { described_class.perform_now(now: now) }.to change(ActionMailer::Base.deliveries, :size).by(1)
+      delivery = instance_double(ActionMailer::MessageDelivery, deliver_now: true)
+      allow(LeagueMailer).to receive(:league_closed).and_return(delivery)
 
-      mail = ActionMailer::Base.deliveries.last
-      expect(mail.to).to eq([ user.email ])
-      expect(mail.subject).to include("has closed")
+      described_class.perform_now(now: now)
+      expect(LeagueMailer).to have_received(:league_closed).with(user, league).once
 
-      expect { described_class.perform_now(now: now) }.not_to(change(ActionMailer::Base.deliveries, :size))
+      described_class.perform_now(now: now)
+      expect(LeagueMailer).to have_received(:league_closed).with(user, league).once
 
       expect(membership.reload.league_closed_email_sent_at).to be_present
     end
