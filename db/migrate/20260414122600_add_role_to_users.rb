@@ -19,4 +19,3 @@ class AddRoleToUsers < ActiveRecord::Migration[8.1]
     remove_column :users, :role if column_exists?(:users, :role)
   end
 end
-
