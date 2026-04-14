@@ -24,6 +24,7 @@ Rails.application.routes.draw do
 
   # Bookmark / cache may still request /trading; redirect to real nested trade URL.
   get "trading", to: "home#trading_redirect", as: :trading
+  get "leaderboard", to: "leaderboards#index", as: :leaderboard
 
   # Admin namespace
   namespace :admin do

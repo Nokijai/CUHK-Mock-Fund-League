@@ -17,9 +17,8 @@
       <% end %>
       <% leagues_nav_active = controller_name == "leagues" && %w[index show edit update].include?(action_name) && !request.path.start_with?("/admin") %>
       <%= link_to "LEAGUES", leagues_path, class: leagues_nav_active ? "terminal-nav-active" : nil %>
-      <% lb_league = @nav_league || @joined_leagues&.first %>
-      <% if lb_league %>
-        <%= link_to "LEADERBOARD", league_leaderboard_path(lb_league, league_params), class: controller_name == "leaderboards" ? "terminal-nav-active" : nil %>
+      <% if @joined_leagues.present? %>
+        <%= link_to "LEADERBOARD", leaderboard_path, class: controller_name == "leaderboards" ? "terminal-nav-active" : nil %>
       <% else %>
         <%= link_to "LEADERBOARD", leagues_path, class: "terminal-nav-hint", data: { tooltip: "Join a league to see rankings" } %>
       <% end %>

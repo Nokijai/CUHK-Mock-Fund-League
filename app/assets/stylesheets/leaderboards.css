@@ -105,6 +105,42 @@
   gap: 0.5rem;
 }
 
+.lb-archive-months {
+  margin-top: 0.75rem;
+}
+
+.lb-archive-month-card {
+  margin-bottom: 0.75rem;
+}
+
+.lb-archive-month-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.lb-archive-league-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.lb-archive-league-card-link {
+  display: block;
+  text-decoration: none;
+}
+
+.lb-archive-league-card-link:hover {
+  border-color: var(--terminal-accent);
+}
+
+.lb-archive-league-card-link .terminal-league-summary-main,
+.lb-archive-league-card-link .terminal-league-summary-meta,
+.lb-archive-league-card-link .terminal-stat-label,
+.lb-archive-league-card-link .terminal-stat-value {
+  color: inherit;
+}
+
 /* ── Status Strip ── */
 
 .lb-status-strip {
@@ -168,6 +204,12 @@
 
 .lb-status-update {
   text-align: right;
+}
+
+@media (max-width: 900px) {
+  .lb-archive-league-card-link .terminal-league-summary-meta {
+    display: block;
+  }
 }
 
 /* ── Main Content Grid: Table + Detail ── */

@@ -1,9 +1,11 @@
 class LeaderboardsController < ApplicationController
-  before_action :set_league
+  before_action :set_league_archive, only: [ :index ]
+  before_action :set_league, only: [ :show ]
+
+  def index
+  end
 
   def show
-    # Reuse preloaded joined leagues for the selector instead of querying all leagues.
-    @leagues = @joined_leagues.presence || League.order(:name)
     if @league.team_mode?
       @rankings = TeamLeaderboardService.new(@league).compute
       @current_entry_id = TeamMembership.find_by(user_id: current_user.id, league_id: @league.id)&.team_id.to_i
@@ -22,6 +24,12 @@ class LeaderboardsController < ApplicationController
 
   def set_league
     @league = League.find(params[:league_id])
+  end
+
+  def set_league_archive
+    all_leagues = League.includes(:creator).order(start_date: :desc, name: :asc)
+    @leagues_by_month = all_leagues.group_by { |league| league.start_date&.to_date&.beginning_of_month }
+    @leagues_by_month = @leagues_by_month.reject { |month, _| month.blank? }
   end
 
   def latest_snapshot_time

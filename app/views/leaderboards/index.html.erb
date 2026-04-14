@@ -1,0 +1,46 @@
+<% content_for :title, "Leaderboard Archive — MOCK-FUND" %>
+
+<div class="terminal-page-head terminal-page-head--row">
+  <div>
+    <h1 class="terminal-page-title">LEADERBOARD ARCHIVE</h1>
+    <div class="terminal-page-meta">Select a month, then click a league card to open the original leaderboard view.</div>
+  </div>
+</div>
+
+<div class="terminal-league-cards lb-archive-months">
+  <% @leagues_by_month.each do |month_start, month_leagues| %>
+    <details class="terminal-window terminal-league-card lb-archive-month-card">
+      <summary class="terminal-league-card-summary">
+        <div class="terminal-league-summary-main">
+          <strong><%= month_start.strftime("%B %Y").upcase %></strong>
+        </div>
+        <div class="terminal-league-summary-meta">
+          <span><%= pluralize(month_leagues.size, "league") %></span>
+        </div>
+      </summary>
+
+      <div class="terminal-league-card-body lb-archive-month-body">
+        <div class="lb-archive-league-list">
+          <% month_leagues.each do |league| %>
+            <%= link_to league_leaderboard_path(league), class: "terminal-window terminal-league-card lb-archive-league-card-link" do %>
+              <div class="terminal-league-card-summary">
+                <div class="terminal-league-summary-main">
+                  <strong><%= league.name %></strong>
+                </div>
+                <div class="terminal-league-summary-meta">
+                  <span><%= format_datetime(league.start_date, format: :short) %> → <%= format_datetime(league.end_date, format: :short) %></span>
+                </div>
+              </div>
+            <% end %>
+          <% end %>
+        </div>
+      </div>
+    </details>
+  <% end %>
+</div>
+
+<% if @leagues_by_month.empty? %>
+  <div class="terminal-window">
+    <p class="terminal-empty">No leagues available for leaderboard archive.</p>
+  </div>
+<% end %>
