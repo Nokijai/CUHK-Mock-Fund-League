@@ -6,7 +6,7 @@ class CreateFriendships < ActiveRecord::Migration[8.1]
       t.timestamps
     end
 
-    add_index :friendships, [:user_id, :friend_id], unique: true
+    add_index :friendships, [ :user_id, :friend_id ], unique: true
     add_index :friendships, :friend_id
     add_foreign_key :friendships, :users, column: :user_id
     add_foreign_key :friendships, :users, column: :friend_id

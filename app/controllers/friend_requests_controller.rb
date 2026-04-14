@@ -16,7 +16,7 @@ class FriendRequestsController < ApplicationController
     if @friend_request.save
       # Broadcast to receiver in real-time via Turbo Stream
       Turbo::StreamsChannel.broadcast_prepend_to(
-        [receiver, "friend_notifications"],
+        [ receiver, "friend_notifications" ],
         target: "friend-requests-list",
         partial: "friend_requests/friend_request",
         locals: { friend_request: @friend_request }
@@ -24,7 +24,7 @@ class FriendRequestsController < ApplicationController
 
       # Also update the receiver's pending count badge
       Turbo::StreamsChannel.broadcast_update_to(
-        [receiver, "friend_notifications"],
+        [ receiver, "friend_notifications" ],
         target: "friend-requests-count",
         html: receiver.pending_received_friend_requests.count.to_s
       )
@@ -58,7 +58,7 @@ class FriendRequestsController < ApplicationController
 
     # Notify the sender in real-time
     Turbo::StreamsChannel.broadcast_prepend_to(
-      [@friend_request.sender, "friend_notifications"],
+      [ @friend_request.sender, "friend_notifications" ],
       target: "realtime-notifications",
       html: "<div class=\"terminal-realtime-notif-card terminal-realtime-notif-card--success\" data-controller=\"realtime-notification\" data-realtime-notification-auto-dismiss-ms-value=\"8000\"><span class=\"terminal-notif-body\"><strong>#{ERB::Util.html_escape(@friend_request.receiver.username)}</strong> accepted your friend request!</span><button class=\"terminal-notif-close\" data-action=\"realtime-notification#dismiss\">&times;</button></div>"
     )

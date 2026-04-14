@@ -110,7 +110,7 @@ class User < ApplicationRecord
     if new_xp < current_threshold
       if level_protected?
         # Already protected once — apply full loss now (demotion)
-        update!(experience_points: [new_xp, 0].max, level_protected: false)
+        update!(experience_points: [ new_xp, 0 ].max, level_protected: false)
       else
         # First time hitting the floor — clamp at threshold, activate shield
         update!(experience_points: current_threshold, level_protected: true)

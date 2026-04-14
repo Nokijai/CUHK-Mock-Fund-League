@@ -6,9 +6,9 @@ class AddChannelFieldsToMessages < ActiveRecord::Migration[8.1]
 
     change_column_null :messages, :receiver_id, true
 
-    add_index :messages, [:channel_type, :created_at]
-    add_index :messages, [:team_id, :created_at]
-    add_index :messages, [:league_id, :created_at]
+    add_index :messages, [ :channel_type, :created_at ]
+    add_index :messages, [ :team_id, :created_at ]
+    add_index :messages, [ :league_id, :created_at ]
     add_foreign_key :messages, :teams, column: :team_id
     add_foreign_key :messages, :leagues, column: :league_id
   end

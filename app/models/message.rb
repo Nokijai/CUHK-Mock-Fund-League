@@ -39,7 +39,7 @@ class Message < ApplicationRecord
   end
 
   def self.chat_stream_key(user_a_id, user_b_id)
-    ids = [user_a_id, user_b_id].sort
+    ids = [ user_a_id, user_b_id ].sort
     "chat_#{ids[0]}_#{ids[1]}"
   end
 

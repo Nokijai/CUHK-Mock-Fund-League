@@ -7,8 +7,8 @@ class CreateMessages < ActiveRecord::Migration[8.1]
       t.timestamps
     end
 
-    add_index :messages, [:sender_id, :receiver_id, :created_at]
-    add_index :messages, [:receiver_id, :sender_id, :created_at]
+    add_index :messages, [ :sender_id, :receiver_id, :created_at ]
+    add_index :messages, [ :receiver_id, :sender_id, :created_at ]
     add_foreign_key :messages, :users, column: :sender_id
     add_foreign_key :messages, :users, column: :receiver_id
   end
