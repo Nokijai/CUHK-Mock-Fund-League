@@ -7,7 +7,7 @@ RSpec.describe PortfolioValuationService do
       create(:stock_price, symbol: "MSFT", price: 250)
 
       service = described_class.new
-      service.preload_symbols(["aapl", "AAPL", "MSFT"])
+      service.preload_symbols([ "aapl", "AAPL", "MSFT" ])
 
       expect(service.price_for_symbol("aapl")).to eq(BigDecimal("120"))
       expect(service.price_for_symbol("msft")).to eq(BigDecimal("250"))

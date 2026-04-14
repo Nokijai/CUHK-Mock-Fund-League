@@ -333,9 +333,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_14_220000) do
     t.datetime "signup_verified_at"
     t.boolean "skip_login_otp", default: false, null: false
     t.datetime "updated_at", null: false
-    t.string "username", null: false
+    t.string "username"
     t.boolean "username_finalized", default: false, null: false
-    t.index "lower((username)::text)", name: "index_users_on_lower_username", unique: true
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["login_otp_locked_until"], name: "index_users_on_login_otp_locked_until"
     t.index ["login_otp_sent_at"], name: "index_users_on_login_otp_sent_at"
@@ -344,6 +343,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_14_220000) do
     t.index ["role"], name: "index_users_on_role"
     t.index ["signup_verified_at"], name: "index_users_on_signup_verified_at"
     t.index ["skip_login_otp"], name: "index_users_on_skip_login_otp"
+    t.index ["username"], name: "index_users_on_username", unique: true
     t.index ["username_finalized"], name: "index_users_on_username_finalized"
   end
 

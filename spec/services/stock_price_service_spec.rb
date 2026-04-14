@@ -42,7 +42,7 @@ RSpec.describe StockPriceService do
     end
 
     it "returns nil when no effective price is available" do
-      expect(described_class.new.get_price("" )).to be_nil
+      expect(described_class.new.get_price("")).to be_nil
     end
   end
 
