@@ -48,8 +48,12 @@ class LeagueMembershipsController < ApplicationController
       return
     end
 
-    @league_membership.destroy
-    redirect_to leagues_path(anchor: "league-#{@league_membership.league_id}"), notice: "Successfully left the league."
+    # leave_with_cleanup! clears team + portfolio rows so the user is fully detached from the league.
+    league_id = @league_membership.league_id
+    @league_membership.leave_with_cleanup!
+    redirect_to leagues_path(anchor: "league-#{league_id}"), notice: "Successfully left the league."
+  rescue ActiveRecord::RecordNotDestroyed, ActiveRecord::InvalidForeignKey => e
+    redirect_back fallback_location: leagues_path, alert: "Could not leave the league: #{e.message}"
   end
 
   private

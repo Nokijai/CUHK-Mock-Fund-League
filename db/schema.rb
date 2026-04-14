@@ -214,7 +214,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_09_120000) do
   end
 
   create_table "stock_prices", force: :cascade do |t|
-    t.datetime "created_at", null: false
     t.decimal "price", precision: 15, scale: 4
     t.string "symbol", null: false
     t.datetime "updated_at", null: false

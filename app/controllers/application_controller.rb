@@ -5,6 +5,8 @@ class ApplicationController < ActionController::Base
   before_action :redirect_pending_otp_user
   before_action :authenticate_user!
   before_action :set_terminal_nav_context
+  # Gate the rest of the app until the user has joined at least one league (browse/join stays on /leagues).
+  before_action :require_joined_league
   before_action :configure_permitted_parameters, if: :devise_controller?
 
   helper_method :show_admin_league_actions?
@@ -84,5 +86,35 @@ class ApplicationController < ActionController::Base
   def show_admin_league_actions?
     return false unless current_user
     current_user.role.to_s == "admin"
+  end
+
+  # Send users with no league membership to the leagues list so they can join (or join a team) first.
+  def require_joined_league
+    return if allow_request_without_joined_league?
+
+    redirect_to leagues_path, alert: "Please join a league to continue."
+  end
+
+  def allow_request_without_joined_league?
+    return true unless user_signed_in?
+    # Single EXISTS query — avoids relying on nav preloads here.
+    return true if current_user.league_memberships.exists?
+
+    return true if controller_path.start_with?("admin/")
+    return true if controller_path.start_with?("api/")
+    return true if devise_controller?
+
+    case controller_path
+    when "leagues"
+      # List/detail routes for picking a league; join actions hit other controllers below.
+      %w[index show].include?(action_name)
+    when "league_memberships"
+      true
+    when "league_teams", "team_memberships"
+      # Team-mode join/create flows must work before a membership row exists.
+      true
+    else
+      false
+    end
   end
 end

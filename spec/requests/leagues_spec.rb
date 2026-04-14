@@ -269,15 +269,31 @@ RSpec.describe "Api::V1::Leagues", type: :request do
   # ─────────────────────────────────────────────────────────────
   describe "DELETE /api/v1/leagues/:league_id/memberships/:user_id" do
     let!(:league)     { create(:league) }
-    let!(:user)       { create(:user) }
-    let!(:membership) { create(:league_membership, user: user, league: league) }
+    # Caller must match membership user (or be admin); signed-in user is current_user.
+    let!(:membership) { create(:league_membership, user: current_user, league: league) }
 
     it "removes the membership and returns 200" do
       expect {
-        delete "/api/v1/leagues/#{league.id}/memberships/#{user.id}", headers: headers
+        delete "/api/v1/leagues/#{league.id}/memberships/#{current_user.id}", headers: headers
       }.to change(LeagueMembership, :count).by(-1)
       expect(response).to have_http_status(:ok)
       expect(JSON.parse(response.body)["message"]).to eq("Left league")
+    end
+
+    it "removes the portfolio for that league when leaving" do
+      create(:portfolio, user: current_user, league: league)
+      expect {
+        delete "/api/v1/leagues/#{league.id}/memberships/#{current_user.id}", headers: headers
+      }.to change(LeagueMembership, :count).by(-1)
+        .and change(Portfolio, :count).by(-1)
+      expect(response).to have_http_status(:ok)
+    end
+
+    it "returns 403 when trying to remove another user's membership" do
+      other = create(:user)
+      create(:league_membership, user: other, league: league)
+      delete "/api/v1/leagues/#{league.id}/memberships/#{other.id}", headers: headers
+      expect(response).to have_http_status(:forbidden)
     end
 
     it "returns 404 when user is not a member" do
@@ -287,8 +303,26 @@ RSpec.describe "Api::V1::Leagues", type: :request do
     end
 
     it "returns 404 when league does not exist" do
-      delete "/api/v1/leagues/0/memberships/#{user.id}", headers: headers
+      delete "/api/v1/leagues/0/memberships/#{current_user.id}", headers: headers
       expect(response).to have_http_status(:not_found)
+    end
+
+    context "when signed in as admin" do
+      let(:admin) { create(:user, role: "admin") }
+      let(:member) { create(:user) }
+
+      before do
+        # Parent example group signs in `current_user`; admins need their own session for this case.
+        sign_in admin
+      end
+
+      it "may remove another user's membership" do
+        create(:league_membership, user: member, league: league)
+        expect {
+          delete "/api/v1/leagues/#{league.id}/memberships/#{member.id}", headers: headers
+        }.to change(LeagueMembership, :count).by(-1)
+        expect(response).to have_http_status(:ok)
+      end
     end
   end
 

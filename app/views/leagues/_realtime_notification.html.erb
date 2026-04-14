@@ -1,19 +1,25 @@
-<%# Lightweight card / flash-style row for Turbo Stream inserts (league created, reminders). %>
-<% variant = local_assigns.fetch(:variant, :default) %>
-<% if variant == :success %>
-  <div class="terminal-flash terminal-flash--success terminal-realtime-flash" role="status">
-    <span class="terminal-flash-icon">LIVE</span>
-    <span class="terminal-flash-text">
-      <strong><%= title.presence || "League notice" %>:</strong>
-      <%= body.presence || league.name %>
-      <%= link_to "View", leagues_path(anchor: "league-#{league.id}"), class: "terminal-btn terminal-btn--small terminal-realtime-view-btn" %>
-    </span>
-    <button class="terminal-flash-close" type="button" onclick="this.parentElement.remove()" aria-label="Dismiss">&times;</button>
+<%# Turbo Stream insert: one card per notification; Stimulus handles timed dismiss vs close-only. %>
+<% notification_id = local_assigns[:notification_id].presence || "realtime-notif-#{league.id}-#{SecureRandom.hex(4)}" %>
+<% auto_dismiss_ms = local_assigns.fetch(:auto_dismiss_ms, 0).to_i %>
+<% tone = local_assigns.fetch(:tone, :accent).to_sym %>
+<%# :created = persistent until ×; member notices use auto_dismiss_ms (10s) + ×. %>
+<div
+  id="<%= notification_id %>"
+  class="terminal-realtime-notif-card terminal-realtime-notif-card--<%= tone %> <%= "terminal-realtime-notif-card--persistent" if auto_dismiss_ms <= 0 %>"
+  data-controller="realtime-notification"
+  data-realtime-notification-auto-dismiss-ms-value="<%= auto_dismiss_ms %>"
+  role="status"
+>
+  <div class="terminal-realtime-notif-main">
+    <div class="terminal-realtime-notif-title"><%= title.presence || "League notice" %></div>
+    <div class="terminal-realtime-notif-body"><%= body.presence || league.name %></div>
+    <%# Navigation only — does not dismiss the toast (dismiss is × only, per product rules). %>
+    <%= link_to "View league", leagues_path(anchor: "league-#{league.id}"), class: "terminal-realtime-notif-view" %>
   </div>
-<% else %>
-  <article class="terminal-realtime-notice" role="status">
-    <strong class="terminal-realtime-notice-title"><%= title.presence || "League notice" %>:</strong>
-    <span class="terminal-realtime-notice-body"><%= body.presence || league.name %></span>
-    <%= link_to "View", leagues_path(anchor: "league-#{league.id}"), class: "terminal-realtime-notice-link" %>
-  </article>
-<% end %>
+  <button
+    type="button"
+    class="terminal-realtime-notif-close"
+    data-action="realtime-notification#dismiss"
+    aria-label="Dismiss notification"
+  >&times;</button>
+</div>

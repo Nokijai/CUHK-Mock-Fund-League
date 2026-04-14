@@ -82,8 +82,13 @@
 
         <div class="terminal-toolbar">
           <% if membership %>
-            <span class="terminal-btn terminal-btn-disabled">ALREADY JOINED</span>
-            <%# LEAVE LEAGUE action intentionally removed from /leagues page. %>
+            <span class="terminal-btn terminal-btn-disabled">JOINED</span>
+            <%# Quit league: same cleanup as LeagueMembershipsController#destroy (portfolio + team seat + membership). %>
+            <%= button_to "LEAVE LEAGUE",
+              league_membership_path(membership),
+              method: :delete,
+              class: "terminal-btn",
+              form: { data: { turbo_confirm: "Leave \"#{league.name}\"? Your portfolio and team membership in this league will be removed." } } %>
           <% elsif !league.join_open_now? %>
             <%# Mirror backend join window rules directly in list action states. %>
             <span class="terminal-btn terminal-btn-disabled">

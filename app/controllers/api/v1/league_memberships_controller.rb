@@ -50,8 +50,15 @@ module Api
         membership = @league.league_memberships.find_by(user_id: params[:user_id].to_i)
         return render json: { errors: [ "Membership not found" ] }, status: :not_found unless membership
 
-        membership.destroy
+        # Same rules as the HTML app: self-serve leave, plus admin moderation of another member.
+        unless membership.user_id == current_user.id || current_user.admin?
+          return render json: { errors: [ "Forbidden" ] }, status: :forbidden
+        end
+
+        membership.leave_with_cleanup!
         render json: { message: "Left league" }
+      rescue ActiveRecord::RecordNotDestroyed => e
+        render json: { errors: [ e.message ] }, status: :unprocessable_entity
       end
 
       private

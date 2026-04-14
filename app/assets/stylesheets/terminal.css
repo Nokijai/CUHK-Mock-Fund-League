@@ -247,88 +247,111 @@ body.terminal-shell .alert {
   border-color: var(--terminal-down);
 }
 
-/* Shared live-notification rail for Turbo Stream inserts (league-created events). */
+/* Shared live-notification rail: scrolls when many persistent “new league” cards stack (no overlap). */
 .terminal-realtime-notifications {
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  gap: 0.45rem;
   margin: 0.5rem 1rem 0;
+  max-height: min(42vh, 22rem);
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 0.15rem;
+  flex-shrink: 0;
 }
 
-.terminal-realtime-notice {
+/* One Turbo-prepended card; flex row keeps × aligned while text wraps. */
+.terminal-realtime-notif-card {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.35rem;
-  padding: 0.5rem 0.75rem;
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex: 0 0 auto;
+  padding: 0.55rem 0.65rem;
   font-size: 12px;
   border: 1px solid var(--terminal-border);
-  border-left: 3px solid var(--terminal-accent);
   border-radius: 2px;
   color: var(--terminal-text);
   background: var(--terminal-panel);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
 }
 
-.terminal-realtime-notice-title {
-  color: var(--terminal-accent);
-  font-weight: 700;
+.terminal-realtime-notif-card--success {
+  border-left: 3px solid var(--terminal-up);
 }
 
-body.terminal-shell main a.terminal-realtime-notice-link {
-  color: var(--terminal-up);
-  text-decoration: none;
+.terminal-realtime-notif-card--accent {
+  border-left: 3px solid var(--terminal-accent);
 }
 
-body.terminal-shell main a.terminal-realtime-notice-link:hover {
-  color: var(--terminal-text);
+.terminal-realtime-notif-card--warn {
+  border-left: 3px solid var(--terminal-down);
 }
 
-/* Turbo-inserted league-created notices: match layout flash strip. */
-#realtime-notifications .terminal-realtime-flash {
-  margin-left: 0;
-  margin-right: 0;
-}
-
-/* League-created row: "View" as neutral chip + up-colored border/text (link for Turbo). */
-.terminal-realtime-flash .terminal-flash-text {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.35rem 0.5rem;
-}
-
-/* View: neutral body; up color on border + label only (no green fill). */
-.terminal-realtime-flash a.terminal-realtime-view-btn,
-#realtime-notifications a.terminal-realtime-view-btn {
-  margin-left: 0;
-  flex-shrink: 0;
-  color: var(--terminal-up);
+/* New-league broadcasts: slightly stronger panel so they read as the “modal” strip. */
+.terminal-realtime-notif-card--persistent {
   background: var(--terminal-zebra);
-  border: 1px solid var(--terminal-up);
-  text-decoration: none;
+}
+
+.terminal-realtime-notif-main {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.terminal-realtime-notif-title {
   font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-size: 11px;
+  color: var(--terminal-accent);
+  margin-bottom: 0.2rem;
 }
 
-#realtime-notifications a.terminal-realtime-view-btn:hover,
-#realtime-notifications a.terminal-realtime-view-btn:focus-visible {
-  color: var(--terminal-up);
-  background: var(--terminal-panel);
-  border-color: var(--terminal-up);
-  filter: brightness(1.12);
-  text-decoration: underline;
-  text-underline-offset: 3px;
-  text-decoration-thickness: 1px;
+.terminal-realtime-notif-body {
+  line-height: 1.35;
+  margin-bottom: 0.35rem;
+  word-break: break-word;
 }
 
-/* Realtime rail sits outside <main>; keep View link styling consistent. */
-#realtime-notifications a.terminal-realtime-notice-link {
+/* “View league” lives outside <main> — style like terminal links, not dashboard accent wall. */
+#realtime-notifications a.terminal-realtime-notif-view {
+  display: inline-block;
+  margin-top: 0.15rem;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   color: var(--terminal-up);
   text-decoration: none;
-  font-weight: 600;
+  border-bottom: 1px solid var(--terminal-up);
 }
 
-#realtime-notifications a.terminal-realtime-notice-link:hover {
+#realtime-notifications a.terminal-realtime-notif-view:hover,
+#realtime-notifications a.terminal-realtime-notif-view:focus-visible {
   color: var(--terminal-text);
+  border-bottom-color: var(--terminal-text);
+}
+
+.terminal-realtime-notif-close {
+  flex: 0 0 auto;
+  margin: -0.1rem -0.1rem 0 0;
+  padding: 0.15rem 0.45rem;
+  font-family: inherit;
+  font-size: 1.1rem;
+  line-height: 1;
+  font-weight: 700;
+  color: var(--terminal-muted);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.terminal-realtime-notif-close:hover,
+.terminal-realtime-notif-close:focus-visible {
+  color: var(--terminal-text);
+  border-color: var(--terminal-border);
 }
 
 body.terminal-shell .disclaimer {

@@ -3,6 +3,8 @@ require "rails_helper"
 RSpec.describe "Leaderboards", type: :request do
   let(:league) { create(:league) }
   let(:user) { create(:user) }
+  # Leaderboard HTML is behind the same joined-league gate as the rest of the app.
+  let!(:membership) { create(:league_membership, user: user, league: league) }
   let!(:portfolio) { create(:portfolio, user: user, league: league, cash_balance: 50_000) }
 
   before do

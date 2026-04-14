@@ -9,14 +9,18 @@ RSpec.describe "Home dashboard", type: :request do
   end
 
   describe "GET /" do
-    it "returns success" do
+    # ApplicationController requires at least one LeagueMembership before non-league pages load.
+    it "redirects to leagues when the user has not joined any league" do
       get root_path
-      expect(response).to have_http_status(:ok)
+      expect(response).to redirect_to(leagues_path)
     end
 
     it "renders dashboard metrics" do
       # Ensure the dashboard has a focus portfolio so value/cash are non-zero.
-      create(:portfolio, user:, cash_balance: 121_699.50, total_value: 121_699.50)
+      league = create(:league)
+      # Membership satisfies the joined-league gate for GET /.
+      create(:league_membership, user:, league:)
+      create(:portfolio, user:, league:, cash_balance: 121_699.50, total_value: 121_699.50)
 
       get root_path
       expect(response.body).to include("DASHBOARD")

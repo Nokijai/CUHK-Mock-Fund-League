@@ -227,7 +227,7 @@ class League < ApplicationRecord
   end
 
   def broadcast_created_notification
-    # Broadcast into a shared stream that logged-in clients subscribe to from the layout.
+    # Global stream (see application layout): persistent card until each user clicks ×; unique id avoids DOM clashes when many leagues are created.
     broadcast_prepend_to(
       "league_notifications",
       target: "realtime-notifications",
@@ -236,7 +236,9 @@ class League < ApplicationRecord
         title: "New league created",
         body: name,
         league: self,
-        variant: :success
+        tone: :success,
+        notification_id: "league-created-#{id}-#{SecureRandom.hex(4)}",
+        auto_dismiss_ms: 0
       }
     )
   end
