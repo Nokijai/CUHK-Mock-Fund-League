@@ -2,6 +2,8 @@ require "rails_helper"
 
 RSpec.describe "Home dashboard", type: :request do
   let(:user) { create(:user) }
+  let(:running_league) { create(:league, name: "Running League", start_date: 1.day.ago, end_date: 1.day.from_now) }
+  let(:future_league) { create(:league, name: "Future League", start_date: 1.day.from_now, end_date: 1.month.from_now) }
 
   before do
     # Dashboard is behind authentication.
@@ -17,10 +19,8 @@ RSpec.describe "Home dashboard", type: :request do
 
     it "renders dashboard metrics" do
       # Ensure the dashboard has a focus portfolio so value/cash are non-zero.
-      league = create(:league)
-      # Membership satisfies the joined-league gate for GET /.
-      create(:league_membership, user:, league:)
-      create(:portfolio, user:, league:, cash_balance: 121_699.50, total_value: 121_699.50)
+      create(:league_membership, user: user, league: running_league)
+      create(:portfolio, user:, league: running_league, cash_balance: 121_699.50, total_value: 121_699.50)
 
       get root_path
       expect(response.body).to include("DASHBOARD")
@@ -31,6 +31,18 @@ RSpec.describe "Home dashboard", type: :request do
       expect(response.body).to include("TOP HOLDINGS")
       expect(response.body).to include("MARKET MOVERS")
       expect(response.body).to include("$121,699.50")
+    end
+
+    it "only shows running leagues in dashboard league widgets" do
+      create(:league_membership, user: user, league: running_league)
+      create(:portfolio, user: user, league: running_league)
+      create(:league_membership, user: user, league: future_league)
+      create(:portfolio, user: user, league: future_league)
+
+      get root_path
+
+      expect(response.body).to include("Running League")
+      expect(response.body).not_to include("Future League")
     end
   end
 end

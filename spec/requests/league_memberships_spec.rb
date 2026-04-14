@@ -22,5 +22,16 @@ RSpec.describe "League memberships (web)", type: :request do
         delete league_membership_path(membership)
       }.to change(Portfolio, :count).by(-1)
     end
+
+    it "does not allow leaving after league starts" do
+      league.update!(start_date: 1.day.ago, end_date: 1.day.from_now)
+
+      expect {
+        delete league_membership_path(membership)
+      }.not_to change(LeagueMembership, :count)
+      expect(response).to redirect_to(leagues_path(anchor: "league-#{league.id}"))
+      follow_redirect!
+      expect(response.body).to include("You can only leave a league before it starts.")
+    end
   end
 end

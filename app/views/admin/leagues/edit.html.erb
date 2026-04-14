@@ -1,8 +1,19 @@
 <% content_for :title, "Edit League — Admin" %>
+<% max_local = "9999-12-31T23:59" %>
+<% editable_before_start = @league.start_date.blank? || @league.start_date > Time.current %>
 <div class="terminal-page-head">
   <h1 class="terminal-page-title">EDIT LEAGUE</h1>
   <div class="terminal-page-meta"><%= @league.name %></div>
 </div>
+
+<% unless editable_before_start %>
+  <div class="terminal-admin-error-panel">
+    <strong>Editing is locked:</strong>
+    <ul>
+      <li>League cannot be edited after it has started.</li>
+    </ul>
+  </div>
+<% end %>
 
 <% if @league.team_mode? %>
   <div class="terminal-window" style="max-width: 900px; margin-top: 1rem;">
@@ -63,7 +74,7 @@
 <% end %>
 
 <div class="terminal-window terminal-admin-form-card">
-  <%= form_with model: @league, url: admin_league_path(@league), method: :patch, class: "terminal-form" do |f| %>
+  <%= form_with model: @league, url: admin_league_path(@league), method: :patch, class: "terminal-form", data: { controller: "team-mode-fields" } do |f| %>
     <div class="terminal-form-field">
       <%= f.label :name, "LEAGUE NAME", class: "terminal-label" %>
       <%= f.text_field :name, class: "terminal-input", required: true %>
@@ -75,49 +86,82 @@
     </div>
 
     <div class="terminal-form-field">
-      <span class="terminal-label">STARTING CAPITAL (LOCKED AFTER CREATION)</span>
-      <p class="terminal-form-hint" style="font-size: 13px; color: var(--terminal-text);"><%= number_to_currency(@league.starting_capital, precision: 2) %></p>
+      <%= f.label :starting_capital, "STARTING CAPITAL ($)", class: "terminal-label" %>
+      <% if editable_before_start %>
+        <%= f.number_field :starting_capital, class: "terminal-input", required: true, step: "0.01" %>
+      <% else %>
+        <p class="terminal-form-hint" style="font-size: 13px; color: var(--terminal-text);"><%= number_to_currency(@league.starting_capital, precision: 2) %> (locked)</p>
+      <% end %>
     </div>
 
     <div class="terminal-form-row">
       <div class="terminal-form-field">
         <%= f.label :start_date, "START DATE & TIME", class: "terminal-label" %>
-        <%= f.datetime_local_field :start_date, class: "terminal-input", required: true %>
+        <%= f.datetime_local_field :start_date, class: "terminal-input", required: true, max: max_local, step: 60, disabled: !editable_before_start %>
       </div>
       <div class="terminal-form-field">
         <%= f.label :end_date, "END DATE & TIME", class: "terminal-label" %>
-        <%= f.datetime_local_field :end_date, class: "terminal-input", required: true %>
+        <%= f.datetime_local_field :end_date, class: "terminal-input", required: true, max: max_local, step: 60, disabled: !editable_before_start %>
       </div>
     </div>
 
     <div class="terminal-form-field">
-      <span class="terminal-label">RULES (LOCKED AFTER CREATION)</span>
-      <% if @league.rules.present? %>
-        <p class="terminal-form-hint" style="font-size: 12px; color: var(--terminal-text);">
-          <% rendered_rule_line = false %>
-          <% if @league.max_participants.present? %>
-            Max participants: <%= @league.max_participants %><br>
-            <% rendered_rule_line = true %>
-          <% end %>
-          <% if @league.handling_fee_rule_configured? %>
-            Handling fee: <%= number_to_percentage(@league.handling_fee_proportion * 100, precision: 2) %><br>
-            <% rendered_rule_line = true %>
-          <% end %>
-          <% if @league.minimum_final_balance.present? %>
-            Minimum final balance: <%= number_to_currency(@league.minimum_final_balance) %>
-            <% rendered_rule_line = true %>
-          <% end %>
-          <% unless rendered_rule_line %>
-            <%= @league.rules.is_a?(Hash) ? @league.rules.to_json : @league.rules %>
-          <% end %>
-        </p>
+      <%= f.label :max_participants, "MAX PARTICIPANTS (OPTIONAL)", class: "terminal-label" %>
+      <% if editable_before_start %>
+        <%= f.number_field :max_participants, class: "terminal-input", min: 1, step: 1, placeholder: "e.g., 50" %>
       <% else %>
-        <p class="terminal-form-hint">No league-specific rules stored.</p>
+        <p class="terminal-form-hint">Max participants: <%= @league.max_participants.presence || "Not set" %> (locked)</p>
       <% end %>
     </div>
 
+    <div class="terminal-form-field">
+      <%= f.label :handling_fee_proportion, "HANDLING FEE PROPORTION (0.01 = 1%)", class: "terminal-label" %>
+      <% if editable_before_start %>
+        <%= f.number_field :handling_fee_proportion, class: "terminal-input", min: 0, max: 1, step: "0.0001", placeholder: "e.g., 0.0025" %>
+      <% else %>
+        <p class="terminal-form-hint">Handling fee: <%= @league.handling_fee_rule_configured? ? number_to_percentage(@league.handling_fee_proportion * 100, precision: 2) : "Not set" %> (locked)</p>
+      <% end %>
+    </div>
+
+    <div class="terminal-form-field">
+      <%= f.label :minimum_final_balance, "MINIMUM FINAL BALANCE (OPTIONAL)", class: "terminal-label" %>
+      <% if editable_before_start %>
+        <%= f.number_field :minimum_final_balance, class: "terminal-input", min: 0, step: "0.01", placeholder: "e.g., 90000" %>
+      <% else %>
+        <p class="terminal-form-hint">Minimum final balance: <%= @league.minimum_final_balance.present? ? number_to_currency(@league.minimum_final_balance) : "Not set" %> (locked)</p>
+      <% end %>
+    </div>
+
+    <div class="terminal-form-field">
+      <%= f.label :team_mode, "TEAM MODE", class: "terminal-label" %>
+      <% if editable_before_start %>
+        <%= f.check_box :team_mode, data: { action: "change->team-mode-fields#toggle", team_mode_fields_target: "toggle" } %>
+      <% else %>
+        <p class="terminal-form-hint">Team mode: <%= @league.team_mode? ? "Enabled" : "Disabled" %> (locked)</p>
+      <% end %>
+    </div>
+
+    <div class="terminal-form-row terminal-form-row--team-limits" data-team-mode-fields-target="fields">
+      <div class="terminal-form-field">
+        <%= f.label :team_min_participants, "TEAM MIN PARTICIPANTS", class: "terminal-label" %>
+        <% if editable_before_start %>
+          <%= f.number_field :team_min_participants, class: "terminal-input", min: 1, step: 1, placeholder: "e.g., 3" %>
+        <% else %>
+          <p class="terminal-form-hint">Team min participants: <%= @league.team_min_participants.presence || "Not set" %> (locked)</p>
+        <% end %>
+      </div>
+      <div class="terminal-form-field">
+        <%= f.label :team_max_participants, "TEAM MAX PARTICIPANTS", class: "terminal-label" %>
+        <% if editable_before_start %>
+          <%= f.number_field :team_max_participants, class: "terminal-input", min: 1, step: 1, placeholder: "e.g., 5" %>
+        <% else %>
+          <p class="terminal-form-hint">Team max participants: <%= @league.team_max_participants.presence || "Not set" %> (locked)</p>
+        <% end %>
+      </div>
+    </div>
+
     <div class="terminal-form-actions">
-      <%= f.submit "UPDATE LEAGUE", class: "terminal-btn terminal-btn-primary" %>
+      <%= f.submit "UPDATE LEAGUE", class: "terminal-btn terminal-btn-primary", disabled: !editable_before_start %>
       <%= link_to "CANCEL", admin_leagues_path, class: "terminal-btn" %>
     </div>
   <% end %>

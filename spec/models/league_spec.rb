@@ -1,6 +1,27 @@
 require "rails_helper"
 
 RSpec.describe League, type: :model do
+  describe "management time rules" do
+    it "requires start_date to be after current time when management rules are enforced" do
+      league = build(:league, start_date: 1.minute.ago, end_date: 1.day.from_now)
+      league.enforce_management_time_rules = true
+
+      expect(league).not_to be_valid
+      expect(league.errors[:start_date]).to include("must be after current time")
+    end
+
+    it "requires year to be 4 digits when management rules are enforced" do
+      league = build(:league)
+      league.start_date = DateTime.new(10_000, 1, 1, 0, 0, 0)
+      league.end_date = DateTime.new(10_000, 1, 2, 0, 0, 0)
+      league.enforce_management_time_rules = true
+
+      expect(league).not_to be_valid
+      expect(league.errors[:start_date]).to include("year must be 4 digits")
+      expect(league.errors[:end_date]).to include("year must be 4 digits")
+    end
+  end
+
   describe "admin-configured rule fields" do
     it "stores structured rule values inside rules json" do
       league = build(:league)
@@ -29,18 +50,24 @@ RSpec.describe League, type: :model do
       expect(zero_fee.handling_fee_rule_configured?).to be(true)
     end
 
-    it "disallows changing rules after the league is created" do
-      league = create(:league, rules: { "max_participants" => 10 })
+    it "allows changing rules before the league starts" do
+      league = create(:league, rules: { "max_participants" => 10 }, start_date: 2.days.from_now, end_date: 5.days.from_now)
       league.max_participants = 20
-      expect(league).not_to be_valid
-      expect(league.errors[:rules].join).to include("cannot be changed")
+      expect(league).to be_valid
     end
 
-    it "disallows changing starting_capital after the league is created" do
-      league = create(:league, starting_capital: 50_000)
+    it "allows changing starting_capital before the league starts" do
+      league = create(:league, starting_capital: 50_000, start_date: 2.days.from_now, end_date: 5.days.from_now)
       league.starting_capital = 75_000
+      expect(league).to be_valid
+    end
+
+    it "disallows changing values after the league has started" do
+      league = create(:league, starting_capital: 50_000, start_date: 2.days.ago, end_date: 2.days.from_now)
+      league.starting_capital = 75_000
+      league.max_participants = 20
       expect(league).not_to be_valid
-      expect(league.errors[:starting_capital].join).to include("cannot be changed")
+      expect(league.errors[:base]).to include("League cannot be edited after it has started")
     end
 
     it "reports capacity reached for configured max participants" do
@@ -49,6 +76,24 @@ RSpec.describe League, type: :model do
       create(:league_membership, league:)
 
       expect(league.full_for_new_members?).to be(true)
+    end
+  end
+
+  describe "join and quit windows" do
+    it "allows joining before start and while running, and blocks after end" do
+      league = build(:league, start_date: 1.day.from_now, end_date: 2.days.from_now)
+
+      expect(league.join_open_now?(at: Time.current)).to be(true)
+      expect(league.join_open_now?(at: league.start_date + 1.hour)).to be(true)
+      expect(league.join_open_now?(at: league.end_date + 1.second)).to be(false)
+    end
+
+    it "allows quitting only before start" do
+      league = build(:league, start_date: 1.day.from_now, end_date: 2.days.from_now)
+
+      expect(league.quit_open_now?(at: Time.current)).to be(true)
+      expect(league.quit_open_now?(at: league.start_date)).to be(false)
+      expect(league.quit_open_now?(at: league.start_date + 1.hour)).to be(false)
     end
   end
 end

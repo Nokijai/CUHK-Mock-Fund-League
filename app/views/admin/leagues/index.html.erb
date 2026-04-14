@@ -10,60 +10,103 @@
   <%= link_to "CREATE LEAGUE", new_admin_league_path, class: "terminal-btn terminal-btn-primary" %>
 </div>
 
-<%= render "admin/shared/search_box", search_placeholder: "Search by league name...", search_endpoint: admin_leagues_path %>
+<div class="terminal-admin-filters-row">
+  <div class="terminal-window terminal-search-box terminal-admin-search-box">
+    <%= form_with url: admin_leagues_path, method: :get, local: true, class: "terminal-admin-filter-form", data: { controller: "admin-table-search", admin_table_search_delay_value: 100, admin_table_search_target_selector_value: "#admin-leagues-results" } do %>
+      <%= hidden_field_tag :start_after, @start_after %>
+      <%= hidden_field_tag :end_before, @end_before %>
+      <label for="admin-leagues-search" class="terminal-label">SEARCH LEAGUES</label>
+      <input
+        type="text"
+        name="search"
+        id="admin-leagues-search"
+        class="terminal-input"
+        placeholder="Search by league name..."
+        value="<%= @search_query %>"
+        data-action="input->admin-table-search#queueSearch"
+      >
+    <% end %>
+  </div>
 
-<div class="terminal-window">
-  <table class="terminal-table">
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>NAME</th>
-        <th>START CAPITAL</th>
-        <th>DATES</th>
-        <th>CREATED</th>
-        <th></th>
-      </tr>
-    </thead>
-    <tbody>
-      <% @leagues.each do |league| %>
+  <div class="terminal-window terminal-search-box terminal-admin-filter-box">
+    <%= form_with url: admin_leagues_path, method: :get, local: true, class: "terminal-admin-filter-form" do %>
+      <%= hidden_field_tag :search, @search_query %>
+      <div class="terminal-admin-period-filter-fields">
+        <div class="terminal-form-field" style="margin-bottom: 0;">
+          <label for="admin-leagues-start-after" class="terminal-label">START AFTER</label>
+          <%= date_field_tag :start_after, @start_after, id: "admin-leagues-start-after", class: "terminal-input" %>
+        </div>
+        <div class="terminal-form-field" style="margin-bottom: 0;">
+          <label for="admin-leagues-end-before" class="terminal-label">END BEFORE</label>
+          <%= date_field_tag :end_before, @end_before, id: "admin-leagues-end-before", class: "terminal-input" %>
+        </div>
+      </div>
+      <div class="terminal-form-actions" style="margin-top: 0.6rem;">
+        <%= submit_tag "APPLY", class: "terminal-btn terminal-btn-primary" %>
+        <%= link_to "CLEAR", admin_leagues_path(search: @search_query), class: "terminal-btn" %>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<div id="admin-leagues-results">
+  <div class="terminal-window">
+    <table class="terminal-table">
+      <thead>
         <tr>
-          <td class="terminal-muted-cell">#<%= league.id %></td>
-          <td><strong><%= league.name %></strong></td>
-          <td class="num"><%= number_to_currency(league.starting_capital, precision: 0) %></td>
-          <td class="terminal-muted-cell"><%= format_datetime(league.start_date, format: :short) %> → <%= format_datetime(league.end_date, format: :short) %></td>
-          <td class="terminal-muted-cell"><%= league.created_at.strftime("%Y-%m-%d") %></td>
-          <td class="terminal-table-actions">
-            <%= link_to "EDIT", edit_admin_league_path(league) %>
-            <%= button_to "DELETE", admin_league_path(league), method: :delete, form: { onsubmit: "showDeleteModal('#{league.name.gsub("'", "\\'")}', this); return false;" }, class: "terminal-action-link terminal-action-link--delete" %>
-          </td>
+          <th>NAME</th>
+          <th>START CAPITAL</th>
+          <th>DATES</th>
+          <th>CREATED</th>
+          <th></th>
         </tr>
-      <% end %>
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+        <% @leagues.each do |league| %>
+          <% locked_for_management = league.start_date.present? && league.start_date <= Time.current %>
+          <tr>
+            <td><strong><%= league.name %></strong></td>
+            <td><%= number_to_currency(league.starting_capital, precision: 0) %></td>
+            <td class="terminal-muted-cell"><%= format_datetime(league.start_date, format: :short) %> → <%= format_datetime(league.end_date, format: :short) %></td>
+            <td class="terminal-muted-cell"><%= league.created_at.strftime("%Y-%m-%d") %></td>
+            <td class="terminal-table-actions">
+              <% if locked_for_management %>
+                <span class="terminal-action-link terminal-action-link--disabled">EDIT</span>
+                <span class="terminal-action-link terminal-action-link--disabled">DELETE</span>
+              <% else %>
+                <%= link_to "EDIT", edit_admin_league_path(league) %>
+                <%= button_to "DELETE", admin_league_path(league), method: :delete, form: { onsubmit: "showDeleteModal('#{league.name.gsub("'", "\\'")}', this); return false;" }, class: "terminal-action-link terminal-action-link--delete" %>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
 
-  <% if @leagues.empty? %>
-    <div class="terminal-empty-state">
-      <% if params[:search].present? %>
-        No leagues found matching "<%= params[:search] %>"
+    <% if @leagues.empty? %>
+      <div class="terminal-empty-state">
+        <% if params[:search].present? %>
+          No leagues found matching "<%= params[:search] %>"
+        <% else %>
+          No leagues found.
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+
+  <% if @leagues.total_pages > 1 %>
+    <div class="terminal-pagination">
+      <% if @leagues.prev_page %>
+        <%= link_to "PREV", admin_leagues_path(page: @leagues.prev_page, search: @search_query, start_after: @start_after, end_before: @end_before), class: "terminal-btn" %>
       <% else %>
-        No leagues found.
+        <span class="terminal-btn terminal-btn--ghost">PREV</span>
+      <% end %>
+      <span class="terminal-pagination-info">Page <%= @leagues.current_page %> of <%= @leagues.total_pages %></span>
+      <% if @leagues.next_page %>
+        <%= link_to "NEXT", admin_leagues_path(page: @leagues.next_page, search: @search_query, start_after: @start_after, end_before: @end_before), class: "terminal-btn" %>
+      <% else %>
+        <span class="terminal-btn terminal-btn--ghost">NEXT</span>
       <% end %>
     </div>
   <% end %>
 </div>
-
-<% if @leagues.total_pages > 1 %>
-  <div class="terminal-pagination">
-    <% if @leagues.prev_page %>
-      <%= link_to "PREV", admin_leagues_path(page: @leagues.prev_page, search: params[:search]), class: "terminal-btn" %>
-    <% else %>
-      <span class="terminal-btn terminal-btn--ghost">PREV</span>
-    <% end %>
-    <span class="terminal-pagination-info">Page <%= @leagues.current_page %> of <%= @leagues.total_pages %></span>
-    <% if @leagues.next_page %>
-      <%= link_to "NEXT", admin_leagues_path(page: @leagues.next_page, search: params[:search]), class: "terminal-btn" %>
-    <% else %>
-      <span class="terminal-btn terminal-btn--ghost">NEXT</span>
-    <% end %>
-  </div>
-<% end %>

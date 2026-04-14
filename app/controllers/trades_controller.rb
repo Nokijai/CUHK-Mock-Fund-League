@@ -177,7 +177,7 @@ class TradesController < ApplicationController
 
   def set_portfolio
     # Reuse preloaded nav context from ApplicationController to avoid repeat queries.
-    if @joined_leagues.blank?
+    if @running_leagues.blank?
       redirect_to leagues_path, alert: "Please join a league first."
       return
     end
@@ -186,16 +186,21 @@ class TradesController < ApplicationController
       # Membership already loaded by set_terminal_nav_context; look up in-memory.
       @portfolio = @league_portfolio_map[params[:league_id].to_i]
       unless @portfolio
-        redirect_to leagues_path, alert: "Please select a league you joined."
+        redirect_to leagues_path, alert: "Please select a running league."
         return
       end
     else
       @portfolio = @league_portfolio_map.values.find { |p| p.id == params[:portfolio_id].to_i } ||
-                   current_user.portfolios.find(params[:portfolio_id])
+                   current_user.portfolios.find_by(id: params[:portfolio_id])
+
+      unless @portfolio&.league&.running_now?
+        redirect_to leagues_path, alert: "Please select a running league."
+        return
+      end
     end
 
     # Prefer preloaded league object to avoid an extra association query.
-    @selected_league = @joined_leagues.find { |league| league.id == @portfolio.league_id } || @portfolio.league
+    @selected_league = @running_leagues.find { |league| league.id == @portfolio.league_id } || @portfolio.league
     @nav_league = @selected_league
     @nav_portfolio = @portfolio
   end

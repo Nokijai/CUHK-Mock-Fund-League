@@ -1,6 +1,6 @@
-<%# League selector used on Trading/Portfolio; options only include joined leagues. %>
-<% if user_signed_in? && @joined_leagues.present? %>
-  <% league_options = @joined_leagues.filter_map do |league| %>
+<%# League selector used on Trading/Portfolio; options only include running leagues with portfolios. %>
+<% if user_signed_in? && @running_leagues.present? %>
+  <% league_options = @running_leagues.filter_map do |league| %>
     <% portfolio = @league_portfolio_map[league.id] %>
     <% next unless portfolio %>
     <% destination = page_type == :trading ? new_portfolio_trade_path(portfolio, league_id: league.id) : portfolio_path(portfolio, league_id: league.id) %>

@@ -71,6 +71,10 @@ Rails.application.configure do
   # Set host to be used by links generated in mailer templates.
   config.action_mailer.default_url_options = { host: "example.com" }
 
+  # Request specs use www.example.com by default; allow it to avoid HostAuthorization 403s.
+  config.hosts << "www.example.com"
+  config.hosts << "example.com"
+
   # Print deprecation notices to the stderr.
   config.active_support.deprecation = :stderr
 

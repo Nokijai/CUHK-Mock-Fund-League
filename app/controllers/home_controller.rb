@@ -41,7 +41,7 @@ class HomeController < ApplicationController
     return nil unless current_user
     return @league_portfolio_map[@selected_league.id] if @selected_league
 
-    current_user.portfolios.first
+    @league_portfolio_map.values.first
   end
 
   def dashboard_league(portfolio)
@@ -193,6 +193,7 @@ class HomeController < ApplicationController
   def available_league_rows
     # Counter in SQL avoids loading all membership rows just to count.
     League
+      .running_now
       .left_joins(:league_memberships)
       .group("leagues.id")
       .order(start_date: :asc)

@@ -1,0 +1,112 @@
+<div id="past-leagues-results">
+  <% if @past_leagues.any? %>
+    <div class="terminal-league-cards" data-controller="leagues-deep-link">
+      <% @past_leagues.each do |league| %>
+        <% membership = @membership_by_league_id[league.id] %>
+        <% portfolio = @portfolio_by_league_id[league.id] %>
+        <% team_membership = @team_membership_by_league_id[league.id] %>
+        <% member_count = league.respond_to?(:memberships_count) ? league.memberships_count : league.league_memberships.size %>
+        <details
+          class="terminal-window terminal-league-card"
+          id="league-<%= league.id %>"
+          name="league-accordion"
+          data-league-start-at-ms="<%= league.start_date.to_i * 1000 %>"
+          data-league-end-at-ms="<%= league.end_date.to_i * 1000 %>"
+        >
+          <summary class="terminal-league-card-summary">
+            <div class="terminal-league-summary-main">
+              <strong><%= league.name %></strong>
+              <% if membership %>
+                <span class="terminal-page-meta" style="margin-left: 0.5rem;">YOU #<%= portfolio&.best_rank || "-" %></span>
+              <% end %>
+            </div>
+            <div class="terminal-league-summary-meta">
+              <span><%= number_to_currency(league.starting_capital, precision: 0) %></span>
+              <span><%= format_datetime(league.start_date, format: :short) %> → <%= format_datetime(league.end_date, format: :short) %></span>
+            </div>
+          </summary>
+
+          <div class="terminal-league-card-body">
+            <div class="terminal-stats-row terminal-stats-row--tight">
+              <div class="terminal-stat-card">
+                <div class="terminal-stat-label">STARTING CAPITAL</div>
+                <div class="terminal-stat-value"><%= number_to_currency(league.starting_capital, precision: 0) %></div>
+              </div>
+              <div class="terminal-stat-card">
+                <div class="terminal-stat-label">SCHEDULE</div>
+                <div class="terminal-stat-value terminal-stat-small"><%= format_datetime(league.start_date, format: :short) %> → <%= format_datetime(league.end_date, format: :short) %></div>
+              </div>
+              <div class="terminal-stat-card">
+                <div class="terminal-stat-label">MEMBERS</div>
+                <div class="terminal-stat-value terminal-stat-small"><%= member_count %></div>
+              </div>
+            </div>
+
+            <div class="terminal-league-details">
+              <div class="terminal-stat-label">DESCRIPTION</div>
+              <p class="terminal-page-meta"><%= league.description.presence || "No description provided." %></p>
+              <% if league.rules.present? %>
+                <div class="terminal-stat-label">RULES</div>
+                <p class="terminal-page-meta">
+                  <% rendered_rule_line = false %>
+                  <% if league.max_participants.present? %>
+                    Max participants: <%= league.max_participants %><br>
+                    <% rendered_rule_line = true %>
+                  <% end %>
+                  <% if league.handling_fee_rule_configured? %>
+                    Handling fee: <%= number_to_percentage(league.handling_fee_proportion * 100, precision: 2) %><br>
+                    <% rendered_rule_line = true %>
+                  <% end %>
+                  <% if league.minimum_final_balance.present? %>
+                    Minimum final balance: <%= number_to_currency(league.minimum_final_balance) %>
+                    <% rendered_rule_line = true %>
+                  <% end %>
+                  <% unless rendered_rule_line %>
+                    <%= league.rules.is_a?(Hash) ? league.rules.to_json : league.rules %>
+                  <% end %>
+                </p>
+              <% end %>
+            </div>
+
+            <% if league.team_mode? %>
+              <%= turbo_frame_tag "league-teams-#{league.id}" do %>
+                <%= render "leagues/team_mode_panel", league: league, team_membership: team_membership %>
+              <% end %>
+            <% end %>
+
+            <div class="terminal-toolbar">
+              <span class="terminal-btn terminal-btn-disabled">ENDED</span>
+              <%= link_to "LEADERBOARD", league_leaderboard_path(league), class: "terminal-btn terminal-btn-primary" %>
+            </div>
+          </div>
+        </details>
+      <% end %>
+    </div>
+  <% end %>
+
+  <% if @past_leagues.empty? %>
+    <div class="terminal-empty-state">
+      <% if params[:search].present? %>
+        No past leagues found matching "<%= params[:search] %>"
+      <% else %>
+        No past leagues found.
+      <% end %>
+    </div>
+  <% end %>
+
+  <% if @past_leagues.total_pages > 1 %>
+    <div class="terminal-pagination">
+      <% if @past_leagues.prev_page %>
+        <%= link_to "PREV", leagues_path(page: @past_leagues.prev_page, search: params[:search]), class: "terminal-btn" %>
+      <% else %>
+        <span class="terminal-btn terminal-btn--ghost">PREV</span>
+      <% end %>
+      <span class="terminal-pagination-info">Page <%= @past_leagues.current_page %> of <%= @past_leagues.total_pages %></span>
+      <% if @past_leagues.next_page %>
+        <%= link_to "NEXT", leagues_path(page: @past_leagues.next_page, search: params[:search]), class: "terminal-btn" %>
+      <% else %>
+        <span class="terminal-btn terminal-btn--ghost">NEXT</span>
+      <% end %>
+    </div>
+  <% end %>
+</div>

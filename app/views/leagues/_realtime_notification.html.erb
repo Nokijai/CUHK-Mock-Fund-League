@@ -7,6 +7,7 @@
   id="<%= notification_id %>"
   class="terminal-realtime-notif-card terminal-realtime-notif-card--<%= tone %> <%= "terminal-realtime-notif-card--persistent" if auto_dismiss_ms <= 0 %>"
   data-controller="realtime-notification"
+  data-action="click->realtime-notification#dismissOnCardClick contextmenu->realtime-notification#dismissFromContextMenu"
   data-realtime-notification-auto-dismiss-ms-value="<%= auto_dismiss_ms %>"
   role="status"
 >

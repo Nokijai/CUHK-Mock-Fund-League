@@ -34,6 +34,10 @@ development:
     <<: *default
     database: cuhk_mock_fund_league_development
     migrations_paths: db/queue_migrate
+  cable:
+    <<: *default
+    database: cuhk_mock_fund_league_development
+    migrations_paths: db/cable_migrate
 
   # The TCP port the server listens on. Defaults to 5432.
   # If your server runs on a different port number, change accordingly.
@@ -64,6 +68,11 @@ test:
     host: <%= ENV.fetch("PGHOST_TEST", "localhost") %>
     database: cuhk_mock_fund_league_test
     migrations_paths: db/queue_migrate
+  cable:
+    <<: *default
+    host: <%= ENV.fetch("PGHOST_TEST", "localhost") %>
+    database: cuhk_mock_fund_league_test
+    migrations_paths: db/cable_migrate
 
 # As with config/credentials.yml, you never want to store sensitive information,
 # like your database password, in your source code. If your source code is

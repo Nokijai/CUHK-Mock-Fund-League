@@ -10,12 +10,12 @@ class LeagueMembershipsController < ApplicationController
     @league_membership = current_user.league_memberships.find_or_initialize_by(league: league)
 
     if @league_membership.persisted?
-      redirect_to leagues_path(anchor: "league-#{league.id}"), notice: "You have already joined this league."
+      redirect_to leagues_path(anchor: "league-#{league.id}"), notice: "You are already registered for this league."
       return
     end
 
     unless league.join_open_now?
-      # Enforce league schedule window before allowing new members.
+      # Enforce registration window before allowing new members.
       alert_message = league.join_block_reason == :not_opened ? "This league has not opened yet." : "This league has expired."
       redirect_to leagues_path(anchor: "league-#{league.id}"), alert: alert_message
       return
@@ -35,7 +35,7 @@ class LeagueMembershipsController < ApplicationController
       end
     end
 
-    redirect_to leagues_path(anchor: "league-#{league.id}"), notice: "Successfully joined the league."
+    redirect_to leagues_path(anchor: "league-#{league.id}"), notice: "Successfully registered for the league."
   rescue ActiveRecord::RecordInvalid => e
     redirect_back fallback_location: leagues_path, alert: e.record.errors.full_messages.join(", ")
   rescue ActiveRecord::RecordNotFound
@@ -48,10 +48,15 @@ class LeagueMembershipsController < ApplicationController
       return
     end
 
+    unless @league_membership.league.quit_open_now?
+      redirect_to leagues_path(anchor: "league-#{@league_membership.league_id}"), alert: "You can only leave a league before it starts."
+      return
+    end
+
     # leave_with_cleanup! clears team + portfolio rows so the user is fully detached from the league.
     league_id = @league_membership.league_id
     @league_membership.leave_with_cleanup!
-    redirect_to leagues_path(anchor: "league-#{league_id}"), notice: "Successfully left the league."
+    redirect_to leagues_path(anchor: "league-#{league_id}"), notice: "Successfully unregistered from the league."
   rescue ActiveRecord::RecordNotDestroyed, ActiveRecord::InvalidForeignKey => e
     redirect_back fallback_location: leagues_path, alert: "Could not leave the league: #{e.message}"
   end

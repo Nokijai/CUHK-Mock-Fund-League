@@ -13,7 +13,7 @@ module Searchable
         scope = scope.where(conditions, *values)
       end
 
-      scope.order(created_at: :desc).page(page).per(per_page)
+      scope.order(created_at: :desc, id: :desc).page(page).per(per_page)
     end
   end
 end

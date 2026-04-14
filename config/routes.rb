@@ -42,6 +42,7 @@ Rails.application.routes.draw do
   end
 
   resources :leagues do
+    get :refresh, on: :collection
     get "leaderboard", to: "leaderboards#show", as: :leaderboard
     # Team-mode leagues: users join by selecting a team (with password) instead of direct league join.
     resources :teams, controller: "league_teams", only: [ :create, :destroy ] do

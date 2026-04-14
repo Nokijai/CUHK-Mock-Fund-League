@@ -22,6 +22,17 @@ export default class extends Controller {
       window.clearTimeout(this.timeoutId)
       this.timeoutId = null
     }
-    this.element.remove()
+    this.element.classList.add("terminal-realtime-notif-card--closing")
+    window.setTimeout(() => this.element.remove(), 320)
+  }
+
+  dismissFromContextMenu(event) {
+    event.preventDefault()
+    this.dismiss()
+  }
+
+  dismissOnCardClick(event) {
+    if (event.target.closest("a, button")) return
+    this.dismiss()
   }
 }

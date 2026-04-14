@@ -2,7 +2,6 @@ class LeagueExpiryReminderJob < ApplicationJob
   queue_as :default
 
   # Fires once per user per checkpoint inside a 1-minute window before that offset from league end.
-  # Hash order is high → low so `due_checkpoint` picks the tightest matching band first.
   END_CHECKPOINTS = {
     1.day.to_i => "1 day left",
     1.hour.to_i => "1 hour left",
@@ -10,87 +9,87 @@ class LeagueExpiryReminderJob < ApplicationJob
     15.minutes.to_i => "15 minutes left"
   }.freeze
   CHECK_WINDOW = 1.minute
-  # Scan far enough ahead to catch the 1-day reminder without scanning the whole table.
   MAX_END_LOOKAHEAD = 1.day + CHECK_WINDOW
-  MEMBER_TOAST_MS = 10_000
+  MEMBER_TOAST_MS = 0
 
-  # Recurring job: live toasts near end, plus lifecycle emails when a league opens or officially closes.
   def perform(now: Time.current)
-    deliver_league_started_to_members(now)
-    deliver_league_ended_emails_to_members(now)
-    deliver_end_reminders_to_members(now)
-    deliver_winner_congratulations(now)
+    deliver_league_started_notifications(now)
+    deliver_end_reminder_notifications(now)
+    deliver_league_ended_notifications(now)
   end
 
   private
 
-  # When start_date enters the recent past, tell joined users the league is live (10s toast) and email them once.
-  def deliver_league_started_to_members(now)
+  # Notify only joined users when a league starts.
+  def deliver_league_started_notifications(now)
     League
       .where(start_date: (now - CHECK_WINDOW)..now)
       .where("end_date > ?", now)
-      .includes(league_memberships: :user)
       .find_each do |league|
-        league.league_memberships.each do |membership|
+        league.league_memberships.includes(:user).find_each do |membership|
           user = membership.user
-          next unless user
-
-          if claim_started_toast_slot(league.id, user.id)
-            broadcast_member_card(
-              user,
-              league,
-              title: "League started",
-              body: "\"#{league.name}\" is now open for trading.",
-              notification_id: "league-started-#{league.id}-#{user.id}",
-              auto_dismiss_ms: MEMBER_TOAST_MS
-            )
-          end
-
-          next unless claim_started_email_slot(league.id, user.id)
+          next unless claim_user_slot("league_started_notice/#{league.id}/#{user.id}", event_at: league.start_date)
 
           LeagueMailer.league_opened(user, league).deliver_now
+          broadcast_member_card(
+            user,
+            league,
+            title: "League started",
+            body: "\"#{league.name}\" is now open for trading.",
+            notification_id: "league-started-#{league.id}-#{user.id}",
+            auto_dismiss_ms: MEMBER_TOAST_MS
+          )
         end
       end
   end
 
-  # After end_date passes, email every member once so they know the league window is officially closed.
-  def deliver_league_ended_emails_to_members(now)
-    # Email delivery should not depend on a narrow timing window:
-    # if the worker is down for a few minutes, we still want every joined user
-    # to receive the closure email once the league has ended.
-    LeagueMembership
-      .joins(:league)
-      .where(leagues: { end_date: ..now })
-      .where(league_closed_email_sent_at: nil)
-      .includes(:user, :league)
-      .find_each do |membership|
-        membership.with_lock do
-          # Double-check under the row lock to prevent double-sends in multi-worker setups.
-          next if membership.league_closed_email_sent_at.present?
-
-          user = membership.user
-          league = membership.league
-          next unless user && league
-
-          LeagueMailer.league_closed(user, league).deliver_now
-          membership.update!(league_closed_email_sent_at: now)
-        end
-      end
-  end
-
-  def deliver_end_reminders_to_members(now)
+  # Broadcast 15-minute warnings only for leagues that run longer than 30 minutes.
+  def deliver_end_reminder_notifications(now)
     League
       .where(end_date: (now - CHECK_WINDOW)..(now + MAX_END_LOOKAHEAD))
-      .includes(league_memberships: :user)
       .find_each do |league|
         next if league.end_date.blank?
+        next unless fifteen_minute_notice_allowed?(league)
 
         seconds_left = (league.end_date - now).to_i
         checkpoint = due_end_checkpoint(seconds_left)
         next unless checkpoint
 
-        message = "League \"#{league.name}\" — #{END_CHECKPOINTS.fetch(checkpoint)} until the end."
-        notify_joined_users(league, checkpoint, message)
+        league.league_memberships.includes(:user).find_each do |membership|
+          user = membership.user
+          next unless claim_user_slot("league_expiry_notice/#{league.id}/#{user.id}/#{checkpoint}", event_at: league.end_date)
+
+          broadcast_member_card(
+            user,
+            league,
+            title: "League ending soon",
+            body: "League \"#{league.name}\" — #{END_CHECKPOINTS.fetch(checkpoint)} until the end.",
+            notification_id: "league-end-#{league.id}-#{checkpoint}-#{user.id}",
+            auto_dismiss_ms: MEMBER_TOAST_MS
+          )
+        end
+      end
+  end
+
+  def deliver_league_ended_notifications(now)
+    League
+      .where(end_date: (now - CHECK_WINDOW)..now)
+      .find_each do |league|
+        league.league_memberships.includes(:user).find_each do |membership|
+          user = membership.user
+          next unless claim_user_slot("league_ended_notice/#{league.id}/#{user.id}", event_at: league.end_date)
+
+          LeagueMailer.league_closed(user, league).deliver_now
+          membership.update_column(:league_closed_email_sent_at, Time.current)
+          broadcast_member_card(
+            user,
+            league,
+            title: "League ended",
+            body: "\"#{league.name}\" has ended. Final standings are now available.",
+            notification_id: "league-ended-#{league.id}-#{user.id}",
+            auto_dismiss_ms: MEMBER_TOAST_MS
+          )
+        end
       end
   end
 
@@ -98,88 +97,19 @@ class LeagueExpiryReminderJob < ApplicationJob
     END_CHECKPOINTS.keys.find { |seconds| seconds_left <= seconds && seconds_left > (seconds - CHECK_WINDOW.to_i) }
   end
 
-  def notify_joined_users(league, checkpoint, message)
-    league.league_memberships.each do |membership|
-      user = membership.user
-      next unless user
-      next unless claim_end_slot(league.id, user.id, checkpoint)
+  def fifteen_minute_notice_allowed?(league)
+    return false if league.start_date.blank? || league.end_date.blank?
 
-      broadcast_member_card(
-        user,
-        league,
-        title: "League ending soon",
-        body: message,
-        notification_id: "league-end-#{league.id}-#{checkpoint}-#{user.id}",
-        auto_dismiss_ms: MEMBER_TOAST_MS
-      )
-    end
+    (league.end_date - league.start_date) > 30.minutes
   end
 
-  # Toast dedupe key (independent from email so both channels can fire together once).
-  def claim_started_toast_slot(league_id, user_id)
-    key = "league_started_notice/#{league_id}/#{user_id}"
-    Rails.cache.write(key, true, expires_in: 2.days, unless_exist: true)
-  end
-
-  # Email dedupe: same 1-minute window as the toast, but its own key so we never double-send after a restart.
-  def claim_started_email_slot(league_id, user_id)
-    key = "league_started_email/#{league_id}/#{user_id}"
-    Rails.cache.write(key, true, expires_in: 2.days, unless_exist: true)
-  end
-
-  # One closure email per member; relies on Solid Queue recurring tick (see config/recurring.yml).
-  def claim_ended_email_slot(league_id, user_id)
-    key = "league_ended_email/#{league_id}/#{user_id}"
-    Rails.cache.write(key, true, expires_in: 2.days, unless_exist: true)
-  end
-
-  def claim_end_slot(league_id, user_id, checkpoint)
-    key = "league_expiry_notice/#{league_id}/#{user_id}/#{checkpoint}"
+  def claim_user_slot(key, event_at: nil)
     Rails.cache.write(key, true, expires_in: 3.days, unless_exist: true)
   end
 
-  # When a league just ended, compute the final leaderboard and broadcast a global congrats to the winner.
-  def deliver_winner_congratulations(now)
-    League
-      .where(end_date: (now - CHECK_WINDOW)..now)
-      .find_each do |league|
-        next unless claim_winner_congrats_slot(league.id)
-
-        rankings = if league.team_mode?
-          TeamLeaderboardService.new(league).compute
-        else
-          LeaderboardService.new(league).compute
-        end
-
-        winner = rankings.first
-        next unless winner
-
-        winner_name = league.team_mode? ? winner[:team_name] : winner[:name]
-
-        league.broadcast_prepend_to(
-          "league_notifications",
-          target: "realtime-notifications",
-          partial: "leagues/realtime_notification",
-          locals: {
-            title: "League finished! \u{1F3C6}",
-            body: "Congratulations to #{winner_name} for winning \"#{league.name}\"!",
-            league: league,
-            tone: :success,
-            notification_id: "league-winner-#{league.id}",
-            auto_dismiss_ms: 0
-          }
-        )
-      end
-  end
-
-  def claim_winner_congrats_slot(league_id)
-    key = "league_winner_congrats/#{league_id}"
-    Rails.cache.write(key, true, expires_in: 3.days, unless_exist: true)
-  end
-
-  # Private per-user Turbo stream (see layout): timed toasts share the same dismiss controller as global notices.
+  # Private Turbo stream to a member-only reminder channel.
   def broadcast_member_card(user, league, title:, body:, notification_id:, auto_dismiss_ms:)
-    league.broadcast_prepend_to(
+    user.broadcast_prepend_to(
       [ user, "league_notifications" ],
       target: "realtime-notifications",
       partial: "leagues/realtime_notification",

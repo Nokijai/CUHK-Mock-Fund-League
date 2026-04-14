@@ -1,4 +1,5 @@
 <% content_for :title, "Create League — Admin" %>
+<% max_local = "9999-12-31T23:59" %>
 <div class="terminal-page-head">
   <h1 class="terminal-page-title">CREATE LEAGUE</h1>
   <div class="terminal-page-meta">Admin panel</div>
@@ -16,7 +17,7 @@
 <% end %>
 
 <div class="terminal-window terminal-admin-form-card">
-  <%= form_with model: @league, url: admin_leagues_path, class: "terminal-form" do |f| %>
+  <%= form_with model: @league, url: admin_leagues_path, class: "terminal-form", data: { controller: "team-mode-fields" } do |f| %>
     <div class="terminal-form-field">
       <%= f.label :name, "LEAGUE NAME", class: "terminal-label" %>
       <%= f.text_field :name, class: "terminal-input", required: true, placeholder: "e.g., Spring 2026 Trading Competition" %>
@@ -35,11 +36,11 @@
     <div class="terminal-form-row">
       <div class="terminal-form-field">
         <%= f.label :start_date, "START DATE & TIME", class: "terminal-label" %>
-        <%= f.datetime_local_field :start_date, class: "terminal-input", required: true %>
+        <%= f.datetime_local_field :start_date, class: "terminal-input", required: true, max: max_local, step: 60 %>
       </div>
       <div class="terminal-form-field">
         <%= f.label :end_date, "END DATE & TIME", class: "terminal-label" %>
-        <%= f.datetime_local_field :end_date, class: "terminal-input", required: true %>
+        <%= f.datetime_local_field :end_date, class: "terminal-input", required: true, max: max_local, step: 60 %>
       </div>
     </div>
 
@@ -59,19 +60,19 @@
     </div>
 
     <div class="terminal-form-field">
-      <%= f.label :team_mode, "TEAM MODE (OPTIONAL)", class: "terminal-label" %>
+      <%= f.label :team_mode, "TEAM MODE", class: "terminal-label" %>
       <div class="terminal-form-hint">If enabled, users must join a team (with password) instead of joining the league individually.</div>
-      <%= f.check_box :team_mode %>
+      <%= f.check_box :team_mode, data: { action: "change->team-mode-fields#toggle", team_mode_fields_target: "toggle" } %>
     </div>
 
-    <div class="terminal-form-row">
+    <div class="terminal-form-row terminal-form-row--team-limits" data-team-mode-fields-target="fields">
       <div class="terminal-form-field">
-        <%= f.label :team_max_participants, "TEAM MAX PARTICIPANTS (OPTIONAL)", class: "terminal-label" %>
-        <%= f.number_field :team_max_participants, class: "terminal-input", min: 1, step: 1, placeholder: "e.g., 5" %>
+        <%= f.label :team_min_participants, "TEAM MIN PARTICIPANTS", class: "terminal-label" %>
+        <%= f.number_field :team_min_participants, class: "terminal-input", min: 1, step: 1, placeholder: "e.g., 3" %>
       </div>
       <div class="terminal-form-field">
-        <%= f.label :team_min_participants, "TEAM MIN PARTICIPANTS TO BE ELIGIBLE (OPTIONAL)", class: "terminal-label" %>
-        <%= f.number_field :team_min_participants, class: "terminal-input", min: 1, step: 1, placeholder: "e.g., 3" %>
+        <%= f.label :team_max_participants, "TEAM MAX PARTICIPANTS", class: "terminal-label" %>
+        <%= f.number_field :team_max_participants, class: "terminal-input", min: 1, step: 1, placeholder: "e.g., 5" %>
       </div>
     </div>
 

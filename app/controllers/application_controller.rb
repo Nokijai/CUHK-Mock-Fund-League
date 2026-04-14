@@ -32,24 +32,28 @@ class ApplicationController < ActionController::Base
 
     joined_memberships = current_user.league_memberships.includes(:league).order(:joined_at).to_a
     @joined_leagues = joined_memberships.map(&:league).compact
+    running_memberships = joined_memberships.select { |membership| membership.league&.running_now? }
+    @running_leagues = running_memberships.map(&:league).compact
     # Load once and reuse instead of querying current_user.portfolios multiple times.
     user_portfolios = current_user.portfolios.to_a
-    @league_portfolio_map = user_portfolios.index_by(&:league_id)
+    running_league_ids = @running_leagues.map(&:id)
+    @league_portfolio_map = user_portfolios.select { |portfolio| running_league_ids.include?(portfolio.league_id) }.index_by(&:league_id)
 
     requested_league_id = params[:league_id].presence
     selected_membership = if requested_league_id.present?
       # Reuse preloaded memberships to avoid an extra query per request.
-      joined_memberships.find { |membership| membership.league_id == requested_league_id.to_i }
+      running_memberships.find { |membership| membership.league_id == requested_league_id.to_i }
     end
-    @selected_league = selected_membership&.league || @joined_leagues.first
+    @selected_league = selected_membership&.league || @running_leagues.first
 
     # Keep top-nav links consistent with the user's selected league context.
     @nav_league = @selected_league
-    @nav_portfolio = @league_portfolio_map[@selected_league&.id] || user_portfolios.first
+    @nav_portfolio = @league_portfolio_map[@selected_league&.id] || @league_portfolio_map.values.first
   end
 
   def set_guest_nav_context
     @joined_leagues = []
+    @running_leagues = []
     @league_portfolio_map = {}
     @selected_league = nil
     @nav_league = nil
@@ -118,5 +122,34 @@ class ApplicationController < ActionController::Base
     else
       false
     end
+  end
+
+  def apply_fuzzy_search(scope, fields, raw_query)
+    patterns = fuzzy_patterns(raw_query)
+    normalized_fields = Array(fields).map(&:to_s).reject(&:blank?)
+    return scope if patterns.empty? || normalized_fields.empty?
+
+    conditions = normalized_fields.flat_map do |field|
+      Array.new(patterns.length, "#{field} ILIKE ?")
+    end.join(" OR ")
+    values = normalized_fields.flat_map { patterns }
+
+    scope.where(conditions, *values)
+  end
+
+  def fuzzy_patterns(raw_query)
+    query = raw_query.to_s.strip
+    return [] if query.blank?
+
+    safe_query = ActiveRecord::Base.sanitize_sql_like(query)
+    squashed = safe_query.gsub(/\s+/, " ")
+    compact_chars = squashed.delete(" ")
+    tokens = squashed.split(" ")
+
+    patterns = []
+    patterns << "%#{squashed}%"
+    patterns << "%#{compact_chars.chars.join('%')}%" if compact_chars.present?
+    patterns << "%#{tokens.join('%')}%" if tokens.any?
+    patterns.uniq
   end
 end

@@ -1,9 +1,5 @@
 # This file is copied to spec/ when you run 'rails generate rspec:install'
 require 'spec_helper'
-# Force test env even when dotenv/docker sets RAILS_ENV=development.
-# If RSpec boots in development, it can:
-# - connect to / truncate the wrong database
-# - fail request specs due to HostAuthorization and other env-specific middleware
 ENV['RAILS_ENV'] = 'test'
 
 # Local test runs may load `.env` (dotenv-rails) which can contain Docker service hostnames
@@ -65,7 +61,7 @@ require 'devise'
 # Request specs use Rack::Test default User-Agent ("Rack::Test"), which can be rejected by
 # `allow_browser versions: :modern`. Force a modern UA so request specs exercise controllers
 # instead of the browser gate returning 403.
-Rails.application.env_config["HTTP_USER_AGENT"] ||= "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+Rails.application.env_config["HTTP_USER_AGENT"] = "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 
 # Requires supporting ruby files with custom matchers and macros, etc, in
 # spec/support/ and its subdirectories. Files matching `spec/**/*_spec.rb` are

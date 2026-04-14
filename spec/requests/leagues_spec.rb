@@ -183,16 +183,16 @@ RSpec.describe "Api::V1::Leagues", type: :request do
   describe "POST /api/v1/leagues/:league_id/memberships" do
     let!(:league) do
       create(:league, starting_capital: 100_000).tap do |open_league|
-        # Membership join tests assume an active join window by default.
+        # Membership join tests assume a running league window by default.
         open_league.update!(
           start_date: 1.day.ago,
-          end_date: 1.day.from_now
+          end_date: 2.days.from_now
         )
       end
     end
     let!(:user)   { create(:user) }
 
-    it "creates a membership and a portfolio, returns 201" do
+    it "creates a membership and a portfolio while the league is running, returns 201" do
       expect {
         post "/api/v1/leagues/#{league.id}/memberships",
              params: { user_id: user.id }.to_json,
@@ -231,20 +231,37 @@ RSpec.describe "Api::V1::Leagues", type: :request do
       expect(response).to have_http_status(:not_found)
     end
 
-    it "rejects join when league has not opened yet" do
-      scheduled_league = create(
+    it "allows join when league is running" do
+      running_league = create(
         :league,
-        start_date: 2.days.from_now,
+        start_date: 2.days.ago,
         end_date: 3.days.from_now,
         starting_capital: 100_000
       )
 
-      post "/api/v1/leagues/#{scheduled_league.id}/memberships",
+      post "/api/v1/leagues/#{running_league.id}/memberships",
            params: { user_id: user.id }.to_json,
            headers: headers
 
-      expect(response).to have_http_status(:unprocessable_entity)
-      expect(JSON.parse(response.body)["errors"]).to include("League has not opened yet")
+      expect(response).to have_http_status(:created)
+      expect(JSON.parse(response.body)["message"]).to eq("Joined league")
+    end
+
+    it "allows join when league has not started yet" do
+      scheduled_league = create(
+        :league,
+        start_date: 2.days.from_now,
+        end_date: 5.days.from_now,
+        starting_capital: 100_000
+      )
+
+      expect {
+        post "/api/v1/leagues/#{scheduled_league.id}/memberships",
+             params: { user_id: user.id }.to_json,
+             headers: headers
+      }.to change(LeagueMembership, :count).by(1)
+      expect(response).to have_http_status(:created)
+      expect(JSON.parse(response.body)["message"]).to eq("Joined league")
     end
 
     it "rejects join when league has expired" do
@@ -302,6 +319,16 @@ RSpec.describe "Api::V1::Leagues", type: :request do
       expect(response).to have_http_status(:not_found)
     end
 
+    it "blocks leaving after league start" do
+      league.update!(start_date: 1.day.ago, end_date: 1.day.from_now)
+
+      expect {
+        delete "/api/v1/leagues/#{league.id}/memberships/#{current_user.id}", headers: headers
+      }.not_to change(LeagueMembership, :count)
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(JSON.parse(response.body)["errors"]).to include("Cannot leave league after it has started")
+    end
+
     it "returns 404 when league does not exist" do
       delete "/api/v1/leagues/0/memberships/#{current_user.id}", headers: headers
       expect(response).to have_http_status(:not_found)
@@ -330,7 +357,7 @@ RSpec.describe "Api::V1::Leagues", type: :request do
   # GET /api/v1/leagues/:league_id/leaderboard
   # ─────────────────────────────────────────────────────────────
   describe "GET /api/v1/leagues/:league_id/leaderboard" do
-    let!(:league) { create(:league) }
+    let!(:league) { create(:league, start_date: 1.day.ago, end_date: 1.day.from_now) }
     let!(:user1)  { create(:user, username: "alice") }
     let!(:user2)  { create(:user, username: "bob") }
     let!(:p1) { create(:portfolio, user: user1, league: league, total_value: 120_000) }

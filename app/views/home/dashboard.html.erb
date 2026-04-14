@@ -9,10 +9,10 @@
     <% if @league %>
       <div class="terminal-league-pill">
         <span class="terminal-league-pill-label">CURRENT LEAGUE</span>
-        <% if @joined_leagues.size > 1 %>
+        <% if @running_leagues.size > 1 %>
           <%= select_tag(
                 "dashboard_league",
-                options_from_collection_for_select(@joined_leagues, :id, :name, @league.id),
+                options_from_collection_for_select(@running_leagues, :id, :name, @league.id),
                 id: "dashboard-league-select",
                 class: "terminal-league-pill-select",
                 aria: { label: "Switch dashboard league" },
@@ -61,8 +61,8 @@
       <% end %>
       <% if @ticker_league_items.any? %>
         <div class="terminal-window terminal-marquee-window terminal-marquee-window--leagues">
-          <div class="terminal-window-title">AVAILABLE LEAGUES</div>
-          <div class="terminal-marquee-viewport" aria-label="Available leagues to join">
+          <div class="terminal-window-title">RUNNING LEAGUES</div>
+          <div class="terminal-marquee-viewport" aria-label="Running leagues">
             <div class="terminal-marquee-roll terminal-marquee-roll--leagues">
               <% 2.times do |seg_idx| %>
                 <div class="terminal-marquee-segment"<% if seg_idx == 1 %> aria-hidden="true"<% end %>>

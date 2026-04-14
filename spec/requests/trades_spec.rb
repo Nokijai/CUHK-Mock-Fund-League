@@ -3,7 +3,7 @@ require "nokogiri"
 
 RSpec.describe "Trades", type: :request do
   let(:user) { create(:user, username: "demo_trader") }
-  let(:league) { create(:league) }
+  let(:league) { create(:league, start_date: 1.day.ago, end_date: 1.day.from_now) }
   let(:portfolio) { create(:portfolio, user: user, league: league) }
   let!(:membership) { create(:league_membership, user: user, league: league) }
 
@@ -91,6 +91,22 @@ RSpec.describe "Trades", type: :request do
       rows = doc.css(".terminal-historical-prices tbody tr")
 
       expect(rows.length).to eq(1)
+    end
+  end
+
+  describe "GET /portfolios/:portfolio_id/trades/new for a future league" do
+    let(:future_league) { create(:league, start_date: 1.day.from_now, end_date: 1.month.from_now) }
+    let(:future_portfolio) { create(:portfolio, user: user, league: future_league) }
+    let!(:future_membership) { create(:league_membership, user: user, league: future_league) }
+
+    before do
+      membership.destroy
+      portfolio.destroy
+    end
+
+    it "redirects to leagues" do
+      get new_portfolio_trade_path(future_portfolio)
+      expect(response).to redirect_to(leagues_path)
     end
   end
 end

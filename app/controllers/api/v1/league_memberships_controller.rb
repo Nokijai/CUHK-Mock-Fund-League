@@ -10,7 +10,7 @@ module Api
         return render json: { errors: [ "User not found" ] }, status: :not_found unless user
 
         unless @league.join_open_now?
-          # Keep API join rules aligned with web join flow and league schedule.
+          # Keep API registration rules aligned with web join flow and league schedule.
           error_message = @league.join_block_reason == :not_opened ? "League has not opened yet" : "League has expired"
           return render json: { errors: [ error_message ] }, status: :unprocessable_entity
         end
@@ -53,6 +53,10 @@ module Api
         # Same rules as the HTML app: self-serve leave, plus admin moderation of another member.
         unless membership.user_id == current_user.id || current_user.admin?
           return render json: { errors: [ "Forbidden" ] }, status: :forbidden
+        end
+
+        unless @league.quit_open_now?
+          return render json: { errors: [ "Cannot leave league after it has started" ] }, status: :unprocessable_entity
         end
 
         membership.leave_with_cleanup!

@@ -6,6 +6,8 @@
     <% selected_league_id = @selected_league&.id %>
     <% league_params = selected_league_id ? { league_id: selected_league_id } : {} %>
     <div class="terminal-nav-links" id="terminal-nav-links">
+      <% leagues_nav_active = controller_name == "leagues" && %w[index show edit update].include?(action_name) && !request.path.start_with?("/admin") %>
+      <%= link_to "LEAGUES", leagues_path, class: leagues_nav_active ? "terminal-nav-active" : nil %>
       <%= link_to "DASHBOARD", root_path, class: (controller_name == "home" && action_name == "dashboard") ? "terminal-nav-active" : nil %>
       <% nav_p = @nav_portfolio %>
       <% trading_active = controller_name == "trades" || (controller_name == "home" && action_name == "trading_redirect") %>
@@ -15,10 +17,9 @@
       <% else %>
         <%= link_to "PORTFOLIO", leagues_path, class: "terminal-nav-hint", data: { tooltip: "Join a league first" } %>
       <% end %>
-      <% leagues_nav_active = controller_name == "leagues" && %w[index show edit update].include?(action_name) && !request.path.start_with?("/admin") %>
-      <%= link_to "LEAGUES", leagues_path, class: leagues_nav_active ? "terminal-nav-active" : nil %>
-      <% if @joined_leagues.present? %>
-        <%= link_to "LEADERBOARD", leaderboard_path, class: controller_name == "leaderboards" ? "terminal-nav-active" : nil %>
+      <% lb_league = @nav_league || @running_leagues&.first %>
+      <% if lb_league %>
+        <%= link_to "LEADERBOARD", league_leaderboard_path(lb_league, league_params), class: controller_name == "leaderboards" ? "terminal-nav-active" : nil %>
       <% else %>
         <%= link_to "LEADERBOARD", leagues_path, class: "terminal-nav-hint", data: { tooltip: "Join a league to see rankings" } %>
       <% end %>

@@ -249,15 +249,28 @@ body.terminal-shell .alert {
 
 /* Shared live-notification rail: scrolls when many persistent “new league” cards stack (no overlap). */
 .terminal-realtime-notifications {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 1200;
   display: flex;
   flex-direction: column;
   gap: 0.45rem;
-  margin: 0.5rem 1rem 0;
+  margin: 0;
+  width: min(360px, calc(100vw - 1.5rem));
   max-height: min(42vh, 22rem);
   overflow-y: auto;
   overflow-x: hidden;
   padding-right: 0.15rem;
   flex-shrink: 0;
+}
+
+@media (max-width: 640px) {
+  .terminal-realtime-notifications {
+    right: 0.5rem;
+    bottom: 0.5rem;
+    width: calc(100vw - 1rem);
+  }
 }
 
 /* One Turbo-prepended card; flex row keeps × aligned while text wraps. */
@@ -275,6 +288,13 @@ body.terminal-shell .alert {
   color: var(--terminal-text);
   background: var(--terminal-panel);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+  transition: opacity 0.32s ease, transform 0.32s ease;
+}
+
+.terminal-realtime-notif-card--closing {
+  opacity: 0;
+  transform: translateY(14px);
+  pointer-events: none;
 }
 
 .terminal-realtime-notif-card--success {
@@ -459,6 +479,89 @@ body.terminal-shell .disclaimer {
   color: var(--terminal-bg);
   border-radius: 2px;
   width: fit-content;
+}
+
+.terminal-live-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.35rem;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--terminal-up);
+}
+
+.terminal-live-indicator--icon {
+  gap: 0;
+  width: 19px;
+  height: 19px;
+  justify-content: center;
+  border: 1px solid rgba(48, 209, 88, 0.35);
+  border-radius: 999px;
+  background: rgba(48, 209, 88, 0.1);
+  transition: background-color 140ms ease, border-color 140ms ease, transform 140ms ease;
+}
+
+.terminal-live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--terminal-up);
+  box-shadow: 0 0 0 0 rgba(48, 209, 88, 0.55);
+  animation: terminal-live-pulse 1.85s cubic-bezier(0.22, 0.61, 0.36, 1) infinite;
+  will-change: transform, box-shadow;
+}
+
+@keyframes terminal-live-pulse {
+  0% {
+    transform: scale(0.88);
+    box-shadow: 0 0 0 0 rgba(48, 209, 88, 0.55);
+  }
+
+  55% {
+    transform: scale(1.02);
+    box-shadow: 0 0 0 9px rgba(48, 209, 88, 0);
+  }
+
+  100% {
+    transform: scale(0.88);
+    box-shadow: 0 0 0 0 rgba(48, 209, 88, 0);
+  }
+}
+
+.terminal-joined-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.35rem;
+  padding: 0.15rem 0.5rem;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--terminal-text);
+  background: transparent;
+  border: 1px solid var(--terminal-border);
+  border-radius: 999px;
+}
+
+.terminal-joined-indicator--icon {
+  gap: 0;
+  width: 18px;
+  height: 18px;
+  justify-content: center;
+  padding: 0;
+  border-color: rgba(255, 149, 0, 0.45);
+  background: rgba(255, 149, 0, 0.08);
+}
+
+.terminal-joined-mark {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: transparent;
+  border: 2px solid var(--terminal-accent);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.35);
 }
 
 .terminal-stats-row {
@@ -1032,14 +1135,21 @@ body.terminal-shell main a.terminal-btn.terminal-btn-primary:focus-visible {
 }
 
 .terminal-table-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
   white-space: nowrap;
 }
 
 .terminal-table-actions a {
-  margin-right: 0.75rem;
   font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
+}
+
+.terminal-table-actions form {
+  display: inline;
+  margin: 0;
 }
 
 /* Portfolio holdings + trading league positions: BUY/SELL as buttons, flush right */
@@ -1777,6 +1887,7 @@ body.terminal-shell main a.terminal-btn--primary:focus-visible {
 
 .terminal-league-card {
   overflow: hidden;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
 }
 
 .terminal-league-card-summary {
@@ -1812,6 +1923,24 @@ body.terminal-shell main a.terminal-btn--primary:focus-visible {
 
 .terminal-league-card-body {
   padding: 0.85rem 1rem 1rem;
+  transform-origin: top;
+  animation: terminal-league-body-enter 170ms ease-out;
+}
+
+.terminal-league-card[open] {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
+}
+
+@keyframes terminal-league-body-enter {
+  0% {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .terminal-league-details {
@@ -2185,9 +2314,21 @@ body.terminal-shell {
   gap: 1rem;
 }
 
+.terminal-form-row--team-limits .terminal-label {
+  min-height: 2.4em;
+}
+
+.terminal-form-row--team-limits[hidden] {
+  display: none;
+}
+
 @media (max-width: 560px) {
   .terminal-form-row {
     grid-template-columns: 1fr;
+  }
+
+  .terminal-form-row--team-limits .terminal-label {
+    min-height: 0;
   }
 }
 
@@ -2226,6 +2367,44 @@ body.terminal-shell {
 
 .terminal-search-wrap {
   position: relative;
+}
+
+.terminal-admin-filters-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1rem;
+  align-items: stretch;
+}
+
+.terminal-admin-search-box {
+  margin-bottom: 1rem;
+}
+
+.terminal-admin-filter-box {
+  margin-bottom: 1rem;
+  min-width: 360px;
+}
+
+.terminal-admin-filter-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.terminal-admin-period-filter-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+@media (max-width: 900px) {
+  .terminal-admin-filters-row {
+    grid-template-columns: 1fr;
+  }
+
+  .terminal-admin-filter-box {
+    min-width: 0;
+  }
 }
 
 .terminal-search-clear {
