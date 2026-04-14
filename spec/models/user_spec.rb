@@ -27,6 +27,54 @@ RSpec.describe User, type: :model do
     end
   end
 
+  describe "level progression" do
+    it "calculates the current and next level from experience points" do
+      user = build(:user, experience_points: 750)
+
+      expect(user.current_level[:name]).to eq("Master")
+      expect(user.level_name).to eq("Master")
+      expect(user.level_icon).to eq("🏅")
+      expect(user.next_level[:name]).to eq("Professional")
+      expect(user.xp_progress_to_next).to eq(current: 750, needed: 1000, percent: 50.0)
+    end
+
+    it "returns a full progress bar at the top level" do
+      user = build(:user, experience_points: 6_000)
+
+      expect(user.next_level).to be_nil
+      expect(user.xp_progress_to_next).to eq(current: 6000, needed: 0, percent: 100)
+    end
+  end
+
+  describe "experience awards" do
+    it "adds experience and clears level protection on positive gains" do
+      user = create(:user, experience_points: 20, level_protected: true)
+
+      user.award_experience!(80)
+
+      expect(user.reload.experience_points).to eq(100)
+      expect(user.level_protected?).to be(false)
+    end
+
+    it "clamps the first loss at the current level threshold" do
+      user = create(:user, experience_points: 120)
+
+      user.award_experience!(-40)
+
+      expect(user.reload.experience_points).to eq(100)
+      expect(user.level_protected?).to be(true)
+    end
+
+    it "applies the full loss after protection has already been used" do
+      user = create(:user, experience_points: 120, level_protected: true)
+
+      user.award_experience!(-200)
+
+      expect(user.reload.experience_points).to eq(0)
+      expect(user.level_protected?).to be(false)
+    end
+  end
+
   describe "authentication" do
     let!(:user) { create(:user, email: "test@example.com", username: "testuser", password: "Test123!@#", password_confirmation: "Test123!@#") }
 
@@ -70,6 +118,24 @@ RSpec.describe User, type: :model do
       it "persists login_otp_digest" do
         user.generate_login_otp!
         expect(user.reload.login_otp_digest).to be_present
+      end
+    end
+
+    describe "#verify_login_otp!" do
+      it "accepts a matching OTP and clears the digest" do
+        allow(SecureRandom).to receive(:random_number).and_return(123456)
+
+        code = user.generate_login_otp!
+
+        expect(user.verify_login_otp!(code)).to be(true)
+        expect(user.reload.login_otp_digest).to be_nil
+      end
+
+      it "tracks failed attempts for a bad OTP" do
+        user.generate_login_otp!
+
+        expect(user.verify_login_otp!("000000")).to be(false)
+        expect(user.reload.login_otp_attempts).to eq(1)
       end
     end
   end

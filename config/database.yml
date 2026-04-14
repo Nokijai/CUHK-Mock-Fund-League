@@ -15,11 +15,11 @@
 default: &default
   adapter: postgresql
   encoding: unicode
-  # Use explicit PGUSER when provided; otherwise default to current OS user.
-  username: <%= ENV.fetch("PGUSER", ENV.fetch("USER", "postgres")) %>
-  # Use PGPASSWORD when set (e.g. docker-compose default postgres:postgres).
+  # Use explicit PGUSER when provided; otherwise prefer Docker defaults, then OS user.
+  username: <%= ENV.fetch("PGUSER", ENV.fetch("POSTGRES_USER", ENV.fetch("USER", "postgres"))) %>
+  # Prefer explicit PGPASSWORD, then Docker default password.
   # Local Postgres setups often use peer auth, so leaving this blank is fine.
-  password: <%= ENV["PGPASSWORD"] %>
+  password: <%= ENV["PGPASSWORD"] || ENV["POSTGRES_PASSWORD"] %>
   # For details on connection pooling, see Rails configuration guide
   # https://guides.rubyonrails.org/configuring.html#database-pooling
   max_connections: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
@@ -58,19 +58,25 @@ development:
 test:
   primary:
     <<: *default
-    # Local default: use TCP localhost even if `.env` contains Docker service hostnames.
-    # Override with PGHOST_TEST when running tests inside Docker.
-    host: <%= ENV.fetch("PGHOST_TEST", "localhost") %>
+    # In Docker, default to service hostname `db`; locally default to localhost.
+    host: <%= ENV.fetch("PGHOST_TEST", (File.exist?("/.dockerenv") ? "db" : "localhost")) %>
+    # Allow explicit test credentials, then fallback to normal/default credentials.
+    username: <%= ENV["PGUSER_TEST"] || ENV.fetch("PGUSER", ENV.fetch("POSTGRES_USER", ENV.fetch("USER", "postgres"))) %>
+    password: <%= ENV["PGPASSWORD_TEST"] || ENV["PGPASSWORD"] || ENV["POSTGRES_PASSWORD"] %>
     database: mock_fund_league_test
   # Mirror development: keep queue tables in the same test DB.
   queue:
     <<: *default
-    host: <%= ENV.fetch("PGHOST_TEST", "localhost") %>
+    host: <%= ENV.fetch("PGHOST_TEST", (File.exist?("/.dockerenv") ? "db" : "localhost")) %>
+    username: <%= ENV["PGUSER_TEST"] || ENV.fetch("PGUSER", ENV.fetch("POSTGRES_USER", ENV.fetch("USER", "postgres"))) %>
+    password: <%= ENV["PGPASSWORD_TEST"] || ENV["PGPASSWORD"] || ENV["POSTGRES_PASSWORD"] %>
     database: mock_fund_league_test
     migrations_paths: db/queue_migrate
   cable:
     <<: *default
-    host: <%= ENV.fetch("PGHOST_TEST", "localhost") %>
+    host: <%= ENV.fetch("PGHOST_TEST", (File.exist?("/.dockerenv") ? "db" : "localhost")) %>
+    username: <%= ENV["PGUSER_TEST"] || ENV.fetch("PGUSER", ENV.fetch("POSTGRES_USER", ENV.fetch("USER", "postgres"))) %>
+    password: <%= ENV["PGPASSWORD_TEST"] || ENV["PGPASSWORD"] || ENV["POSTGRES_PASSWORD"] %>
     database: cuhk_mock_fund_league_test
     migrations_paths: db/cable_migrate
 

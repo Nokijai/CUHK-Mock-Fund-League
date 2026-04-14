@@ -10,9 +10,28 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_14_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_14_220000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
+
+  create_table "friend_requests", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "receiver_id", null: false
+    t.bigint "sender_id", null: false
+    t.string "status", default: "pending", null: false
+    t.datetime "updated_at", null: false
+    t.index ["receiver_id", "status"], name: "index_friend_requests_on_receiver_id_and_status"
+    t.index ["sender_id", "receiver_id"], name: "index_friend_requests_on_sender_id_and_receiver_id", unique: true
+  end
+
+  create_table "friendships", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "friend_id", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["friend_id"], name: "index_friendships_on_friend_id"
+    t.index ["user_id", "friend_id"], name: "index_friendships_on_user_id_and_friend_id", unique: true
+  end
 
   create_table "holdings", force: :cascade do |t|
     t.decimal "average_cost", precision: 15, scale: 4, default: "0.0"
@@ -216,6 +235,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_14_120000) do
   end
 
   create_table "stock_prices", force: :cascade do |t|
+    t.datetime "created_at", null: false
     t.decimal "price", precision: 15, scale: 4
     t.string "symbol", null: false
     t.datetime "updated_at", null: false
