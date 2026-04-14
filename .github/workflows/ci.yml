@@ -137,9 +137,11 @@ jobs:
 
       - name: Setup database
         run: |
-          bin/rails db:create db:schema:load
-          # Solid Queue tables live in the queue DB schema.
-          bin/rails db:schema:load:queue
+          # Use migrations (not schema load) so CI matches real deploy behavior
+          # and catches missing migrations (e.g. `users.role`).
+          bin/rails db:create
+          bin/rails db:migrate
+          bin/rails db:migrate:queue
 
       - name: Run RSpec tests
         run: bundle exec rspec

@@ -23,6 +23,23 @@ class LeagueExpiryReminderJob < ApplicationJob
 
   private
 
+  # ---------------------------------------------------------------------------
+  # Backwards-compatible aliases
+  # ---------------------------------------------------------------------------
+  # Earlier iterations of this job used different method names. Keep these wrappers
+  # so any older call sites (or specs) still work.
+  def deliver_league_started_to_members(now)
+    deliver_league_started_notifications(now)
+  end
+
+  def deliver_league_ended_emails_to_members(now)
+    deliver_league_ended_notifications(now)
+  end
+
+  def deliver_end_reminders_to_members(now)
+    deliver_end_reminder_notifications(now)
+  end
+
   # Notify only joined users when a league starts.
   def deliver_league_started_notifications(now)
     League
@@ -197,7 +214,7 @@ class LeagueExpiryReminderJob < ApplicationJob
     Rails.cache.write(key, true, expires_in: 3.days, unless_exist: true)
   end
 
-  # Private per-user Turbo stream (see layout): timed toasts share the same dismiss controller as global notices.
+  # Private Turbo stream to a member-only reminder channel.
   def broadcast_member_card(user, league, title:, body:, notification_id:, auto_dismiss_ms:)
     user.broadcast_prepend_to(
       [ user, "league_notifications" ],

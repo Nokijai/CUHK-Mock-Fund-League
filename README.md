@@ -1,6 +1,7 @@
 # CUHK Mock-Fund League
 
 Rails 8.1 app with:
+
 - PostgreSQL
 - Devise authentication
 - Solid Queue workers + recurring jobs
@@ -66,6 +67,7 @@ Optional but recommended:
 ## First-Time Cloud Server Setup (Ubuntu VM)
 
 Run once on a fresh server.
+
 ### 1) Install system packages
 
 ```bash
@@ -161,6 +163,7 @@ SECRET_KEY_BASE_DUMMY=1 bundle exec rails assets:precompile
 ```
 
 Then restart:
+
 - web process (`puma`)
 - worker process (`bin/jobs`)
 
@@ -191,6 +194,7 @@ Restart app and worker after successful commands.
 ## API Guide (`/api/v1`)
 
 Authentication note:
+
 - API controllers inherit app authentication (`before_action :authenticate_user!`)
 - Current API auth is session/cookie based (Devise), not token/JWT.
 
@@ -271,3 +275,46 @@ For container platforms, keep release step equivalent to:
 ```bash
 bundle exec rails db:migrate db:migrate:queue
 ```
+
+## Setup Guide (Run and Test)
+
+Use these commands for TA/demo setup from a clean local environment:
+
+```bash
+docker compose down -v --remove-orphans
+docker compose up --build -d
+docker compose exec web bundle exec rails db:prepare
+docker compose exec web bundle exec rails db:migrate
+docker compose exec web bundle exec rails db:migrate:queue
+```
+
+Run test suites:
+
+```bash
+# RSpec test suite
+docker compose exec web bundle exec rspec
+
+# Cucumber feature tests (if needed)
+docker compose exec web bundle exec cucumber
+```
+
+## Implemented Features and Ownership
+
+The table below is used for individual contribution evaluation.
+
+| Feature Name                            | Primary Developer (Name) | Secondary Developer | Notes                                                                         |
+| --------------------------------------- | ------------------------ | ------------------- | ----------------------------------------------------------------------------- |
+| User Authentication and Role Control    | Funnywai                 | Nokijai             | Based on git shortlog for auth-related files (Devise/user controllers/models) |
+| League Management                       | Nokijai                  | jeremyting0727      | Based on git shortlog for leagues + league memberships files                  |
+| Portfolio and Trading Engine            | Nokijai                  | tylertam228         | Based on git shortlog for portfolios/trades controllers and models            |
+| Leaderboard and Ranking                 | Nokijai                  | tylertam228         | Based on git shortlog for leaderboard controllers/helpers/views/CSS           |
+| Market Data Integration                 | Nokijai                  | Funnywai            | Based on git shortlog for stocks/services/Python fetch scripts                |
+| Social Features (Friends and Messaging) | Ethannggggg              | x                   | Only one contributor found in git shortlog for social feature files           |
+| Team and Membership Management          | Nokijai                  | jeremyting0727      | Based on git shortlog for team membership + league team files                 |
+| API Endpoints (`/api/v1`)               | Ethannggggg              | Nokijai             | Based on git shortlog for app/controllers/api                                 |
+
+## SimpleCov Report Screenshot
+
+Include a screenshot of your SimpleCov coverage report in the repository (for example: `docs/simplecov-report.png`) and keep it updated.
+
+![SimpleCov Coverage Report](docs/simplecov-report.png)
