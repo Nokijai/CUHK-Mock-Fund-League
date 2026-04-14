@@ -10,10 +10,29 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_14_124500) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_14_220000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_stat_statements"
+
+  create_table "friend_requests", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "receiver_id", null: false
+    t.bigint "sender_id", null: false
+    t.string "status", default: "pending", null: false
+    t.datetime "updated_at", null: false
+    t.index ["receiver_id", "status"], name: "index_friend_requests_on_receiver_id_and_status"
+    t.index ["sender_id", "receiver_id"], name: "index_friend_requests_on_sender_id_and_receiver_id", unique: true
+  end
+
+  create_table "friendships", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "friend_id", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["friend_id"], name: "index_friendships_on_friend_id"
+    t.index ["user_id", "friend_id"], name: "index_friendships_on_user_id_and_friend_id", unique: true
+  end
 
   create_table "holdings", force: :cascade do |t|
     t.decimal "average_cost", precision: 15, scale: 4, default: "0.0"
@@ -52,6 +71,22 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_14_124500) do
     t.datetime "updated_at", null: false
     t.index ["creator_id"], name: "index_leagues_on_creator_id"
     t.index ["name"], name: "index_leagues_on_name", unique: true
+  end
+
+  create_table "messages", force: :cascade do |t|
+    t.text "body", null: false
+    t.string "channel_type", default: "individual", null: false
+    t.datetime "created_at", null: false
+    t.bigint "league_id"
+    t.bigint "receiver_id"
+    t.bigint "sender_id", null: false
+    t.bigint "team_id"
+    t.datetime "updated_at", null: false
+    t.index ["channel_type", "created_at"], name: "index_messages_on_channel_type_and_created_at"
+    t.index ["league_id", "created_at"], name: "index_messages_on_league_id_and_created_at"
+    t.index ["receiver_id", "sender_id", "created_at"], name: "index_messages_on_receiver_id_and_sender_id_and_created_at"
+    t.index ["sender_id", "receiver_id", "created_at"], name: "index_messages_on_sender_id_and_receiver_id_and_created_at"
+    t.index ["team_id", "created_at"], name: "index_messages_on_team_id_and_created_at"
   end
 
   create_table "portfolio_snapshots", force: :cascade do |t|
@@ -281,6 +316,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_14_124500) do
     t.datetime "created_at", null: false
     t.string "email", null: false
     t.string "encrypted_password", default: "", null: false
+    t.integer "experience_points", default: 0, null: false
+    t.boolean "level_protected", default: false, null: false
     t.integer "login_otp_attempts", default: 0, null: false
     t.string "login_otp_digest"
     t.datetime "login_otp_locked_until"
@@ -316,10 +353,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_14_124500) do
     t.index ["username_finalized"], name: "index_users_on_username_finalized"
   end
 
+  add_foreign_key "friend_requests", "users", column: "receiver_id"
+  add_foreign_key "friend_requests", "users", column: "sender_id"
+  add_foreign_key "friendships", "users"
+  add_foreign_key "friendships", "users", column: "friend_id"
   add_foreign_key "holdings", "portfolios"
   add_foreign_key "league_memberships", "leagues"
   add_foreign_key "league_memberships", "users"
   add_foreign_key "leagues", "users", column: "creator_id"
+  add_foreign_key "messages", "leagues"
+  add_foreign_key "messages", "teams"
+  add_foreign_key "messages", "users", column: "receiver_id"
+  add_foreign_key "messages", "users", column: "sender_id"
   add_foreign_key "portfolio_snapshots", "portfolios"
   add_foreign_key "portfolios", "leagues"
   add_foreign_key "portfolios", "users"

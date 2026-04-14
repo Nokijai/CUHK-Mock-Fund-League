@@ -16,6 +16,12 @@ class LeagueExpiryReminderJob < ApplicationJob
     deliver_league_started_notifications(now)
     deliver_end_reminder_notifications(now)
     deliver_league_ended_notifications(now)
+    deliver_league_started_to_members(now)
+    deliver_league_ended_emails_to_members(now)
+    deliver_end_reminders_to_members(now)
+    deliver_team_chat_expiry_warnings(now)
+    deliver_winner_congratulations(now)
+    award_experience_points(now)
   end
 
   private
@@ -107,7 +113,94 @@ class LeagueExpiryReminderJob < ApplicationJob
     Rails.cache.write(key, true, expires_in: 3.days, unless_exist: true)
   end
 
-  # Private Turbo stream to a member-only reminder channel.
+  # When a league just ended, compute the final leaderboard and broadcast a global congrats to the winner.
+  def deliver_winner_congratulations(now)
+    League
+      .where(end_date: (now - CHECK_WINDOW)..now)
+      .find_each do |league|
+        next unless claim_winner_congrats_slot(league.id)
+
+        rankings = if league.team_mode?
+          TeamLeaderboardService.new(league).compute
+        else
+          LeaderboardService.new(league).compute
+        end
+
+        winner = rankings.first
+        next unless winner
+
+        winner_name = league.team_mode? ? winner[:team_name] : winner[:name]
+
+        league.broadcast_prepend_to(
+          "league_notifications",
+          target: "realtime-notifications",
+          partial: "leagues/realtime_notification",
+          locals: {
+            title: "League finished! \u{1F3C6}",
+            body: "Congratulations to #{winner_name} for winning \"#{league.name}\"!",
+            league: league,
+            tone: :success,
+            notification_id: "league-winner-#{league.id}",
+            auto_dismiss_ms: 0
+          }
+        )
+      end
+  end
+
+  def claim_winner_congrats_slot(league_id)
+    key = "league_winner_congrats/#{league_id}"
+    Rails.cache.write(key, true, expires_in: 3.days, unless_exist: true)
+  end
+
+  # Broadcast a system warning into each team chat ~1 hour before the league ends.
+  def deliver_team_chat_expiry_warnings(now)
+    one_hour = 1.hour.to_i
+    League
+      .where(end_date: now..(now + one_hour + CHECK_WINDOW.to_i))
+      .where("rules->>'team_mode' = ?", "true")
+      .includes(:teams)
+      .find_each do |league|
+        league.teams.each do |team|
+          next unless claim_team_chat_warning_slot(team.id)
+
+          stream_key = Message.team_stream_key(team.id)
+          minutes_left = ((league.end_date - now) / 60).round
+
+          Turbo::StreamsChannel.broadcast_append_to(
+            stream_key,
+            target: "chat-messages-#{stream_key}",
+            html: <<~HTML
+              <div class="terminal-chat-message terminal-chat-system-message">
+                <span class="terminal-chat-system-text">⚠ League &ldquo;#{ERB::Util.html_escape(league.name)}&rdquo; ends in ~#{minutes_left} min. This team chat will close.</span>
+              </div>
+            HTML
+          )
+        end
+      end
+  end
+
+  def claim_team_chat_warning_slot(team_id)
+    key = "team_chat_expiry_warning/#{team_id}"
+    Rails.cache.write(key, true, expires_in: 2.days, unless_exist: true)
+  end
+
+  # Award experience points to all participants when a league just ended.
+  def award_experience_points(now)
+    League
+      .where(end_date: (now - CHECK_WINDOW)..now)
+      .find_each do |league|
+        next unless claim_xp_award_slot(league.id)
+
+        ExperienceAwardService.new(league).award!
+      end
+  end
+
+  def claim_xp_award_slot(league_id)
+    key = "league_xp_awarded/#{league_id}"
+    Rails.cache.write(key, true, expires_in: 3.days, unless_exist: true)
+  end
+
+  # Private per-user Turbo stream (see layout): timed toasts share the same dismiss controller as global notices.
   def broadcast_member_card(user, league, title:, body:, notification_id:, auto_dismiss_ms:)
     user.broadcast_prepend_to(
       [ user, "league_notifications" ],

@@ -32,9 +32,86 @@
     </div>
 
     <div class="terminal-topbar-right">
-      <span class="terminal-topbar-user">
-        <%= current_user.username.presence || current_user.email %>
-      </span>
+      <%= link_to profile_path, class: "terminal-topbar-profile-link" do %>
+        <span class="terminal-topbar-profile-icon"><%= current_user.level_icon %></span>
+        <span class="terminal-topbar-user">
+          <%= current_user.username.presence || current_user.email %>
+        </span>
+        <span class="terminal-topbar-level-tag"><%= current_user.level_name.upcase %></span>
+      <% end %>
+
+      <%# ── Friends panel toggle ── %>
+      <div class="terminal-friends-wrapper" data-controller="friends-panel">
+        <button class="terminal-topbar-friends-btn" type="button" data-action="click->friends-panel#toggle">
+          FRIENDS
+          <% pending_count = current_user.pending_received_friend_requests.count %>
+          <% if pending_count > 0 %>
+            <span class="terminal-friends-badge" id="friend-requests-count"><%= pending_count %></span>
+          <% else %>
+            <span class="terminal-friends-badge terminal-friends-badge--hidden" id="friend-requests-count">0</span>
+          <% end %>
+        </button>
+
+        <div class="terminal-friends-panel" data-friends-panel-target="panel" style="display:none;">
+          <div class="terminal-friends-panel-header">
+            <span>FRIENDS (<span id="friends-count"><%= current_user.friends.count %></span>)</span>
+            <button type="button" class="terminal-friends-panel-close" data-action="click->friends-panel#close">&times;</button>
+          </div>
+
+          <%# ── Tab bar ── %>
+          <div class="terminal-friends-tabs">
+            <button class="terminal-friends-tab terminal-friends-tab--active" data-action="click->friends-panel#showTab" data-friends-panel-tab-param="list">LIST</button>
+            <button class="terminal-friends-tab" data-action="click->friends-panel#showTab" data-friends-panel-tab-param="requests">
+              REQUESTS <span class="terminal-friends-tab-count" id="friend-requests-tab-count"><%= pending_count %></span>
+            </button>
+            <button class="terminal-friends-tab" data-action="click->friends-panel#showTab" data-friends-panel-tab-param="search">ADD</button>
+          </div>
+
+          <%# ── Friends list tab ── %>
+          <div class="terminal-friends-tab-content" data-friends-panel-target="tabContent" data-tab="list">
+            <div id="friends-list">
+              <% current_user.friends.order(:username).each do |friend| %>
+                <div class="terminal-friend-row" id="friend_<%= friend.id %>">
+                  <span class="terminal-friend-name"><%= friend.username %></span>
+                  <% fs = current_user.friendships.find_by(friend_id: friend.id) %>
+                  <% if fs %>
+                    <%= button_to "REMOVE", friendship_path(fs), method: :delete,
+                      class: "terminal-friend-remove-btn",
+                      form: { data: { turbo_confirm: "Remove #{friend.username} from friends?" } } %>
+                  <% end %>
+                </div>
+              <% end %>
+              <% if current_user.friends.empty? %>
+                <div class="terminal-friend-empty">No friends yet. Search & add friends!</div>
+              <% end %>
+            </div>
+          </div>
+
+          <%# ── Incoming requests tab ── %>
+          <div class="terminal-friends-tab-content" data-friends-panel-target="tabContent" data-tab="requests" style="display:none;">
+            <div id="friend-requests-list">
+              <% current_user.pending_received_friend_requests.includes(:sender).order(created_at: :desc).each do |fr| %>
+                <%= render partial: "friend_requests/friend_request", locals: { friend_request: fr } %>
+              <% end %>
+              <% if current_user.pending_received_friend_requests.empty? %>
+                <div class="terminal-friend-empty">No pending requests.</div>
+              <% end %>
+            </div>
+          </div>
+
+          <%# ── Search / add tab ── %>
+          <div class="terminal-friends-tab-content" data-friends-panel-target="tabContent" data-tab="search" style="display:none;">
+            <div class="terminal-friend-search-box">
+              <input type="text" placeholder="Search username..." class="terminal-friend-search-input"
+                     data-action="input->friends-panel#search"
+                     data-friends-panel-target="searchInput" autocomplete="off">
+            </div>
+            <div id="friend-search-results" data-friends-panel-target="searchResults">
+            </div>
+          </div>
+        </div>
+      </div>
+
       <%= button_to "LOGOUT", destroy_user_session_path, method: :delete, class: "terminal-topbar-logout" %>
       <span class="terminal-market-live">MARKET: LIVE</span>
     </div>

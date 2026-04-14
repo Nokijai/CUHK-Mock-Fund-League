@@ -28,6 +28,10 @@
     <%= turbo_stream_from "league_notifications" if user_signed_in? %>
     <%# Subscribe each user to their private league reminder stream (member-only reminders). %>
     <%= turbo_stream_from [current_user, "league_notifications"] if user_signed_in? %>
+    <%# Subscribe each user to friend request notifications. %>
+    <%= turbo_stream_from [current_user, "friend_notifications"] if user_signed_in? %>
+    <%# Subscribe to world chat. %>
+    <%= turbo_stream_from "chat_world" if user_signed_in? %>
     <% if notice.present? %>
       <div class="terminal-flash terminal-flash--success" role="status">
         <span class="terminal-flash-icon">FILLED</span>
@@ -48,5 +52,60 @@
     <main class="terminal-main">
     <%= yield %>
     </main>
+
+    <% if user_signed_in? %>
+      <%# ── Floating chat button (draggable) + chat box ── %>
+      <div id="chat-widget" data-controller="chat" data-chat-current-user-id-value="<%= current_user.id %>">
+        <%# Draggable floating button %>
+        <div class="terminal-chat-fab" data-chat-target="fab" data-action="mousedown->chat#startDrag touchstart->chat#startDrag click->chat#toggleBox">
+          <span class="terminal-chat-fab-emoji">💬</span>
+        </div>
+
+        <%# Chat box (hidden by default) %>
+        <div class="terminal-chat-box" data-chat-target="chatBox" style="display:none;">
+          <%# ── Chat box title bar ── %>
+          <div class="terminal-chat-titlebar">
+            <span class="terminal-chat-titlebar-icon">📡</span>
+            <span class="terminal-chat-titlebar-text">MESSENGER</span>
+            <button type="button" class="terminal-chat-titlebar-close" data-action="click->chat#toggleBox">&times;</button>
+          </div>
+          <%# ── Channel tabs ── %>
+          <div class="terminal-chat-channel-tabs" data-chat-target="channelTabs">
+            <button class="terminal-chat-channel-tab terminal-chat-channel-tab--active" data-action="click->chat#switchChannel" data-channel="world">🌐 WORLD</button>
+            <button class="terminal-chat-channel-tab" data-action="click->chat#switchChannel" data-channel="team">👥 TEAM</button>
+            <button class="terminal-chat-channel-tab" data-action="click->chat#switchChannel" data-channel="individual">💬 FRIENDS</button>
+          </div>
+          <div class="terminal-chat-box-content" data-chat-target="chatContent">
+          </div>
+          <%# ── Emoji picker overlay ── %>
+          <div class="terminal-chat-emoji-picker" data-chat-target="emojiPicker" style="display:none;">
+            <div class="terminal-chat-picker-header">
+              <span>EMOJI</span>
+              <button type="button" class="terminal-chat-picker-close" data-action="click->chat#toggleEmojiPicker">&times;</button>
+            </div>
+            <div class="terminal-chat-picker-grid">
+              <% %w[😀 😂 🤣 😊 😍 🥰 😎 🤔 😏 😢 😭 😤 🤯 🥳 🤩 😴 🤮 🤡 👍 👎 👏 🙌 💪 🤝 ✌️ 🫡 💰 📈 📉 🏆 🎯 🔥 ⭐ 💎 🚀 💼 📊 💹 🏅 🎉].each do |emoji| %>
+                <button type="button" class="terminal-chat-emoji-item" data-action="click->chat#insertEmoji" data-emoji="<%= emoji %>"><%= emoji %></button>
+              <% end %>
+            </div>
+          </div>
+          <%# ── Sticker picker overlay ── %>
+          <div class="terminal-chat-sticker-picker" data-chat-target="stickerPicker" style="display:none;">
+            <div class="terminal-chat-picker-header">
+              <span>STICKERS</span>
+              <button type="button" class="terminal-chat-picker-close" data-action="click->chat#toggleStickerPicker">&times;</button>
+            </div>
+            <div class="terminal-chat-picker-grid terminal-chat-picker-grid--stickers">
+              <% { "🚀🌕" => "To the Moon!", "📈💰" => "Bull Run!", "📉😱" => "Bear Market!", "💎🙌" => "Diamond Hands", "🏆🥇" => "Champion!", "🔥📊" => "On Fire!", "🎯✅" => "Nailed It!", "👋😊" => "Hello!", "🤝💼" => "Deal!", "⭐🌟" => "Star Trader", "💪📈" => "Power Move", "🎉🥳" => "Celebration!" }.each do |sticker, label| %>
+                <button type="button" class="terminal-chat-sticker-item" data-action="click->chat#insertSticker" data-sticker="<%= sticker %>" title="<%= label %>">
+                  <span class="terminal-chat-sticker-emoji"><%= sticker %></span>
+                  <span class="terminal-chat-sticker-label"><%= label %></span>
+                </button>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      </div>
+    <% end %>
   </body>
 </html>

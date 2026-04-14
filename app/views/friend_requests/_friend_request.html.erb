@@ -1,0 +1,8 @@
+<div class="terminal-friend-request-row" id="friend-request-<%= friend_request.id %>">
+  <span class="terminal-friend-name"><%= friend_request.sender.username %></span>
+  <span class="terminal-friend-request-time"><%= time_ago_in_words(friend_request.created_at) %> ago</span>
+  <div class="terminal-friend-request-actions">
+    <%= button_to "ACCEPT", accept_friend_request_path(friend_request), method: :patch, class: "terminal-friend-accept-btn" %>
+    <%= button_to "DECLINE", decline_friend_request_path(friend_request), method: :patch, class: "terminal-friend-decline-btn" %>
+  </div>
+</div>

@@ -28,6 +28,9 @@ Rails.application.routes.draw do
 
   root "home#dashboard"
 
+  # User profile
+  get "profile", to: "profiles#show", as: :profile
+
   # Bookmark / cache may still request /trading; redirect to real nested trade URL.
   get "trading", to: "home#trading_redirect", as: :trading
   get "leaderboard", to: "leaderboards#index", as: :leaderboard
@@ -56,6 +59,30 @@ Rails.application.routes.draw do
     end
   end
   resources :league_memberships, only: [ :index, :create, :destroy ]
+
+  # Friendships & friend requests
+  resources :friendships, only: [ :index, :destroy ] do
+    collection do
+      get :search
+    end
+  end
+  resources :friend_requests, only: [ :index, :create ] do
+    member do
+      patch :accept
+      patch :decline
+    end
+  end
+
+  # Chat messages
+  resources :messages, only: [ :create ] do
+    collection do
+      get :world
+      get :team_list
+      get "team_conversation/:team_id", action: :team_conversation, as: :team_conversation
+      get "conversation/:friend_id", action: :conversation, as: :conversation
+      get :friends_list
+    end
+  end
 
   resources :portfolios, only: [ :show ] do
     resources :trades, only: [ :index, :new, :create, :show ]

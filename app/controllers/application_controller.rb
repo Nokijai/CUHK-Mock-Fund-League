@@ -122,6 +122,12 @@ class ApplicationController < ActionController::Base
     when "users/onboarding"
       # OAuth users must be able to set username before joining a league.
       true
+    when "friendships", "friend_requests"
+      true
+    when "messages"
+      true
+    when "profiles"
+      true
     else
       false
     end
