@@ -74,7 +74,7 @@ RSpec.describe LeagueExpiryReminderJob, type: :job do
     it "emails each member once after end_date passes" do
       league = create(:league, start_date: now - 2.weeks, end_date: now - 20.seconds)
       user = create(:user)
-      create(:league_membership, user: user, league: league)
+      membership = create(:league_membership, user: user, league: league)
 
       expect { described_class.perform_now(now: now) }.to change(ActionMailer::Base.deliveries, :size).by(1)
 
@@ -83,6 +83,8 @@ RSpec.describe LeagueExpiryReminderJob, type: :job do
       expect(mail.subject).to include("has closed")
 
       expect { described_class.perform_now(now: now) }.not_to(change(ActionMailer::Base.deliveries, :size))
+
+      expect(membership.reload.league_closed_email_sent_at).to be_present
     end
   end
 

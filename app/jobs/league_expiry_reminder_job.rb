@@ -54,16 +54,25 @@ class LeagueExpiryReminderJob < ApplicationJob
 
   # After end_date passes, email every member once so they know the league window is officially closed.
   def deliver_league_ended_emails_to_members(now)
-    League
-      .where(end_date: (now - CHECK_WINDOW)..now)
-      .includes(league_memberships: :user)
-      .find_each do |league|
-        league.league_memberships.each do |membership|
+    # Email delivery should not depend on a narrow timing window:
+    # if the worker is down for a few minutes, we still want every joined user
+    # to receive the closure email once the league has ended.
+    LeagueMembership
+      .joins(:league)
+      .where(leagues: { end_date: ..now })
+      .where(league_closed_email_sent_at: nil)
+      .includes(:user, :league)
+      .find_each do |membership|
+        membership.with_lock do
+          # Double-check under the row lock to prevent double-sends in multi-worker setups.
+          next if membership.league_closed_email_sent_at.present?
+
           user = membership.user
-          next unless user
-          next unless claim_ended_email_slot(league.id, user.id)
+          league = membership.league
+          next unless user && league
 
           LeagueMailer.league_closed(user, league).deliver_now
+          membership.update!(league_closed_email_sent_at: now)
         end
       end
   end
