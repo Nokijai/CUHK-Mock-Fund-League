@@ -1,0 +1,22 @@
+<%# Friends list for choosing who to chat with %>
+<div class="terminal-chat-friends-header">💬 DIRECT MESSAGES</div>
+<% if friends.any? %>
+  <% friends.each do |friend| %>
+    <div class="terminal-chat-friend-row" data-action="click->chat#openConversation" data-friend-id="<%= friend.id %>" data-friend-name="<%= friend.username %>">
+      <div class="terminal-chat-friend-avatar">
+        <span><%= friend.username[0].upcase %></span>
+        <span class="terminal-chat-friend-status-dot"></span>
+      </div>
+      <div class="terminal-chat-friend-info">
+        <span class="terminal-chat-friend-name"><%= friend.username %></span>
+        <span class="terminal-chat-friend-subtitle">Click to chat</span>
+      </div>
+      <span class="terminal-chat-friend-arrow">›</span>
+    </div>
+  <% end %>
+<% else %>
+  <div class="terminal-chat-empty-state">
+    <span class="terminal-chat-empty-icon">🤗</span>
+    <span>Add friends to start chatting!</span>
+  </div>
+<% end %>

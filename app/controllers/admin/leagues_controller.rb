@@ -1,13 +1,36 @@
 class Admin::LeaguesController < Admin::BaseController
   before_action :set_league, only: [ :edit, :update, :destroy ]
+  before_action :ensure_league_editable, only: [ :edit, :update, :destroy ]
 
   def index
-    @leagues = League.search_and_paginate(
-      params[:search],
-      %w[name],
-      page: params[:page],
-      per_page: 10
-    )
+    @leagues = League.all
+
+    @search_query = params[:search].to_s.strip
+    if @search_query.present?
+      @leagues = apply_fuzzy_search(@leagues, [ "name" ], @search_query)
+    end
+
+    @start_after = params[:start_after].to_s.strip
+    if @start_after.present?
+      begin
+        start_after_date = Date.iso8601(@start_after)
+        @leagues = @leagues.where("start_date >= ?", start_after_date.beginning_of_day)
+      rescue ArgumentError
+        # Ignore invalid start date filter input and render unfiltered by start date.
+      end
+    end
+
+    @end_before = params[:end_before].to_s.strip
+    if @end_before.present?
+      begin
+        end_before_date = Date.iso8601(@end_before)
+        @leagues = @leagues.where("end_date <= ?", end_before_date.end_of_day)
+      rescue ArgumentError
+        # Ignore invalid end date filter input and render unfiltered by end date.
+      end
+    end
+
+    @leagues = @leagues.order(start_date: :desc, id: :desc).page(params[:page]).per(10)
   end
 
   def new
@@ -16,6 +39,7 @@ class Admin::LeaguesController < Admin::BaseController
 
   def create
     @league = League.new(league_params)
+    @league.enforce_management_time_rules = true
     # League leader is the creating user (admin creates leagues via this UI).
     @league.creator = current_user
     if @league.save
@@ -29,6 +53,7 @@ class Admin::LeaguesController < Admin::BaseController
   end
 
   def update
+    @league.enforce_management_time_rules = true
     if @league.update(league_params)
       redirect_to admin_leagues_path, notice: "League updated successfully."
     else
@@ -49,15 +74,16 @@ class Admin::LeaguesController < Admin::BaseController
   end
 
   def league_params
-    # starting_capital + rule fields only on create; see League immutability validations.
-    if action_name == "create"
-      params.require(:league).permit(
-        :name, :description, :start_date, :end_date, :starting_capital,
-        :max_participants, :handling_fee_proportion, :minimum_final_balance,
-        :team_mode, :team_max_participants, :team_min_participants
-      )
-    else
-      params.require(:league).permit(:name, :description, :start_date, :end_date)
-    end
+    params.require(:league).permit(
+      :name, :description, :start_date, :end_date, :starting_capital,
+      :max_participants, :handling_fee_proportion, :minimum_final_balance,
+      :team_mode, :team_max_participants, :team_min_participants
+    )
+  end
+
+  def ensure_league_editable
+    return if @league.start_date.blank? || @league.start_date > Time.current
+
+    redirect_to admin_leagues_path, alert: "Started or ended leagues cannot be edited or deleted."
   end
 end

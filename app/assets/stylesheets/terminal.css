@@ -247,88 +247,131 @@ body.terminal-shell .alert {
   border-color: var(--terminal-down);
 }
 
-/* Shared live-notification rail for Turbo Stream inserts (league-created events). */
+/* Shared live-notification rail: scrolls when many persistent “new league” cards stack (no overlap). */
 .terminal-realtime-notifications {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 1200;
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
-  margin: 0.5rem 1rem 0;
+  gap: 0.45rem;
+  margin: 0;
+  width: min(360px, calc(100vw - 1.5rem));
+  max-height: min(42vh, 22rem);
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 0.15rem;
+  flex-shrink: 0;
 }
 
-.terminal-realtime-notice {
+@media (max-width: 640px) {
+  .terminal-realtime-notifications {
+    right: 0.5rem;
+    bottom: 0.5rem;
+    width: calc(100vw - 1rem);
+  }
+}
+
+/* One Turbo-prepended card; flex row keeps × aligned while text wraps. */
+.terminal-realtime-notif-card {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.35rem;
-  padding: 0.5rem 0.75rem;
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex: 0 0 auto;
+  padding: 0.55rem 0.65rem;
   font-size: 12px;
   border: 1px solid var(--terminal-border);
-  border-left: 3px solid var(--terminal-accent);
   border-radius: 2px;
   color: var(--terminal-text);
   background: var(--terminal-panel);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+  transition: opacity 0.32s ease, transform 0.32s ease;
 }
 
-.terminal-realtime-notice-title {
-  color: var(--terminal-accent);
-  font-weight: 700;
+.terminal-realtime-notif-card--closing {
+  opacity: 0;
+  transform: translateY(14px);
+  pointer-events: none;
 }
 
-body.terminal-shell main a.terminal-realtime-notice-link {
-  color: var(--terminal-up);
-  text-decoration: none;
+.terminal-realtime-notif-card--success {
+  border-left: 3px solid var(--terminal-up);
 }
 
-body.terminal-shell main a.terminal-realtime-notice-link:hover {
-  color: var(--terminal-text);
+.terminal-realtime-notif-card--accent {
+  border-left: 3px solid var(--terminal-accent);
 }
 
-/* Turbo-inserted league-created notices: match layout flash strip. */
-#realtime-notifications .terminal-realtime-flash {
-  margin-left: 0;
-  margin-right: 0;
+.terminal-realtime-notif-card--warn {
+  border-left: 3px solid var(--terminal-down);
 }
 
-/* League-created row: "View" as neutral chip + up-colored border/text (link for Turbo). */
-.terminal-realtime-flash .terminal-flash-text {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.35rem 0.5rem;
-}
-
-/* View: neutral body; up color on border + label only (no green fill). */
-.terminal-realtime-flash a.terminal-realtime-view-btn,
-#realtime-notifications a.terminal-realtime-view-btn {
-  margin-left: 0;
-  flex-shrink: 0;
-  color: var(--terminal-up);
+/* New-league broadcasts: slightly stronger panel so they read as the “modal” strip. */
+.terminal-realtime-notif-card--persistent {
   background: var(--terminal-zebra);
-  border: 1px solid var(--terminal-up);
-  text-decoration: none;
+}
+
+.terminal-realtime-notif-main {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.terminal-realtime-notif-title {
   font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-size: 11px;
+  color: var(--terminal-accent);
+  margin-bottom: 0.2rem;
 }
 
-#realtime-notifications a.terminal-realtime-view-btn:hover,
-#realtime-notifications a.terminal-realtime-view-btn:focus-visible {
-  color: var(--terminal-up);
-  background: var(--terminal-panel);
-  border-color: var(--terminal-up);
-  filter: brightness(1.12);
-  text-decoration: underline;
-  text-underline-offset: 3px;
-  text-decoration-thickness: 1px;
+.terminal-realtime-notif-body {
+  line-height: 1.35;
+  margin-bottom: 0.35rem;
+  word-break: break-word;
 }
 
-/* Realtime rail sits outside <main>; keep View link styling consistent. */
-#realtime-notifications a.terminal-realtime-notice-link {
+/* “View league” lives outside <main> — style like terminal links, not dashboard accent wall. */
+#realtime-notifications a.terminal-realtime-notif-view {
+  display: inline-block;
+  margin-top: 0.15rem;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   color: var(--terminal-up);
   text-decoration: none;
-  font-weight: 600;
+  border-bottom: 1px solid var(--terminal-up);
 }
 
-#realtime-notifications a.terminal-realtime-notice-link:hover {
+#realtime-notifications a.terminal-realtime-notif-view:hover,
+#realtime-notifications a.terminal-realtime-notif-view:focus-visible {
   color: var(--terminal-text);
+  border-bottom-color: var(--terminal-text);
+}
+
+.terminal-realtime-notif-close {
+  flex: 0 0 auto;
+  margin: -0.1rem -0.1rem 0 0;
+  padding: 0.15rem 0.45rem;
+  font-family: inherit;
+  font-size: 1.1rem;
+  line-height: 1;
+  font-weight: 700;
+  color: var(--terminal-muted);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.terminal-realtime-notif-close:hover,
+.terminal-realtime-notif-close:focus-visible {
+  color: var(--terminal-text);
+  border-color: var(--terminal-border);
 }
 
 body.terminal-shell .disclaimer {
@@ -436,6 +479,89 @@ body.terminal-shell .disclaimer {
   color: var(--terminal-bg);
   border-radius: 2px;
   width: fit-content;
+}
+
+.terminal-live-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.35rem;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--terminal-up);
+}
+
+.terminal-live-indicator--icon {
+  gap: 0;
+  width: 19px;
+  height: 19px;
+  justify-content: center;
+  border: 1px solid rgba(48, 209, 88, 0.35);
+  border-radius: 999px;
+  background: rgba(48, 209, 88, 0.1);
+  transition: background-color 140ms ease, border-color 140ms ease, transform 140ms ease;
+}
+
+.terminal-live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--terminal-up);
+  box-shadow: 0 0 0 0 rgba(48, 209, 88, 0.55);
+  animation: terminal-live-pulse 1.85s cubic-bezier(0.22, 0.61, 0.36, 1) infinite;
+  will-change: transform, box-shadow;
+}
+
+@keyframes terminal-live-pulse {
+  0% {
+    transform: scale(0.88);
+    box-shadow: 0 0 0 0 rgba(48, 209, 88, 0.55);
+  }
+
+  55% {
+    transform: scale(1.02);
+    box-shadow: 0 0 0 9px rgba(48, 209, 88, 0);
+  }
+
+  100% {
+    transform: scale(0.88);
+    box-shadow: 0 0 0 0 rgba(48, 209, 88, 0);
+  }
+}
+
+.terminal-joined-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.35rem;
+  padding: 0.15rem 0.5rem;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--terminal-text);
+  background: transparent;
+  border: 1px solid var(--terminal-border);
+  border-radius: 999px;
+}
+
+.terminal-joined-indicator--icon {
+  gap: 0;
+  width: 18px;
+  height: 18px;
+  justify-content: center;
+  padding: 0;
+  border-color: rgba(255, 149, 0, 0.45);
+  background: rgba(255, 149, 0, 0.08);
+}
+
+.terminal-joined-mark {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: transparent;
+  border: 2px solid var(--terminal-accent);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.35);
 }
 
 .terminal-stats-row {
@@ -1009,14 +1135,21 @@ body.terminal-shell main a.terminal-btn.terminal-btn-primary:focus-visible {
 }
 
 .terminal-table-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
   white-space: nowrap;
 }
 
 .terminal-table-actions a {
-  margin-right: 0.75rem;
   font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
+}
+
+.terminal-table-actions form {
+  display: inline;
+  margin: 0;
 }
 
 /* Portfolio holdings + trading league positions: BUY/SELL as buttons, flush right */
@@ -1754,6 +1887,7 @@ body.terminal-shell main a.terminal-btn--primary:focus-visible {
 
 .terminal-league-card {
   overflow: hidden;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
 }
 
 .terminal-league-card-summary {
@@ -1789,6 +1923,24 @@ body.terminal-shell main a.terminal-btn--primary:focus-visible {
 
 .terminal-league-card-body {
   padding: 0.85rem 1rem 1rem;
+  transform-origin: top;
+  animation: terminal-league-body-enter 170ms ease-out;
+}
+
+.terminal-league-card[open] {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
+}
+
+@keyframes terminal-league-body-enter {
+  0% {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .terminal-league-details {
@@ -2162,9 +2314,21 @@ body.terminal-shell {
   gap: 1rem;
 }
 
+.terminal-form-row--team-limits .terminal-label {
+  min-height: 2.4em;
+}
+
+.terminal-form-row--team-limits[hidden] {
+  display: none;
+}
+
 @media (max-width: 560px) {
   .terminal-form-row {
     grid-template-columns: 1fr;
+  }
+
+  .terminal-form-row--team-limits .terminal-label {
+    min-height: 0;
   }
 }
 
@@ -2203,6 +2367,44 @@ body.terminal-shell {
 
 .terminal-search-wrap {
   position: relative;
+}
+
+.terminal-admin-filters-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1rem;
+  align-items: stretch;
+}
+
+.terminal-admin-search-box {
+  margin-bottom: 1rem;
+}
+
+.terminal-admin-filter-box {
+  margin-bottom: 1rem;
+  min-width: 360px;
+}
+
+.terminal-admin-filter-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.terminal-admin-period-filter-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+@media (max-width: 900px) {
+  .terminal-admin-filters-row {
+    grid-template-columns: 1fr;
+  }
+
+  .terminal-admin-filter-box {
+    min-width: 0;
+  }
 }
 
 .terminal-search-clear {
@@ -2289,6 +2491,320 @@ body.terminal-shell main a.terminal-btn.terminal-btn--danger:focus-visible {
   grid-template-columns: 1fr;
   gap: 0.75rem;
   margin-top: 0.65rem;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Friends Panel — top-bar dropdown
+   ═══════════════════════════════════════════════════════════════ */
+
+.terminal-friends-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.terminal-topbar-friends-btn {
+  background: none;
+  border: 1px solid var(--terminal-border);
+  padding: 0.25rem 0.55rem;
+  font-size: 11px;
+  color: var(--terminal-text);
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  border-radius: 2px;
+  position: relative;
+}
+
+.terminal-topbar-friends-btn:hover {
+  color: var(--terminal-accent);
+  border-color: var(--terminal-accent);
+}
+
+.terminal-friends-badge {
+  display: inline-block;
+  background: var(--terminal-down);
+  color: var(--terminal-text);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 0 4px;
+  border-radius: 2px;
+  margin-left: 4px;
+  min-width: 16px;
+  text-align: center;
+  line-height: 16px;
+  vertical-align: middle;
+}
+
+.terminal-friends-badge--hidden {
+  display: none;
+}
+
+.terminal-friends-panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  width: 320px;
+  max-height: 420px;
+  background: var(--terminal-panel);
+  border: 1px solid var(--terminal-border);
+  border-radius: 4px;
+  z-index: 1000;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.terminal-friends-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--terminal-border);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--terminal-accent);
+}
+
+.terminal-friends-panel-close {
+  background: none;
+  border: none;
+  color: var(--terminal-muted);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 0 4px;
+  font-family: inherit;
+  line-height: 1;
+}
+
+.terminal-friends-panel-close:hover {
+  color: var(--terminal-down);
+}
+
+/* ── Tabs ── */
+.terminal-friends-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--terminal-border);
+}
+
+.terminal-friends-tab {
+  flex: 1;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 0.4rem 0.5rem;
+  font-size: 10px;
+  font-weight: 600;
+  font-family: inherit;
+  color: var(--terminal-muted);
+  cursor: pointer;
+  text-align: center;
+  letter-spacing: 0.06em;
+}
+
+.terminal-friends-tab:hover {
+  color: var(--terminal-text);
+}
+
+.terminal-friends-tab--active {
+  color: var(--terminal-accent);
+  border-bottom-color: var(--terminal-accent);
+}
+
+.terminal-friends-tab-count {
+  font-size: 9px;
+  background: var(--terminal-down);
+  color: var(--terminal-text);
+  padding: 0 3px;
+  border-radius: 2px;
+  margin-left: 2px;
+}
+
+/* ── Tab content ── */
+.terminal-friends-tab-content {
+  overflow-y: auto;
+  max-height: 300px;
+  padding: 0.5rem;
+}
+
+/* ── Friend rows ── */
+.terminal-friend-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.35rem 0.5rem;
+  border-bottom: 1px solid var(--terminal-zebra);
+  font-size: 12px;
+}
+
+.terminal-friend-row:last-child {
+  border-bottom: none;
+}
+
+.terminal-friend-name {
+  color: var(--terminal-text);
+  font-weight: 500;
+  letter-spacing: 0.04em;
+}
+
+.terminal-friend-remove-btn {
+  background: none;
+  border: 1px solid var(--terminal-border);
+  padding: 0.15rem 0.4rem;
+  font-size: 10px;
+  color: var(--terminal-muted);
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  border-radius: 2px;
+}
+
+.terminal-friend-remove-btn:hover {
+  color: var(--terminal-down);
+  border-color: var(--terminal-down);
+}
+
+.terminal-friend-empty {
+  text-align: center;
+  color: var(--terminal-muted);
+  font-size: 11px;
+  padding: 1.5rem 0.5rem;
+  letter-spacing: 0.04em;
+}
+
+/* ── Friend requests ── */
+.terminal-friend-request-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.4rem 0.5rem;
+  border-bottom: 1px solid var(--terminal-zebra);
+  font-size: 12px;
+  gap: 0.3rem;
+}
+
+.terminal-friend-request-row:last-child {
+  border-bottom: none;
+}
+
+.terminal-friend-request-time {
+  font-size: 10px;
+  color: var(--terminal-muted);
+}
+
+.terminal-friend-request-actions {
+  display: flex;
+  gap: 0.3rem;
+}
+
+.terminal-friend-accept-btn {
+  background: var(--terminal-up);
+  border: none;
+  padding: 0.15rem 0.4rem;
+  font-size: 10px;
+  color: var(--terminal-bg);
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  border-radius: 2px;
+}
+
+.terminal-friend-accept-btn:hover {
+  filter: brightness(1.15);
+}
+
+.terminal-friend-decline-btn {
+  background: none;
+  border: 1px solid var(--terminal-border);
+  padding: 0.15rem 0.4rem;
+  font-size: 10px;
+  color: var(--terminal-muted);
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  border-radius: 2px;
+}
+
+.terminal-friend-decline-btn:hover {
+  color: var(--terminal-down);
+  border-color: var(--terminal-down);
+}
+
+/* ── Search ── */
+.terminal-friend-search-box {
+  margin-bottom: 0.5rem;
+}
+
+.terminal-friend-search-input {
+  width: 100%;
+  background: var(--terminal-bg);
+  border: 1px solid var(--terminal-border);
+  padding: 0.35rem 0.5rem;
+  font-size: 12px;
+  color: var(--terminal-text);
+  font-family: inherit;
+  border-radius: 2px;
+  outline: none;
+}
+
+.terminal-friend-search-input:focus {
+  border-color: var(--terminal-accent);
+}
+
+.terminal-friend-search-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.35rem 0.5rem;
+  border-bottom: 1px solid var(--terminal-zebra);
+  font-size: 12px;
+}
+
+.terminal-friend-search-row:last-child {
+  border-bottom: none;
+}
+
+.terminal-friend-add-btn {
+  background: var(--terminal-accent);
+  border: none;
+  padding: 0.15rem 0.4rem;
+  font-size: 10px;
+  color: var(--terminal-bg);
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  border-radius: 2px;
+}
+
+.terminal-friend-add-btn:hover {
+  filter: brightness(1.15);
+}
+
+.terminal-friend-status-ok {
+  font-size: 10px;
+  color: var(--terminal-up);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+}
+
+.terminal-friend-status-sent {
+  font-size: 10px;
+  color: var(--terminal-accent);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+}
+
+.terminal-friend-status-error {
+  font-size: 10px;
+  color: var(--terminal-down);
+  font-weight: 500;
 }
 
 .terminal-team-card {
@@ -2690,4 +3206,1193 @@ body.terminal-shell main a.terminal-btn.terminal-btn--danger:focus-visible {
 .lb-rank-delta--flat {
   color: var(--terminal-muted);
   font-size: 8px;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Chat Widget — floating button + chat box
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ══════════════════════════════════════════════════════════════
+   CHAT WIDGET — Business Formal Theme
+   ══════════════════════════════════════════════════════════════ */
+
+.terminal-chat-fab {
+  position: fixed;
+  bottom: 28px;
+  left: 28px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--terminal-accent, #ff9500), #e08600);
+  color: var(--terminal-bg, #1c1c1e);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  z-index: 9999;
+  box-shadow: 0 4px 20px rgba(255, 149, 0, 0.35), 0 2px 8px rgba(0,0,0,0.4);
+  border: none;
+  transition: box-shadow 0.2s, transform 0.15s;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}
+
+.terminal-chat-fab:hover {
+  box-shadow: 0 6px 28px rgba(255, 149, 0, 0.5), 0 3px 12px rgba(0,0,0,0.5);
+  transform: scale(1.05);
+}
+
+.terminal-chat-fab:active {
+  cursor: grabbing;
+  transform: scale(0.97);
+}
+
+.terminal-chat-fab-emoji {
+  font-size: 26px;
+  pointer-events: none;
+  line-height: 1;
+}
+
+/* ── Chat box ── */
+.terminal-chat-box {
+  position: fixed;
+  bottom: 94px;
+  left: 28px;
+  width: 400px;
+  height: 520px;
+  background: var(--terminal-panel, #2c2c2e);
+  border: 1px solid var(--terminal-border, #3a3a3c);
+  border-radius: 12px;
+  z-index: 9998;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6), 0 0 1px rgba(255,255,255,0.06);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ── Title bar ── */
+.terminal-chat-titlebar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.04) 0%, transparent 100%);
+  border-bottom: 1px solid var(--terminal-border, #3a3a3c);
+  flex-shrink: 0;
+}
+.terminal-chat-titlebar-icon {
+  font-size: 15px;
+  line-height: 1;
+}
+.terminal-chat-titlebar-text {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--terminal-accent, #ff9500);
+  flex: 1;
+}
+.terminal-chat-titlebar-close {
+  background: none;
+  border: none;
+  color: var(--terminal-muted, #8e8e93);
+  font-size: 18px;
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+  transition: color 0.15s;
+}
+.terminal-chat-titlebar-close:hover {
+  color: var(--terminal-error, #ff453a);
+}
+
+.terminal-chat-box-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* ── Friends / team list header ── */
+.terminal-chat-friends-header {
+  padding: 10px 14px 8px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--terminal-accent, #ff9500);
+  border-bottom: 1px solid var(--terminal-border, #3a3a3c);
+}
+
+.terminal-chat-friend-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+  transition: background 0.12s;
+}
+
+.terminal-chat-friend-row:hover {
+  background: rgba(255, 149, 0, 0.06);
+}
+
+.terminal-chat-friend-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--terminal-accent, #ff9500), #e08600);
+  color: var(--terminal-bg, #1c1c1e);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.terminal-chat-friend-avatar--team {
+  background: linear-gradient(135deg, #30d158, #28a745);
+  border-radius: 8px;
+}
+
+.terminal-chat-friend-status-dot {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #30d158;
+  border: 2px solid var(--terminal-panel, #2c2c2e);
+}
+
+.terminal-chat-friend-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  flex: 1;
+  min-width: 0;
+}
+
+.terminal-chat-friend-name {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--terminal-text, #f5f5f7);
+  letter-spacing: 0.03em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.terminal-chat-friend-subtitle {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  color: var(--terminal-muted, #8e8e93);
+  letter-spacing: 0.02em;
+}
+
+.terminal-chat-friend-arrow {
+  font-size: 18px;
+  color: var(--terminal-muted, #8e8e93);
+  flex-shrink: 0;
+  transition: color 0.12s, transform 0.12s;
+}
+.terminal-chat-friend-row:hover .terminal-chat-friend-arrow {
+  color: var(--terminal-accent, #ff9500);
+  transform: translateX(2px);
+}
+
+.terminal-chat-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-align: center;
+  color: var(--terminal-muted, #8e8e93);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  padding: 2.5rem 1rem;
+  letter-spacing: 0.03em;
+}
+.terminal-chat-empty-icon {
+  font-size: 32px;
+  line-height: 1;
+  opacity: 0.7;
+}
+
+.terminal-chat-empty {
+  text-align: center;
+  color: var(--terminal-muted, #8e8e93);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  padding: 2rem 0.75rem;
+}
+
+.terminal-chat-loading {
+  text-align: center;
+  color: var(--terminal-muted, #8e8e93);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  padding: 2rem 0.75rem;
+  letter-spacing: 0.08em;
+  animation: terminal-chat-pulse 1.2s ease-in-out infinite;
+}
+@keyframes terminal-chat-pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+/* ── Conversation header ── */
+.terminal-chat-conv-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--terminal-border, #3a3a3c);
+  flex-shrink: 0;
+  background: linear-gradient(180deg, rgba(255,255,255,0.03) 0%, transparent 100%);
+}
+
+.terminal-chat-back-btn {
+  background: none;
+  border: 1px solid var(--terminal-border, #3a3a3c);
+  color: var(--terminal-text, #f5f5f7);
+  padding: 3px 8px;
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+
+.terminal-chat-back-btn:hover {
+  border-color: var(--terminal-accent, #ff9500);
+  color: var(--terminal-accent, #ff9500);
+  background: rgba(255, 149, 0, 0.08);
+}
+
+.terminal-chat-conv-header-icon {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.terminal-chat-conv-friend-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--terminal-accent, #ff9500), #e08600);
+  color: var(--terminal-bg, #1c1c1e);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.terminal-chat-conv-name {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--terminal-text, #f5f5f7);
+  letter-spacing: 0.06em;
+}
+
+.terminal-chat-conv-badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.55rem;
+  color: var(--terminal-accent, #ff9500);
+  background: rgba(255, 149, 0, 0.12);
+  padding: 2px 6px;
+  border-radius: 3px;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+  margin-left: auto;
+}
+
+.terminal-chat-conv-status {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.58rem;
+  color: #30d158;
+  letter-spacing: 0.03em;
+}
+
+/* ── Messages area ── */
+.terminal-chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: rgba(0,0,0,0.15);
+}
+
+.terminal-chat-messages::-webkit-scrollbar {
+  width: 4px;
+}
+.terminal-chat-messages::-webkit-scrollbar-track {
+  background: transparent;
+}
+.terminal-chat-messages::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.1);
+  border-radius: 4px;
+}
+
+.terminal-chat-msg {
+  max-width: 78%;
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.terminal-chat-msg-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--terminal-border, #3a3a3c);
+  color: var(--terminal-text, #f5f5f7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.terminal-chat-msg-content {
+  padding: 8px 12px;
+  border-radius: 12px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  line-height: 1.5;
+  word-wrap: break-word;
+  min-width: 0;
+}
+
+.terminal-chat-msg--mine {
+  align-self: flex-end;
+  flex-direction: row-reverse;
+}
+
+.terminal-chat-msg--mine .terminal-chat-msg-avatar {
+  background: var(--terminal-accent, #ff9500);
+  color: var(--terminal-bg, #1c1c1e);
+}
+
+.terminal-chat-msg--mine .terminal-chat-msg-content {
+  background: linear-gradient(135deg, var(--terminal-accent, #ff9500), #e08600);
+  color: var(--terminal-bg, #1c1c1e);
+  border-bottom-right-radius: 4px;
+}
+
+.terminal-chat-msg--theirs {
+  align-self: flex-start;
+}
+
+.terminal-chat-msg--theirs .terminal-chat-msg-content {
+  background: var(--terminal-bg, #1c1c1e);
+  color: var(--terminal-text, #f5f5f7);
+  border: 1px solid var(--terminal-border, #3a3a3c);
+  border-bottom-left-radius: 4px;
+}
+
+.terminal-chat-msg-author {
+  display: block;
+  font-size: 0.55rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  margin-bottom: 2px;
+  opacity: 0.65;
+}
+
+.terminal-chat-msg--mine .terminal-chat-msg-author {
+  color: var(--terminal-bg, #1c1c1e);
+}
+
+.terminal-chat-msg-body {
+  display: block;
+}
+
+.terminal-chat-msg-time {
+  display: block;
+  font-size: 0.5rem;
+  text-align: right;
+  margin-top: 3px;
+  opacity: 0.45;
+}
+
+/* ── Sticker rendering ── */
+.terminal-chat-sticker {
+  display: block;
+  font-size: 40px;
+  line-height: 1.1;
+  padding: 4px 0;
+  text-align: center;
+}
+
+/* ── Chat input form ── */
+.terminal-chat-form {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  border-top: 1px solid var(--terminal-border, #3a3a3c);
+  flex-shrink: 0;
+  background: var(--terminal-panel, #2c2c2e);
+}
+
+.terminal-chat-emoji-btn,
+.terminal-chat-sticker-btn {
+  background: none;
+  border: none;
+  padding: 8px 6px 8px 10px;
+  font-size: 17px;
+  cursor: pointer;
+  line-height: 1;
+  transition: transform 0.15s;
+  flex-shrink: 0;
+}
+.terminal-chat-emoji-btn:hover,
+.terminal-chat-sticker-btn:hover {
+  transform: scale(1.2);
+}
+
+.terminal-chat-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  padding: 12px 8px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  color: var(--terminal-text, #f5f5f7);
+  outline: none;
+  min-width: 0;
+}
+
+.terminal-chat-input::placeholder {
+  color: var(--terminal-muted, #8e8e93);
+  font-size: 0.68rem;
+}
+
+.terminal-chat-send-btn {
+  background: linear-gradient(135deg, var(--terminal-accent, #ff9500), #e08600);
+  border: none;
+  padding: 10px 14px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--terminal-bg, #1c1c1e);
+  cursor: pointer;
+  letter-spacing: 0.06em;
+  transition: filter 0.15s;
+  flex-shrink: 0;
+}
+
+.terminal-chat-send-btn:hover {
+  filter: brightness(1.15);
+}
+
+/* ── Emoji picker overlay ── */
+.terminal-chat-emoji-picker,
+.terminal-chat-sticker-picker {
+  position: absolute;
+  bottom: 50px;
+  left: 0;
+  right: 0;
+  background: var(--terminal-panel, #2c2c2e);
+  border-top: 1px solid var(--terminal-border, #3a3a3c);
+  flex-direction: column;
+  z-index: 10;
+  max-height: 220px;
+  overflow: hidden;
+}
+
+.terminal-chat-picker-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--terminal-accent, #ff9500);
+  border-bottom: 1px solid var(--terminal-border, #3a3a3c);
+  flex-shrink: 0;
+}
+
+.terminal-chat-picker-close {
+  background: none;
+  border: none;
+  color: var(--terminal-muted, #8e8e93);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 0 2px;
+  line-height: 1;
+  transition: color 0.15s;
+}
+.terminal-chat-picker-close:hover {
+  color: var(--terminal-error, #ff453a);
+}
+
+.terminal-chat-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 2px;
+  padding: 8px;
+  overflow-y: auto;
+}
+
+.terminal-chat-picker-grid--stickers {
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+}
+
+.terminal-chat-emoji-item {
+  background: none;
+  border: 1px solid transparent;
+  font-size: 20px;
+  padding: 4px;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background 0.12s, border-color 0.12s, transform 0.1s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1;
+}
+.terminal-chat-emoji-item:hover {
+  background: rgba(255, 149, 0, 0.1);
+  border-color: rgba(255, 149, 0, 0.3);
+  transform: scale(1.15);
+}
+
+.terminal-chat-sticker-item {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--terminal-border, #3a3a3c);
+  border-radius: 8px;
+  padding: 8px 4px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  transition: background 0.12s, border-color 0.12s, transform 0.1s;
+}
+.terminal-chat-sticker-item:hover {
+  background: rgba(255, 149, 0, 0.08);
+  border-color: var(--terminal-accent, #ff9500);
+  transform: scale(1.04);
+}
+
+.terminal-chat-sticker-emoji {
+  font-size: 24px;
+  line-height: 1;
+}
+
+.terminal-chat-sticker-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.52rem;
+  color: var(--terminal-muted, #8e8e93);
+  letter-spacing: 0.03em;
+  text-align: center;
+}
+
+/* ── Responsive: smaller chat box on mobile ── */
+@media (max-width: 480px) {
+  .terminal-chat-box {
+    width: calc(100vw - 20px);
+    height: 65vh;
+    left: 10px;
+    right: 10px;
+    bottom: 90px;
+    border-radius: 10px;
+  }
+  .terminal-chat-picker-grid {
+    grid-template-columns: repeat(6, 1fr);
+  }
+  .terminal-chat-picker-grid--stickers {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* ── Chat channel tabs (WORLD / TEAM / FRIENDS) ── */
+.terminal-chat-channel-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--terminal-border, #3a3a3c);
+  background: var(--terminal-panel, #2c2c2e);
+  flex-shrink: 0;
+}
+.terminal-chat-channel-tab {
+  flex: 1;
+  padding: 9px 0;
+  text-align: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.06em;
+  color: var(--terminal-muted, #8e8e93);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s, border-bottom 0.15s;
+  border-bottom: 2px solid transparent;
+}
+.terminal-chat-channel-tab:hover {
+  color: var(--terminal-text, #f5f5f7);
+  background: rgba(255,255,255,0.02);
+}
+.terminal-chat-channel-tab--active {
+  color: var(--terminal-accent, #ff9500);
+  border-bottom-color: var(--terminal-accent, #ff9500);
+  background: rgba(255, 149, 0, 0.05);
+}
+
+/* ── Team list (league headers + team rows) ── */
+.terminal-chat-team-league-header {
+  padding: 10px 14px 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.terminal-chat-team-league-icon {
+  font-size: 13px;
+  line-height: 1;
+}
+.terminal-chat-team-league-name {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  color: var(--terminal-accent, #ff9500);
+  font-weight: 600;
+}
+.terminal-chat-team-league-ended {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.58rem;
+  color: var(--terminal-error, #ff453a);
+  background: rgba(255, 69, 58, 0.12);
+  padding: 2px 7px;
+  border-radius: 4px;
+  letter-spacing: 0.06em;
+}
+.terminal-chat-friend-row--disabled {
+  opacity: 0.4;
+  pointer-events: none;
+  cursor: default;
+}
+.terminal-chat-team-closed-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.58rem;
+  color: var(--terminal-error, #ff453a);
+  margin-left: auto;
+  letter-spacing: 0.05em;
+  flex-shrink: 0;
+}
+
+/* ── Team conversation header ── */
+.terminal-chat-conv-header-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.terminal-chat-conv-league {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.58rem;
+  color: var(--terminal-muted, #8e8e93);
+  letter-spacing: 0.04em;
+}
+
+/* ── Closed banner ── */
+.terminal-chat-closed-banner {
+  padding: 12px 14px;
+  text-align: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  color: var(--terminal-error, #ff453a);
+  background: rgba(255, 69, 58, 0.08);
+  border-top: 1px solid var(--terminal-border, #3a3a3c);
+  flex-shrink: 0;
+}
+
+/* ── System messages (chat warnings) ── */
+.terminal-chat-system-message {
+  text-align: center;
+  padding: 8px 14px;
+}
+.terminal-chat-system-text {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.62rem;
+  color: var(--terminal-warning, #ffd60a);
+  letter-spacing: 0.03em;
+  background: rgba(255, 214, 10, 0.08);
+  padding: 4px 10px;
+  border-radius: 4px;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   PROFILE PAGE
+   ══════════════════════════════════════════════════════════════ */
+
+/* ── Nav: profile link in topbar ── */
+.terminal-topbar-profile-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+  padding: 4px 10px;
+  border-radius: 6px;
+  transition: background 0.15s;
+}
+.terminal-topbar-profile-link:hover {
+  background: rgba(255, 149, 0, 0.08);
+}
+.terminal-topbar-profile-icon {
+  font-size: 16px;
+  line-height: 1;
+}
+.terminal-topbar-level-tag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.55rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--terminal-accent, #ff9500);
+  background: rgba(255, 149, 0, 0.12);
+  padding: 2px 7px;
+  border-radius: 4px;
+}
+
+/* ── Profile page layout ── */
+.terminal-profile-page {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 24px 16px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.terminal-profile-card {
+  background: var(--terminal-panel, #2c2c2e);
+  border: 1px solid var(--terminal-border, #3a3a3c);
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.terminal-profile-divider {
+  height: 1px;
+  background: var(--terminal-border, #3a3a3c);
+  margin: 16px 0;
+}
+
+/* ── Profile header ── */
+.terminal-profile-card-header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.terminal-profile-avatar {
+  position: relative;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--terminal-accent, #ff9500), #e08600);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 4px 16px rgba(255, 149, 0, 0.3);
+}
+.terminal-profile-avatar-letter {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--terminal-bg, #1c1c1e);
+}
+.terminal-profile-level-badge {
+  position: absolute;
+  bottom: -4px;
+  right: -4px;
+  font-size: 22px;
+  line-height: 1;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+}
+
+.terminal-profile-identity {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.terminal-profile-username {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.4rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: var(--terminal-text, #f5f5f7);
+  margin: 0;
+}
+.terminal-profile-level-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--terminal-accent, #ff9500);
+}
+
+/* ── Info grid ── */
+.terminal-profile-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+}
+.terminal-profile-info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.04);
+}
+.terminal-profile-info-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--terminal-muted, #8e8e93);
+}
+.terminal-profile-info-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--terminal-text, #f5f5f7);
+  word-break: break-all;
+}
+
+/* Role badges */
+.terminal-profile-role-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  width: fit-content;
+}
+.terminal-profile-role-badge--user {
+  background: rgba(48, 209, 88, 0.15);
+  color: #30d158;
+}
+.terminal-profile-role-badge--admin {
+  background: rgba(255, 69, 58, 0.15);
+  color: #ff453a;
+}
+
+/* ── Section title ── */
+.terminal-profile-section-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--terminal-text, #f5f5f7);
+  margin: 0;
+}
+
+/* ── Level track ── */
+.terminal-profile-level-track {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 0;
+  overflow-x: auto;
+}
+
+.terminal-profile-level-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-width: 60px;
+  opacity: 0.35;
+  transition: opacity 0.2s;
+}
+.terminal-profile-level-node--active {
+  opacity: 1;
+}
+.terminal-profile-level-node--current {
+  transform: scale(1.15);
+}
+.terminal-profile-level-node-icon {
+  font-size: 28px;
+  line-height: 1;
+}
+.terminal-profile-level-node--current .terminal-profile-level-node-icon {
+  filter: drop-shadow(0 0 8px rgba(255, 149, 0, 0.6));
+}
+.terminal-profile-level-node-name {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.55rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--terminal-text, #f5f5f7);
+}
+.terminal-profile-level-node-xp {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.5rem;
+  color: var(--terminal-muted, #8e8e93);
+}
+
+.terminal-profile-level-connector {
+  flex: 1;
+  height: 2px;
+  background: var(--terminal-border, #3a3a3c);
+  margin: 0 4px;
+  margin-bottom: 34px;
+  border-radius: 1px;
+}
+.terminal-profile-level-connector--filled {
+  background: linear-gradient(90deg, var(--terminal-accent, #ff9500), #e08600);
+  box-shadow: 0 0 6px rgba(255, 149, 0, 0.3);
+}
+
+/* ── XP progress bar ── */
+.terminal-profile-xp-section {
+  padding-top: 8px;
+}
+.terminal-profile-xp-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--terminal-text, #f5f5f7);
+}
+.terminal-profile-xp-numbers {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--terminal-accent, #ff9500);
+}
+.terminal-profile-xp-bar-track {
+  width: 100%;
+  height: 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid var(--terminal-border, #3a3a3c);
+}
+.terminal-profile-xp-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--terminal-accent, #ff9500), #ffd60a);
+  border-radius: 6px;
+  transition: width 0.6s ease;
+  box-shadow: 0 0 8px rgba(255, 149, 0, 0.4);
+}
+.terminal-profile-xp-hint {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.58rem;
+  color: var(--terminal-muted, #8e8e93);
+  margin-top: 6px;
+  text-align: right;
+}
+.terminal-profile-xp-maxed {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #ffd60a;
+  padding: 12px 16px;
+  background: rgba(255, 214, 10, 0.08);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 214, 10, 0.2);
+}
+
+/* ── XP rules ── */
+.terminal-profile-xp-rules {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.terminal-profile-xp-rule {
+  display: flex;
+  gap: 14px;
+  padding: 14px 16px;
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.04);
+}
+.terminal-profile-xp-rule-icon {
+  font-size: 28px;
+  line-height: 1;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.terminal-profile-xp-rule-content {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.terminal-profile-xp-rule-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--terminal-text, #f5f5f7);
+}
+.terminal-profile-xp-rule-desc {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--terminal-muted, #8e8e93);
+  line-height: 1.6;
+}
+.terminal-profile-xp-positive {
+  color: #30d158;
+  font-weight: 700;
+}
+.terminal-profile-xp-negative {
+  color: #ff453a;
+  font-weight: 700;
+}
+.terminal-profile-xp-placements {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 4px;
+}
+.terminal-profile-xp-placement {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  background: rgba(255,255,255,0.02);
+  border-radius: 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--terminal-text, #f5f5f7);
+}
+.terminal-profile-xp-placement-rank {
+  font-size: 18px;
+  line-height: 1;
+}
+
+/* ── Shield banner ── */
+.terminal-profile-shield-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+  padding: 12px 16px;
+  background: rgba(255, 204, 0, 0.08);
+  border: 1px solid rgba(255, 204, 0, 0.25);
+  border-radius: 8px;
+}
+.terminal-profile-shield-icon {
+  font-size: 28px;
+  flex-shrink: 0;
+}
+.terminal-profile-shield-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--terminal-text, #f5f5f7);
+}
+.terminal-profile-shield-text strong {
+  color: #ffcc00;
+  letter-spacing: 0.5px;
+}
+.terminal-profile-shield-text span {
+  opacity: 0.7;
+  font-size: 0.7rem;
+}
+
+/* ── Rule sub-notes & examples ── */
+.terminal-profile-xp-rule-sub {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 8px 10px;
+  background: rgba(255, 204, 0, 0.06);
+  border-left: 2px solid rgba(255, 204, 0, 0.35);
+  border-radius: 0 6px 6px 0;
+  font-size: 0.7rem;
+  color: var(--terminal-text, #f5f5f7);
+  opacity: 0.85;
+}
+.terminal-profile-xp-rule-sub-icon {
+  flex-shrink: 0;
+  font-size: 14px;
+}
+.terminal-profile-xp-rule-sub code {
+  background: rgba(255, 255, 255, 0.08);
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  color: #ffcc00;
+}
+.terminal-profile-xp-shield-example {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 10px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 6px;
+}
+.terminal-profile-xp-example-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  color: var(--terminal-text, #f5f5f7);
+  opacity: 0.8;
+  gap: 8px;
+}
+
+/* ── Profile responsive ── */
+@media (max-width: 480px) {
+  .terminal-profile-page {
+    padding: 12px 8px 24px;
+  }
+  .terminal-profile-card {
+    padding: 16px;
+  }
+  .terminal-profile-card-header {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+  .terminal-profile-identity {
+    align-items: center;
+  }
+  .terminal-profile-info-grid {
+    grid-template-columns: 1fr;
+  }
+  .terminal-profile-level-track {
+    gap: 4px;
+  }
+  .terminal-profile-level-node {
+    min-width: 48px;
+  }
+  .terminal-profile-level-node-icon {
+    font-size: 22px;
+  }
+  .terminal-topbar-level-tag {
+    display: none;
+  }
 }

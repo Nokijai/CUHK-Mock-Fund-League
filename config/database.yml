@@ -17,6 +17,9 @@ default: &default
   encoding: unicode
   # Use explicit PGUSER when provided; otherwise default to current OS user.
   username: <%= ENV.fetch("PGUSER", ENV.fetch("USER", "postgres")) %>
+  # Use PGPASSWORD when set (e.g. docker-compose default postgres:postgres).
+  # Local Postgres setups often use peer auth, so leaving this blank is fine.
+  password: <%= ENV["PGPASSWORD"] %>
   # For details on connection pooling, see Rails configuration guide
   # https://guides.rubyonrails.org/configuring.html#database-pooling
   max_connections: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
@@ -25,12 +28,16 @@ default: &default
 development:
   primary:
     <<: *default
-    database: cuhk_mock_fund_league_development
+    database: mock_fund_league_development
   # Same DB as primary; Solid Queue uses this config for job/recurring tables.
   queue:
     <<: *default
-    database: cuhk_mock_fund_league_development
+    database: mock_fund_league_development
     migrations_paths: db/queue_migrate
+  cable:
+    <<: *default
+    database: cuhk_mock_fund_league_development
+    migrations_paths: db/cable_migrate
 
   # The TCP port the server listens on. Defaults to 5432.
   # If your server runs on a different port number, change accordingly.
@@ -54,13 +61,18 @@ test:
     # Local default: use TCP localhost even if `.env` contains Docker service hostnames.
     # Override with PGHOST_TEST when running tests inside Docker.
     host: <%= ENV.fetch("PGHOST_TEST", "localhost") %>
-    database: cuhk_mock_fund_league_test
+    database: mock_fund_league_test
   # Mirror development: keep queue tables in the same test DB.
   queue:
     <<: *default
     host: <%= ENV.fetch("PGHOST_TEST", "localhost") %>
-    database: cuhk_mock_fund_league_test
+    database: mock_fund_league_test
     migrations_paths: db/queue_migrate
+  cable:
+    <<: *default
+    host: <%= ENV.fetch("PGHOST_TEST", "localhost") %>
+    database: cuhk_mock_fund_league_test
+    migrations_paths: db/cable_migrate
 
 # As with config/credentials.yml, you never want to store sensitive information,
 # like your database password, in your source code. If your source code is

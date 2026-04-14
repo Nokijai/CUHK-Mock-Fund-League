@@ -1,0 +1,54 @@
+<%# Shared snapshot of league economics + schedule for lifecycle emails (inline styles for clients). %>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 22px 0 0; border: 1px solid #e5e7eb; border-radius: 10px; overflow: hidden;">
+  <tr>
+    <td colspan="2" style="padding: 12px 16px; background-color: #f8fafc; font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: #475569; font-weight: 600;">
+      League details
+    </td>
+  </tr>
+  <tr>
+    <td style="padding: 12px 16px; width: 42%; font-size: 14px; color: #6b7280; border-top: 1px solid #e5e7eb;">Starts</td>
+    <td style="padding: 12px 16px; font-size: 14px; color: #111827; border-top: 1px solid #e5e7eb; font-weight: 600;">
+      <%= @league.start_date.in_time_zone.strftime("%a %d %b %Y, %H:%M %Z") %>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding: 12px 16px; font-size: 14px; color: #6b7280; border-top: 1px solid #e5e7eb;">Ends</td>
+    <td style="padding: 12px 16px; font-size: 14px; color: #111827; border-top: 1px solid #e5e7eb; font-weight: 600;">
+      <%= @league.end_date.in_time_zone.strftime("%a %d %b %Y, %H:%M %Z") %>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding: 12px 16px; font-size: 14px; color: #6b7280; border-top: 1px solid #e5e7eb;">Starting capital</td>
+    <td style="padding: 12px 16px; font-size: 14px; color: #111827; border-top: 1px solid #e5e7eb; font-weight: 600;">
+      <%= number_to_currency(@league.starting_capital, precision: 0) %> <span style="color: #6b7280; font-weight: 500;">USD (virtual)</span>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding: 12px 16px; font-size: 14px; color: #6b7280; border-top: 1px solid #e5e7eb;">Participants joined</td>
+    <td style="padding: 12px 16px; font-size: 14px; color: #111827; border-top: 1px solid #e5e7eb; font-weight: 600;">
+      <%= @participant_count %><% if @league.max_participants.present? %> <span style="color: #6b7280; font-weight: 500;">/ cap <%= @league.max_participants %></span><% end %>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding: 12px 16px; font-size: 14px; color: #6b7280; border-top: 1px solid #e5e7eb;">Team mode</td>
+    <td style="padding: 12px 16px; font-size: 14px; color: #111827; border-top: 1px solid #e5e7eb; font-weight: 600;">
+      <%= @league.team_mode? ? "Yes" : "No" %>
+    </td>
+  </tr>
+  <% if @league.handling_fee_rule_configured? %>
+    <tr>
+      <td style="padding: 12px 16px; font-size: 14px; color: #6b7280; border-top: 1px solid #e5e7eb;">Handling fee</td>
+      <td style="padding: 12px 16px; font-size: 14px; color: #111827; border-top: 1px solid #e5e7eb; font-weight: 600;">
+        <%= number_to_percentage((@league.handling_fee_proportion * 100).to_f, precision: 4, strip_insignificant_zeros: true) %>
+      </td>
+    </tr>
+  <% end %>
+  <% if @league.minimum_final_balance.present? %>
+    <tr>
+      <td style="padding: 12px 16px; font-size: 14px; color: #6b7280; border-top: 1px solid #e5e7eb;">Minimum final balance</td>
+      <td style="padding: 12px 16px; font-size: 14px; color: #111827; border-top: 1px solid #e5e7eb; font-weight: 600;">
+        <%= number_to_currency(@league.minimum_final_balance, precision: 2) %> USD
+      </td>
+    </tr>
+  <% end %>
+</table>

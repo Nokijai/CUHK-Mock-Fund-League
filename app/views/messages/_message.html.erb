@@ -1,0 +1,13 @@
+<%# Single message bubble — data-sender-id used by Stimulus to fix alignment for broadcast %>
+<div class="terminal-chat-msg" id="message_<%= message.id %>" data-sender-id="<%= message.sender_id %>">
+  <div class="terminal-chat-msg-avatar"><%= message.sender.username[0].upcase %></div>
+  <div class="terminal-chat-msg-content">
+    <span class="terminal-chat-msg-author"><%= message.sender.username.upcase %></span>
+    <% if message.body.start_with?("sticker:") %>
+      <span class="terminal-chat-sticker"><%= message.body.sub("sticker:", "") %></span>
+    <% else %>
+      <span class="terminal-chat-msg-body"><%= message.body %></span>
+    <% end %>
+    <span class="terminal-chat-msg-time"><%= message.created_at.strftime("%H:%M") %></span>
+  </div>
+</div>

@@ -1,0 +1,38 @@
+<%# List of teams the user belongs to, grouped by league %>
+<div class="terminal-chat-friends-header">👥 YOUR TEAMS</div>
+<% if team_memberships.any? %>
+  <% team_memberships.group_by { |tm| tm.team.league }.each do |league, memberships| %>
+    <div class="terminal-chat-team-league-header">
+      <span class="terminal-chat-team-league-icon">📊</span>
+      <span class="terminal-chat-team-league-name"><%= league.name %></span>
+      <% if league.end_date.present? && league.end_date < Time.current %>
+        <span class="terminal-chat-team-league-ended">🔒 ENDED</span>
+      <% end %>
+    </div>
+    <% memberships.each do |tm| %>
+      <% ended = league.end_date.present? && league.end_date < Time.current %>
+      <div class="terminal-chat-friend-row <%= 'terminal-chat-friend-row--disabled' if ended %>"
+           data-action="<%= 'click->chat#openTeamConversation' unless ended %>"
+           data-team-id="<%= tm.team.id %>"
+           data-team-name="<%= tm.team.name %>">
+        <div class="terminal-chat-friend-avatar terminal-chat-friend-avatar--team">
+          <span>🏆</span>
+        </div>
+        <div class="terminal-chat-friend-info">
+          <span class="terminal-chat-friend-name"><%= tm.team.name %></span>
+          <span class="terminal-chat-friend-subtitle"><%= ended ? 'League ended' : 'Active' %></span>
+        </div>
+        <% if ended %>
+          <span class="terminal-chat-team-closed-label">CLOSED</span>
+        <% else %>
+          <span class="terminal-chat-friend-arrow">›</span>
+        <% end %>
+      </div>
+    <% end %>
+  <% end %>
+<% else %>
+  <div class="terminal-chat-empty-state">
+    <span class="terminal-chat-empty-icon">🏅</span>
+    <span>Join a team-mode league to chat with your team!</span>
+  </div>
+<% end %>

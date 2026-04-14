@@ -1,7 +1,9 @@
 Rails.application.routes.draw do
   devise_for :users, controllers: {
     sessions: "users/sessions",
-    registrations: "users/registrations"
+    registrations: "users/registrations",
+    # OAuth callbacks live under Users::OmniauthCallbacksController.
+    omniauth_callbacks: "users/omniauth_callbacks"
   }
 
   devise_scope :user do
@@ -18,12 +20,20 @@ Rails.application.routes.draw do
     post "users/verify_signup_otp/resend", to: "users/registrations#resend_otp", as: :users_resend_signup_otp
   end
 
+  # OAuth onboarding: pick a username before entering the app.
+  get "users/onboarding/username", to: "users/onboarding#edit_username", as: :edit_users_onboarding_username
+  patch "users/onboarding/username", to: "users/onboarding#update_username", as: :users_onboarding_username
+
   get "up" => "rails/health#show", as: :rails_health_check
 
   root "home#dashboard"
 
+  # User profile
+  get "profile", to: "profiles#show", as: :profile
+
   # Bookmark / cache may still request /trading; redirect to real nested trade URL.
   get "trading", to: "home#trading_redirect", as: :trading
+  get "leaderboard", to: "leaderboards#index", as: :leaderboard
 
   # Admin namespace
   namespace :admin do
@@ -41,6 +51,7 @@ Rails.application.routes.draw do
   end
 
   resources :leagues do
+    get :refresh, on: :collection
     get "leaderboard", to: "leaderboards#show", as: :leaderboard
     # Team-mode leagues: users join by selecting a team (with password) instead of direct league join.
     resources :teams, controller: "league_teams", only: [ :create, :destroy ] do
@@ -49,12 +60,38 @@ Rails.application.routes.draw do
   end
   resources :league_memberships, only: [ :index, :create, :destroy ]
 
+  # Friendships & friend requests
+  resources :friendships, only: [ :index, :destroy ] do
+    collection do
+      get :search
+    end
+  end
+  resources :friend_requests, only: [ :index, :create ] do
+    member do
+      patch :accept
+      patch :decline
+    end
+  end
+
+  # Chat messages
+  resources :messages, only: [ :create ] do
+    collection do
+      get :world
+      get :team_list
+      get "team_conversation/:team_id", action: :team_conversation, as: :team_conversation
+      get "conversation/:friend_id", action: :conversation, as: :conversation
+      get :friends_list
+    end
+  end
+
   resources :portfolios, only: [ :show ] do
     resources :trades, only: [ :index, :new, :create, :show ]
   end
 
   get "stocks/search", to: "stocks#search"
   get "stocks/:symbol", to: "stocks#show", as: :stock
+  # Ticker news feed (external API, cached). HTML view uses this indirectly too.
+  get "stocks/:symbol/news", to: "stocks#news", as: :stock_news
 
   namespace :api do
     namespace :v1 do

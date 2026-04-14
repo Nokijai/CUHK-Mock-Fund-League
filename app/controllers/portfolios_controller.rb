@@ -50,7 +50,7 @@ class PortfoliosController < ApplicationController
 
   def set_portfolio
     # Reuse preloaded nav context from ApplicationController to avoid repeat queries.
-    if @joined_leagues.blank?
+    if @running_leagues.blank?
       redirect_to leagues_path, alert: "Please join a league first."
       return
     end
@@ -58,12 +58,17 @@ class PortfoliosController < ApplicationController
     if params[:league_id].present?
       @portfolio = @league_portfolio_map[params[:league_id].to_i]
       unless @portfolio
-        redirect_to leagues_path, alert: "Please select a league you joined."
+        redirect_to leagues_path, alert: "Please select a running league."
         return
       end
     else
       @portfolio = @league_portfolio_map.values.find { |p| p.id == params[:id].to_i } ||
-                   current_user.portfolios.find(params[:id])
+                   current_user.portfolios.find_by(id: params[:id])
+
+      unless @portfolio&.league&.running_now?
+        redirect_to leagues_path, alert: "Please select a running league."
+        return
+      end
     end
 
     @selected_league = @portfolio.league

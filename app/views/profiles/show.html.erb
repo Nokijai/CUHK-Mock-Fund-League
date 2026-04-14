@@ -1,0 +1,169 @@
+<% content_for(:title) { "Profile — #{@user.username}" } %>
+
+<div class="terminal-profile-page">
+  <%# ── Profile Card ── %>
+  <div class="terminal-profile-card">
+    <div class="terminal-profile-card-header">
+      <div class="terminal-profile-avatar">
+        <span class="terminal-profile-avatar-letter"><%= @user.username[0].upcase %></span>
+        <span class="terminal-profile-level-badge"><%= @level[:icon] %></span>
+      </div>
+      <div class="terminal-profile-identity">
+        <h1 class="terminal-profile-username"><%= @user.username %></h1>
+        <span class="terminal-profile-level-title"><%= @level[:icon] %> <%= @level[:name].upcase %></span>
+      </div>
+    </div>
+
+    <div class="terminal-profile-divider"></div>
+
+    <%# ── Info Grid ── %>
+    <div class="terminal-profile-info-grid">
+      <div class="terminal-profile-info-item">
+        <span class="terminal-profile-info-label">📧 EMAIL</span>
+        <span class="terminal-profile-info-value"><%= @user.email %></span>
+      </div>
+      <div class="terminal-profile-info-item">
+        <span class="terminal-profile-info-label">🔑 ACCOUNT TYPE</span>
+        <span class="terminal-profile-info-value terminal-profile-role-badge terminal-profile-role-badge--<%= @user.role %>"><%= @user.role.upcase %></span>
+      </div>
+      <div class="terminal-profile-info-item">
+        <span class="terminal-profile-info-label">📅 MEMBER SINCE</span>
+        <span class="terminal-profile-info-value"><%= @member_since.strftime("%B %d, %Y") %></span>
+      </div>
+      <div class="terminal-profile-info-item">
+        <span class="terminal-profile-info-label">🏆 LEAGUES JOINED</span>
+        <span class="terminal-profile-info-value"><%= @leagues_played %></span>
+      </div>
+      <div class="terminal-profile-info-item">
+        <span class="terminal-profile-info-label">👥 FRIENDS</span>
+        <span class="terminal-profile-info-value"><%= @friends_count %></span>
+      </div>
+      <div class="terminal-profile-info-item">
+        <span class="terminal-profile-info-label">⭐ EXPERIENCE</span>
+        <span class="terminal-profile-info-value"><%= @user.experience_points %> XP</span>
+      </div>
+    </div>
+  </div>
+
+  <%# ── Level Progress Card ── %>
+  <div class="terminal-profile-card">
+    <h2 class="terminal-profile-section-title">📊 LEVEL PROGRESSION</h2>
+    <div class="terminal-profile-divider"></div>
+
+    <%# Level track visualization %>
+    <div class="terminal-profile-level-track">
+      <% User::LEVELS.each_with_index do |lvl, idx| %>
+        <div class="terminal-profile-level-node <%= 'terminal-profile-level-node--active' if idx <= @user.level_index %> <%= 'terminal-profile-level-node--current' if idx == @user.level_index %>">
+          <div class="terminal-profile-level-node-icon"><%= lvl[:icon] %></div>
+          <div class="terminal-profile-level-node-name"><%= lvl[:name] %></div>
+          <div class="terminal-profile-level-node-xp"><%= lvl[:threshold] %> XP</div>
+        </div>
+        <% if idx < User::LEVELS.size - 1 %>
+          <div class="terminal-profile-level-connector <%= 'terminal-profile-level-connector--filled' if idx < @user.level_index %>"></div>
+        <% end %>
+      <% end %>
+    </div>
+
+    <%# Shield status %>
+    <% if @user.level_protected? && @user.level_index > 0 %>
+      <div class="terminal-profile-shield-banner">
+        <span class="terminal-profile-shield-icon">🛡️</span>
+        <div class="terminal-profile-shield-text">
+          <strong>DEMOTION SHIELD ACTIVE</strong>
+          <span>You are at the bottom of your level. Next XP loss will result in demotion.</span>
+        </div>
+      </div>
+    <% end %>
+
+    <%# XP progress bar %>
+    <div class="terminal-profile-xp-section">
+      <% if @next_level %>
+        <div class="terminal-profile-xp-header">
+          <span>Progress to <strong><%= @next_level[:icon] %> <%= @next_level[:name] %></strong></span>
+          <span class="terminal-profile-xp-numbers"><%= @progress[:current] %> / <%= @progress[:needed] %> XP</span>
+        </div>
+        <div class="terminal-profile-xp-bar-track">
+          <div class="terminal-profile-xp-bar-fill" style="width: <%= @progress[:percent] %>%"></div>
+        </div>
+        <div class="terminal-profile-xp-hint"><%= (@progress[:needed] - @progress[:current]).clamp(0, Float::INFINITY).to_i %> XP until next level</div>
+      <% else %>
+        <div class="terminal-profile-xp-maxed">
+          <span>👑 MAXIMUM LEVEL REACHED</span>
+          <span class="terminal-profile-xp-numbers"><%= @progress[:current] %> XP</span>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <%# ── How to earn XP Card ── %>
+  <div class="terminal-profile-card">
+    <h2 class="terminal-profile-section-title">🎯 HOW TO EARN XP</h2>
+    <div class="terminal-profile-divider"></div>
+
+    <div class="terminal-profile-xp-rules">
+      <div class="terminal-profile-xp-rule">
+        <div class="terminal-profile-xp-rule-icon">📈</div>
+        <div class="terminal-profile-xp-rule-content">
+          <div class="terminal-profile-xp-rule-title">PORTFOLIO PERFORMANCE</div>
+          <div class="terminal-profile-xp-rule-desc">
+            When a league ends, XP is calculated from your portfolio's percentage change.
+            <br>E.g. $100,000 → $150,000 = <span class="terminal-profile-xp-positive">+50 XP</span>
+            <br>E.g. $100,000 → $50,000 = <span class="terminal-profile-xp-negative">−50 XP</span>
+          </div>
+          <div class="terminal-profile-xp-rule-sub">
+            <span class="terminal-profile-xp-rule-sub-icon">💰</span>
+            <span><strong>Handling Fee Bonus:</strong> If you earn XP, it is multiplied by <code>(1 + Fee × 10)</code>. Higher fee leagues give more XP!</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="terminal-profile-xp-rule">
+        <div class="terminal-profile-xp-rule-icon">🏆</div>
+        <div class="terminal-profile-xp-rule-content">
+          <div class="terminal-profile-xp-rule-title">PLACEMENT BONUS</div>
+          <div class="terminal-profile-xp-rule-desc">Top 3 finishers receive bonus XP:</div>
+          <div class="terminal-profile-xp-placements">
+            <div class="terminal-profile-xp-placement">
+              <span class="terminal-profile-xp-placement-rank terminal-profile-xp-rank--gold">🥇</span>
+              <span>1st Place</span>
+              <span class="terminal-profile-xp-positive">+30 XP</span>
+            </div>
+            <div class="terminal-profile-xp-placement">
+              <span class="terminal-profile-xp-placement-rank terminal-profile-xp-rank--silver">🥈</span>
+              <span>2nd Place</span>
+              <span class="terminal-profile-xp-positive">+20 XP</span>
+            </div>
+            <div class="terminal-profile-xp-placement">
+              <span class="terminal-profile-xp-placement-rank terminal-profile-xp-rank--bronze">🥉</span>
+              <span>3rd Place</span>
+              <span class="terminal-profile-xp-positive">+10 XP</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="terminal-profile-xp-rule">
+        <div class="terminal-profile-xp-rule-icon">🛡️</div>
+        <div class="terminal-profile-xp-rule-content">
+          <div class="terminal-profile-xp-rule-title">DEMOTION SHIELD</div>
+          <div class="terminal-profile-xp-rule-desc">
+            When XP loss would drop you below your current level, you get <strong>one chance</strong> to stay.
+            Your XP is clamped at the level threshold and a shield is activated.
+            <br>If you lose XP again while the shield is active, you will be <span class="terminal-profile-xp-negative">demoted immediately</span>.
+            <br>Earning positive XP removes the shield.
+          </div>
+          <div class="terminal-profile-xp-shield-example">
+            <div class="terminal-profile-xp-example-row">
+              <span>⚡ Elite (190 XP) loses 100 XP →</span>
+              <span class="terminal-profile-xp-positive">Stays at 100 XP (shield on)</span>
+            </div>
+            <div class="terminal-profile-xp-example-row">
+              <span>⚡ Elite (100 XP, 🛡️) loses 30 XP →</span>
+              <span class="terminal-profile-xp-negative">Drops to 70 XP (demoted to Beginner)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

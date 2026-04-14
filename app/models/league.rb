@@ -1,5 +1,6 @@
 class League < ApplicationRecord
   include Searchable
+  attr_accessor :enforce_management_time_rules
 
   # Rule keys live only in DB column `leagues.rules` (jsonb). There are no separate columns.
   # Virtual accessors below read/write these keys; `save` persists the whole `rules` hash.
@@ -14,6 +15,7 @@ class League < ApplicationRecord
   has_many :users, through: :league_memberships
   has_many :portfolios, dependent: :destroy
   has_many :teams, dependent: :destroy
+  scope :running_now, ->(at = Time.current) { where("start_date <= ? AND end_date >= ?", at, at) }
   # League "leader" is the creator (used for team moderation privileges).
   belongs_to :creator, class_name: "User", optional: true
   # Real-time fan-out: every newly created league pushes a UI notification to all subscribers.
@@ -30,9 +32,8 @@ class League < ApplicationRecord
   validate :handling_fee_rule_must_be_valid_proportion
   validate :minimum_final_balance_rule_must_be_non_negative
   validate :team_rule_values_must_be_valid
-  # Once persisted, economic/rule fields are frozen (fairness); only set on create.
-  validate :rules_immutable_after_create, on: :update
-  validate :starting_capital_immutable_after_create, on: :update
+  validate :management_time_rules, if: :enforce_management_time_rules
+  validate :immutable_after_start, on: :update
 
   # Virtual accessors backed by `rules` JSON (same storage as API `league.rules` and leagues#index per-card RULES block).
   def max_participants
@@ -109,8 +110,15 @@ class League < ApplicationRecord
     league_memberships.count >= max_participants
   end
 
-  # Joining is allowed only while the league window is active.
+  # Joining is allowed before start and while running, until the league ends.
   def join_open_now?(at: Time.current)
+    return false if end_date.blank?
+
+    at <= end_date
+  end
+
+  # A league is running once it has started and before it ends.
+  def running_now?(at: Time.current)
     return false if start_date.blank? || end_date.blank?
 
     at >= start_date && at <= end_date
@@ -118,10 +126,16 @@ class League < ApplicationRecord
 
   # Provides consistent reason messaging for web/API join rejections.
   def join_block_reason(at: Time.current)
-    return :not_opened if start_date.present? && at < start_date
     return :expired if end_date.present? && at > end_date
 
     nil
+  end
+
+  # Members can self-quit only before the league starts.
+  def quit_open_now?(at: Time.current)
+    return false if start_date.blank?
+
+    at < start_date
   end
 
   private
@@ -156,18 +170,13 @@ class League < ApplicationRecord
     self.rules = base
   end
 
-  def rules_immutable_after_create
-    # Prefer Rails dirty-tracking that works consistently for jsonb assignments.
-    return unless will_save_change_to_rules?
+  def immutable_after_start
+    # Lock all league edits after start to keep game state consistent.
+    original_start = attribute_in_database("start_date") || start_date
+    return if original_start.blank? || original_start > Time.current
+    return unless has_changes_to_save?
 
-    errors.add(:rules, "cannot be changed after the league is created")
-  end
-
-  # Portfolios are seeded from starting_capital; changing it post-create would desync balances.
-  def starting_capital_immutable_after_create
-    return unless will_save_change_to_starting_capital?
-
-    errors.add(:starting_capital, "cannot be changed after the league is created")
+    errors.add(:base, "League cannot be edited after it has started")
   end
 
   def end_date_after_start_date
@@ -226,8 +235,27 @@ class League < ApplicationRecord
     end
   end
 
+  def management_time_rules
+    return if start_date.blank? || end_date.blank?
+
+    # After start, update errors should come from immutable_after_start only.
+    original_start = attribute_in_database("start_date") if persisted?
+    return if original_start.present? && original_start <= Time.current
+
+    now = Time.current
+    if start_date <= now
+      errors.add(:start_date, "must be after current time")
+    end
+
+    { start_date: start_date, end_date: end_date }.each do |field, value|
+      next if value.year.to_s.rjust(4, "0").length == 4
+
+      errors.add(field, "year must be 4 digits")
+    end
+  end
+
   def broadcast_created_notification
-    # Broadcast into a shared stream that logged-in clients subscribe to from the layout.
+    # Global stream (see application layout): persistent card until each user clicks ×; unique id avoids DOM clashes when many leagues are created.
     broadcast_prepend_to(
       "league_notifications",
       target: "realtime-notifications",
@@ -236,7 +264,9 @@ class League < ApplicationRecord
         title: "New league created",
         body: name,
         league: self,
-        variant: :success
+        tone: :success,
+        notification_id: "league-created-#{id}-#{SecureRandom.hex(4)}",
+        auto_dismiss_ms: 0
       }
     )
   end

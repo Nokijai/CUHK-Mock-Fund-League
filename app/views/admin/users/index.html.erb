@@ -10,13 +10,40 @@
   <%= link_to "CREATE USER", new_admin_user_path, class: "terminal-btn terminal-btn-primary" %>
 </div>
 
-<%= render "admin/shared/search_box", search_placeholder: "Search by username or email...", search_endpoint: admin_users_path %>
+<div class="terminal-admin-filters-row">
+  <div class="terminal-window terminal-search-box terminal-admin-search-box">
+    <%= form_with url: admin_users_path, method: :get, local: true, class: "terminal-admin-filter-form", data: { controller: "admin-filter-autosubmit", admin_filter_autosubmit_delay_value: 100 } do %>
+      <%= hidden_field_tag :role, @role_filter %>
+      <label for="admin-users-search" class="terminal-label">SEARCH USERS</label>
+      <input
+        type="text"
+        name="search"
+        id="admin-users-search"
+        class="terminal-input"
+        placeholder="Search by username or email..."
+        value="<%= @search_query %>"
+        data-action="input->admin-filter-autosubmit#queueSubmit"
+      >
+    <% end %>
+  </div>
+
+  <div class="terminal-window terminal-search-box terminal-admin-filter-box">
+    <%= form_with url: admin_users_path, method: :get, local: true, class: "terminal-admin-filter-form" do %>
+      <%= hidden_field_tag :search, @search_query %>
+      <label for="admin-users-role" class="terminal-label">ROLE FILTER</label>
+      <%= select_tag :role,
+        options_for_select([["ALL ROLES", ""]] + User::ROLES.map { |role| [role.upcase, role] }, @role_filter),
+        id: "admin-users-role",
+        class: "terminal-input",
+        onchange: "this.form.requestSubmit()" %>
+    <% end %>
+  </div>
+</div>
 
 <div class="terminal-window">
   <table class="terminal-table">
     <thead>
       <tr>
-        <th>ID</th>
         <th>USERNAME</th>
         <th>EMAIL</th>
         <th>ROLE</th>
@@ -28,7 +55,6 @@
     <tbody>
       <% @users.each do |user| %>
         <tr>
-          <td class="terminal-muted-cell">#<%= user.id %></td>
           <td><%= user.username.presence || user.email %></td>
           <td><%= user.email %></td>
           <td><span class="<%= user.admin? ? 'terminal-text-up' : '' %>"><%= user.role.upcase %></span></td>
@@ -36,7 +62,7 @@
             <% if user.signup_pending? %>
               <span class="terminal-badge-inactive">PENDING</span>
             <% else %>
-              <span class="terminal-badge-active">VERIFIED</span>
+              <span>VERIFIED</span>
             <% end %>
           </td>
           <td class="terminal-muted-cell"><%= user.created_at.strftime("%Y-%m-%d") %></td>
@@ -78,13 +104,13 @@
 <% if @users.total_pages > 1 %>
   <div class="terminal-pagination">
     <% if @users.prev_page %>
-      <%= link_to "PREV", admin_users_path(page: @users.prev_page, search: params[:search]), class: "terminal-btn" %>
+      <%= link_to "PREV", admin_users_path(page: @users.prev_page, search: @search_query, role: @role_filter), class: "terminal-btn" %>
     <% else %>
       <span class="terminal-btn terminal-btn--ghost">PREV</span>
     <% end %>
     <span class="terminal-pagination-info">Page <%= @users.current_page %> of <%= @users.total_pages %></span>
     <% if @users.next_page %>
-      <%= link_to "NEXT", admin_users_path(page: @users.next_page, search: params[:search]), class: "terminal-btn" %>
+      <%= link_to "NEXT", admin_users_path(page: @users.next_page, search: @search_query, role: @role_filter), class: "terminal-btn" %>
     <% else %>
       <span class="terminal-btn terminal-btn--ghost">NEXT</span>
     <% end %>

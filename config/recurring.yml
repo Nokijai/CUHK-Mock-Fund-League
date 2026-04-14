@@ -14,7 +14,7 @@ development:
   nestak_market_data_refresh_full:
     class: MarketDataRefreshFullJob
     schedule: every hour at minute 7
-  # Send league end-time reminders to joined users (1h / 15m / 5m / expiry).
+  # League start (joined users) + end countdown (1d / 1h / 30m / 15m); toasts 10s except new-league (× only).
   league_expiry_reminders:
     class: LeagueExpiryReminderJob
     schedule: every minute
@@ -30,7 +30,7 @@ production:
   nestak_market_data_refresh_full:
     class: MarketDataRefreshFullJob
     schedule: every hour at minute 7
-  # Send league end-time reminders to joined users (1h / 15m / 5m / expiry).
+  # League start (joined users) + end countdown (1d / 1h / 30m / 15m); toasts 10s except new-league (× only).
   league_expiry_reminders:
     class: LeagueExpiryReminderJob
     schedule: every minute

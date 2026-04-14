@@ -10,7 +10,6 @@ export default class extends Controller {
   }
 
   connect() {
-    console.log('[stock-search] Controller connected')
     // Debounce timeout reference
     this._debounceTimer = null
     this._lastQuery = this.queryValue || ""
@@ -42,8 +41,6 @@ export default class extends Controller {
       return
     }
     
-    console.log('[stock-search] Input changed:', query)
-    
     // Debounce: wait 300ms after user stops typing
     this._debounceTimer = setTimeout(() => {
       this._lastQuery = query
@@ -54,7 +51,6 @@ export default class extends Controller {
   // Perform the search
   async search() {
     const query = this.inputTarget.value.trim()
-    console.log('[stock-search] Searching for:', query)
     
     try {
       // Build search URL with query parameter
@@ -84,7 +80,6 @@ export default class extends Controller {
       const newTbody = doc.querySelector('.terminal-available-stocks tbody')
       if (newTbody && this.resultsTarget) {
         this.resultsTarget.innerHTML = newTbody.innerHTML
-        console.log('[stock-search] Results updated')
       }
       
       // Update URL without page reload (for bookmarking/sharing)

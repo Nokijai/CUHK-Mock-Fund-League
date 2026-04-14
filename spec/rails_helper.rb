@@ -1,6 +1,15 @@
 # This file is copied to spec/ when you run 'rails generate rspec:install'
 require 'spec_helper'
-ENV['RAILS_ENV'] ||= 'test'
+ENV['RAILS_ENV'] = 'test'
+
+# Test safety: never let RSpec connect to a real/production database just because
+# dotenv loaded a `DATABASE_URL` from `.env`. CI explicitly sets DATABASE_URL to its
+# service container, but local runs should default to `config/database.yml` test DB.
+unless ENV["ALLOW_DATABASE_URL_IN_TEST"] == "1" || ENV["CI"] == "true"
+  %w[DATABASE_URL QUEUE_DATABASE_URL CACHE_DATABASE_URL CABLE_DATABASE_URL].each do |key|
+    ENV.delete(key)
+  end
+end
 
 # Local test runs may load `.env` (dotenv-rails) which can contain Docker service hostnames
 # like `db`. When not running inside Docker, rewrite those URLs to localhost so RSpec can boot.
@@ -61,7 +70,7 @@ require 'devise'
 # Request specs use Rack::Test default User-Agent ("Rack::Test"), which can be rejected by
 # `allow_browser versions: :modern`. Force a modern UA so request specs exercise controllers
 # instead of the browser gate returning 403.
-Rails.application.env_config["HTTP_USER_AGENT"] ||= "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+Rails.application.env_config["HTTP_USER_AGENT"] = "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 
 # Requires supporting ruby files with custom matchers and macros, etc, in
 # spec/support/ and its subdirectories. Files matching `spec/**/*_spec.rb` are

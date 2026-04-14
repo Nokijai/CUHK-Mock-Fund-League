@@ -2,13 +2,21 @@ class Admin::UsersController < Admin::BaseController
   before_action :set_user, only: [ :edit, :update, :destroy, :approve_signup ]
 
   def index
-    @users = User.search_and_paginate(
-      params[:search],
-      # Users are now username-first; keep searching email too for admin workflows.
-      %w[username email],
-      page: params[:page],
-      per_page: 10
-    )
+    scope = User.all
+
+    @role_filter = params[:role].to_s
+    if User::ROLES.include?(@role_filter)
+      scope = scope.where(role: @role_filter)
+    else
+      @role_filter = ""
+    end
+
+    @search_query = params[:search].to_s.strip
+    if @search_query.present?
+      scope = apply_fuzzy_search(scope, [ "username", "email" ], @search_query)
+    end
+
+    @users = scope.order(created_at: :desc, id: :desc).page(params[:page]).per(10)
   end
 
   def new

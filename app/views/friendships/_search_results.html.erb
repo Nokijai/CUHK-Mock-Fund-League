@@ -1,0 +1,22 @@
+<% users.each do |user| %>
+  <%
+    already_friends = current_user.friends_with?(user)
+    pending_sent = current_user.sent_friend_requests.pending.exists?(receiver_id: user.id)
+    pending_received = current_user.received_friend_requests.pending.exists?(sender_id: user.id)
+  %>
+  <div class="terminal-friend-search-row" id="friend-search-user-<%= user.id %>">
+    <span class="terminal-friend-name"><%= user.username %></span>
+    <% if already_friends %>
+      <span class="terminal-friend-status-ok">FRIENDS</span>
+    <% elsif pending_sent %>
+      <span class="terminal-friend-status-sent">REQUEST SENT</span>
+    <% elsif pending_received %>
+      <span class="terminal-friend-status-sent">PENDING ACCEPT</span>
+    <% else %>
+      <%= button_to "ADD", friend_requests_path(receiver_id: user.id), method: :post, class: "terminal-friend-add-btn" %>
+    <% end %>
+  </div>
+<% end %>
+<% if users.empty? %>
+  <div class="terminal-friend-empty">No users found.</div>
+<% end %>

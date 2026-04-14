@@ -1,0 +1,26 @@
+<div class="terminal-auth-page">
+  <div class="terminal-auth-card">
+    <div class="terminal-window">
+      <div class="terminal-window-title">CHOOSE USERNAME</div>
+      <div class="terminal-auth-body">
+        <%# OAuth users must pick a unique username before continuing. %>
+        <%= form_with model: current_user, url: users_onboarding_username_path, method: :patch do |f| %>
+          <div class="terminal-form-field">
+            <%= f.label :username, "USERNAME", class: "terminal-label" %>
+            <div class="terminal-form-hint">No spaces. Letters, digits, and underscores recommended.</div>
+            <%= f.text_field :username, class: "terminal-input", autofocus: true, autocomplete: "username" %>
+          </div>
+
+          <div class="terminal-form-actions">
+            <%= f.submit "SAVE USERNAME", class: "terminal-btn terminal-btn-primary" %>
+          </div>
+        <% end %>
+
+        <div class="terminal-form-divider">
+          <p>Signed in as <strong><%= current_user.oauth_email.presence || current_user.email %></strong></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+

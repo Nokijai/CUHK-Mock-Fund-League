@@ -1,0 +1,24 @@
+<%# World chat conversation %>
+<%= turbo_stream_from stream_key %>
+<div class="terminal-chat-conv-header">
+  <span class="terminal-chat-conv-header-icon">🌐</span>
+  <span class="terminal-chat-conv-name">WORLD CHAT</span>
+  <span class="terminal-chat-conv-badge">PUBLIC</span>
+</div>
+<div class="terminal-chat-messages" id="chat-messages-<%= stream_key %>" data-chat-target="messagesContainer">
+  <% if messages.empty? %>
+    <div class="terminal-chat-empty-state">
+      <span class="terminal-chat-empty-icon">💬</span>
+      <span>No messages yet. Start the conversation!</span>
+    </div>
+  <% end %>
+  <% messages.each do |msg| %>
+    <%= render partial: "messages/message", locals: { message: msg, current_user_id: current_user.id } %>
+  <% end %>
+</div>
+<form class="terminal-chat-form" data-action="submit->chat#sendMessage" data-chat-target="messageForm" data-channel-type="world">
+  <button type="button" class="terminal-chat-emoji-btn" data-action="click->chat#toggleEmojiPicker" title="Emoji">😊</button>
+  <button type="button" class="terminal-chat-sticker-btn" data-action="click->chat#toggleStickerPicker" title="Stickers">🎨</button>
+  <input type="text" class="terminal-chat-input" placeholder="Say something to everyone..." data-chat-target="messageInput" autocomplete="off" maxlength="2000">
+  <button type="submit" class="terminal-chat-send-btn">➤ SEND</button>
+</form>

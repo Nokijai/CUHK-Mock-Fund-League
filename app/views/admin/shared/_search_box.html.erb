@@ -20,6 +20,7 @@
 <%= javascript_tag nonce: true do %>
   var searchTimeout;
   var searchEndpoint = '<%= search_endpoint %>';
+  var searchTargetSelector = '<%= local_assigns[:search_target_selector].presence || ".terminal-window table" %>';
 
   function performSearch(query) {
     var clearBtn = document.getElementById('clearBtn');
@@ -34,14 +35,11 @@
       .then(function(html) {
         var parser = new DOMParser();
         var doc = parser.parseFromString(html, 'text/html');
-        var newTable = doc.querySelector('.terminal-window table');
-        var oldTable = document.querySelector('.terminal-window table');
-        if (newTable && oldTable) {
-          oldTable.parentElement.innerHTML = newTable.parentElement.innerHTML;
+        var newTarget = doc.querySelector(searchTargetSelector);
+        var oldTarget = document.querySelector(searchTargetSelector);
+        if (newTarget && oldTarget) {
+          oldTarget.outerHTML = newTarget.outerHTML;
         }
-        var newMeta = doc.querySelector('.terminal-page-meta');
-        var oldMeta = document.querySelector('.terminal-page-meta');
-        if (newMeta && oldMeta) oldMeta.textContent = newMeta.textContent;
       });
     }, 150);
   }

@@ -8,7 +8,7 @@ class LeagueTeamsController < ApplicationController
     end
 
     unless league.join_open_now?
-      # Keep join window rules consistent for both team join and individual join.
+      # Keep registration window rules consistent for both team join and individual join.
       alert_message = league.join_block_reason == :not_opened ? "This league has not opened yet." : "This league has expired."
       redirect_to leagues_path(anchor: "league-#{league.id}"), alert: alert_message
       return

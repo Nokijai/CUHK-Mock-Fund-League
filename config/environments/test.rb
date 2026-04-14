@@ -6,6 +6,14 @@
 Rails.application.configure do
   # When dotenv-rails loads `.env` in tests, it may contain Docker service hostnames (db).
   # Local test runs should use localhost unless explicitly overridden.
+  #
+  # IMPORTANT: prevent accidental truncation/purge of the development database when running
+  # `db:test:*` tasks. Rails merges the special DATABASE_URL env var into the test connection
+  # config unless we clear it.
+  unless ENV["ALLOW_DATABASE_URL_IN_TEST"] == "true"
+    %w[DATABASE_URL QUEUE_DATABASE_URL CACHE_DATABASE_URL CABLE_DATABASE_URL].each { |k| ENV.delete(k) }
+  end
+
   unless File.exist?("/.dockerenv") || ENV["CI"].present?
     ENV["PGHOST"] = "localhost" if ENV["PGHOST"].to_s == "db"
 
@@ -14,6 +22,10 @@ Rails.application.configure do
       ENV.delete(key)
     end
   end
+
+  # When running tests inside Docker, Postgres is normally reachable via the compose service hostname.
+  # Use a dedicated env var so local (non-docker) test runs keep defaulting to localhost.
+  ENV["PGHOST_TEST"] ||= "db" if File.exist?("/.dockerenv")
 
   # Configure 'rails notes' to inspect Cucumber files
   config.annotations.register_directories("features")
@@ -33,6 +45,9 @@ Rails.application.configure do
   # Configure public file server for tests with cache-control for performance.
   config.public_file_server.headers = { "cache-control" => "public, max-age=3600" }
 
+  # Request specs often hit `www.example.com` (Rack::Test default). Disable host authorization in test.
+  config.hosts.clear
+
   # Show full error reports.
   config.consider_all_requests_local = true
   config.cache_store = :null_store
@@ -50,9 +65,15 @@ Rails.application.configure do
   # The :test delivery method accumulates sent emails in the
   # ActionMailer::Base.deliveries array.
   config.action_mailer.delivery_method = :test
+  # Specs assert on ActionMailer::Base.deliveries; enable deliveries in test.
+  config.action_mailer.perform_deliveries = true
 
   # Set host to be used by links generated in mailer templates.
   config.action_mailer.default_url_options = { host: "example.com" }
+
+  # Request specs use www.example.com by default; allow it to avoid HostAuthorization 403s.
+  config.hosts << "www.example.com"
+  config.hosts << "example.com"
 
   # Print deprecation notices to the stderr.
   config.active_support.deprecation = :stderr

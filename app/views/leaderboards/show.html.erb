@@ -3,26 +3,14 @@
 <div class="lb-page" data-current-user-id="<%= @current_entry_id %>"
      data-end-time="<%= @league.end_date&.to_time&.end_of_day&.to_i&.*(1000) %>">
 
-  <%# ── League Selector Bar ── %>
+  <%# ── Leaderboard Header ── %>
   <div class="lb-comp-bar">
     <div class="lb-comp-selector">
       <span class="lb-comp-label">LEAGUE</span>
-      <div class="lb-comp-dropdown">
-        <button class="lb-comp-current" type="button" onclick="this.parentElement.classList.toggle('open')">
-          <%= @league.name.upcase %>
-          <span class="lb-comp-arrow">▾</span>
-        </button>
-        <ul class="lb-comp-list">
-          <% @leagues.each do |lg| %>
-            <li>
-              <%= link_to lg.name.upcase, league_leaderboard_path(lg),
-                    class: lg.id == @league.id ? "active" : nil %>
-            </li>
-          <% end %>
-        </ul>
-      </div>
+      <span class="lb-comp-current"><%= @league.name.upcase %></span>
     </div>
     <div class="lb-comp-actions">
+      <%= link_to "ARCHIVE", leaderboard_path, class: "terminal-btn" %>
       <button class="terminal-btn" type="button" onclick="document.getElementById('lb-prizes-modal').style.display='flex'">PRIZES</button>
       <%= link_to "RULES", league_path(@league), class: "terminal-btn" %>
       <%= link_to "BACK", league_path(@league), class: "terminal-btn" %>
@@ -289,12 +277,6 @@
   var scrollEl = document.getElementById('lb-table-scroll');
   var countdownEl = document.getElementById('lb-countdown');
   var pageEl = document.querySelector('.lb-page');
-
-  document.addEventListener('click', function(e) {
-    document.querySelectorAll('.lb-comp-dropdown.open').forEach(function(d) {
-      if (!d.contains(e.target)) d.classList.remove('open');
-    });
-  });
 
   if (countdownEl && pageEl.dataset.endTime) {
     var endTime = parseInt(pageEl.dataset.endTime, 10);
