@@ -9,4 +9,3 @@ class AddLeagueClosedEmailSentAtToLeagueMemberships < ActiveRecord::Migration[8.
     add_index :league_memberships, :league_closed_email_sent_at
   end
 end
-
