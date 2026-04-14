@@ -27,7 +27,10 @@ class LeaderboardsController < ApplicationController
   end
 
   def set_league_archive
-    all_leagues = League.includes(:creator).order(start_date: :desc, name: :asc)
+    all_leagues = League
+      .includes(:creator)
+      .where("start_date <= ?", Date.current)
+      .order(start_date: :desc, name: :asc)
     @leagues_by_month = all_leagues.group_by { |league| league.start_date&.to_date&.beginning_of_month }
     @leagues_by_month = @leagues_by_month.reject { |month, _| month.blank? }
   end
