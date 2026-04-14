@@ -7,30 +7,114 @@
   </div>
 </div>
 
-<div class="terminal-league-cards lb-archive-months">
+<%# ── Filter Bar ── %>
+<div class="lb-filter-bar terminal-window">
+  <div class="lb-filter-row">
+    <div class="lb-filter-group">
+      <label class="lb-filter-label" for="lb-filter-status">STATUS</label>
+      <select class="lb-filter-input lb-filter-select" id="lb-filter-status">
+        <option value="all">All</option>
+        <option value="active">Active</option>
+        <option value="ended">Ended</option>
+      </select>
+    </div>
+
+    <div class="lb-filter-group">
+      <label class="lb-filter-label" for="lb-filter-name">NAME</label>
+      <input class="lb-filter-input" id="lb-filter-name" type="text" placeholder="Search league…" autocomplete="off">
+    </div>
+
+    <div class="lb-filter-group">
+      <label class="lb-filter-label" for="lb-filter-year">YEAR</label>
+      <input class="lb-filter-input lb-filter-year-input" id="lb-filter-year" type="text"
+             placeholder="e.g. 2026" maxlength="4" autocomplete="off" spellcheck="false">
+    </div>
+
+    <div class="lb-filter-group">
+      <label class="lb-filter-label" for="lb-filter-month">MONTH</label>
+      <select class="lb-filter-input lb-filter-select" id="lb-filter-month">
+        <option value="">All months</option>
+        <option value="01">January</option>
+        <option value="02">February</option>
+        <option value="03">March</option>
+        <option value="04">April</option>
+        <option value="05">May</option>
+        <option value="06">June</option>
+        <option value="07">July</option>
+        <option value="08">August</option>
+        <option value="09">September</option>
+        <option value="10">October</option>
+        <option value="11">November</option>
+        <option value="12">December</option>
+      </select>
+    </div>
+
+    <div class="lb-filter-group">
+      <label class="lb-filter-label" for="lb-filter-prize">PRIZE</label>
+      <input class="lb-filter-input" id="lb-filter-prize" type="text" placeholder="e.g. Trophy" autocomplete="off">
+    </div>
+
+    <div class="lb-filter-group">
+      <label class="lb-filter-label" for="lb-filter-type">PARTICIPANT TYPE</label>
+      <select class="lb-filter-input lb-filter-select" id="lb-filter-type">
+        <option value="all">All</option>
+        <option value="individual">Individual</option>
+        <option value="team">Team</option>
+      </select>
+    </div>
+
+    <div class="lb-filter-group lb-filter-actions">
+      <button class="terminal-btn lb-filter-reset-btn" id="lb-filter-reset" type="button">RESET</button>
+    </div>
+  </div>
+</div>
+
+<div class="terminal-league-cards lb-archive-months" id="lb-archive-months">
   <% @leagues_by_month.each do |month_start, month_leagues| %>
-    <details class="terminal-window terminal-league-card lb-archive-month-card">
+    <details class="terminal-window terminal-league-card lb-archive-month-card" open>
       <summary class="terminal-league-card-summary">
         <div class="terminal-league-summary-main">
           <strong><%= month_start.strftime("%B %Y").upcase %></strong>
         </div>
         <div class="terminal-league-summary-meta">
-          <span><%= pluralize(month_leagues.size, "league") %></span>
+          <span class="lb-month-count"><%= pluralize(month_leagues.size, "league") %></span>
         </div>
       </summary>
 
       <div class="terminal-league-card-body lb-archive-month-body">
         <div class="lb-archive-league-list">
           <% month_leagues.each do |league| %>
-            <%= link_to league_leaderboard_path(league), class: "terminal-window terminal-league-card lb-archive-league-card-link" do %>
+            <%
+              status = league_status(league)
+              prizes_text = league_prizes_text(league)
+              rules_text = league_rules_text(league)
+            %>
+            <%= link_to league_leaderboard_path(league),
+                  class: "terminal-window terminal-league-card lb-archive-league-card-link",
+                  data: {
+                    status: status,
+                    name: league.name.downcase,
+                    start: league.start_date&.strftime('%Y-%m-%d'),
+                    end: league.end_date&.strftime('%Y-%m-%d'),
+                    prizes: prizes_text.downcase,
+                    type: league.team_mode? ? 'team' : 'individual'
+                  } do %>
               <div class="terminal-league-card-summary">
                 <div class="terminal-league-summary-main">
+                  <span class="lb-status-light lb-status-light--<%= status %>"></span>
                   <strong><%= league.name %></strong>
                 </div>
                 <div class="terminal-league-summary-meta">
                   <span><%= format_datetime(league.start_date, format: :short) %> → <%= format_datetime(league.end_date, format: :short) %></span>
                 </div>
               </div>
+
+              <% if prizes_text.present? %>
+                <div class="lb-card-details">
+                  <span class="lb-card-tag">PRIZES: <%= prizes_text %></span>
+                  <span class="lb-card-tag"><%= league.team_mode? ? 'TEAM MODE' : 'INDIVIDUAL' %></span>
+                </div>
+              <% end %>
             <% end %>
           <% end %>
         </div>
@@ -39,8 +123,127 @@
   <% end %>
 </div>
 
+<div class="terminal-window lb-no-results" id="lb-no-results" style="display:none">
+  <p class="terminal-empty">No leagues match the current filters.</p>
+</div>
+
 <% if @leagues_by_month.empty? %>
   <div class="terminal-window">
     <p class="terminal-empty">No leagues available for leaderboard archive.</p>
   </div>
+<% end %>
+
+<%= javascript_tag nonce: true do %>
+(function() {
+  var statusEl  = document.getElementById('lb-filter-status');
+  var nameEl    = document.getElementById('lb-filter-name');
+  var yearEl    = document.getElementById('lb-filter-year');
+  var monthEl   = document.getElementById('lb-filter-month');
+  var prizeEl   = document.getElementById('lb-filter-prize');
+  var typeEl    = document.getElementById('lb-filter-type');
+  var resetBtn  = document.getElementById('lb-filter-reset');
+  var noResults = document.getElementById('lb-no-results');
+  var container = document.getElementById('lb-archive-months');
+
+  // Build a YYYY-MM-DD range from the year + month selectors.
+  // Year only  → full year range.
+  // Month only → that month across all years (done per-card below).
+  // Both       → exact month range.
+  function buildDateRange(year, month) {
+    var validYear = /^\d{4}$/.test(year.trim());
+    if (!validYear && !month) return null; // nothing set
+    if (validYear && !month) {
+      return { from: year + '-01-01', to: year + '-12-31', yearOnly: year };
+    }
+    if (validYear && month) {
+      var y = parseInt(year, 10);
+      var m = parseInt(month, 10);
+      var lastDay = new Date(y, m, 0).getDate();
+      return { from: year + '-' + month + '-01', to: year + '-' + month + '-' + String(lastDay).padStart(2, '0') };
+    }
+    // month only — no year constraint; pass month number for per-card check
+    return { monthOnly: month };
+  }
+
+  function applyFilters() {
+    var statusVal = statusEl.value;
+    var nameVal   = nameEl.value.trim().toLowerCase();
+    var year      = yearEl.value.trim();
+    var month     = monthEl.value;
+    var dateRange = buildDateRange(year, month);
+    var prizeVal  = prizeEl.value.trim().toLowerCase();
+    var typeVal   = typeEl.value;
+
+    // Flag invalid year input
+    if (year && !/^\d{4}$/.test(year)) {
+      yearEl.classList.add('lb-filter-input--invalid');
+    } else {
+      yearEl.classList.remove('lb-filter-input--invalid');
+    }
+
+    var cards = container.querySelectorAll('.lb-archive-league-card-link');
+    var totalVisible = 0;
+
+    cards.forEach(function(card) {
+      var d = card.dataset;
+      var show = true;
+
+      if (statusVal !== 'all' && d.status !== statusVal) show = false;
+      if (nameVal && d.name.indexOf(nameVal) === -1) show = false;
+      if (dateRange) {
+        var cardStart = (d.start || '').slice(0, 10);
+        var cardEnd   = (d.end   || '').slice(0, 10);
+        if (dateRange.monthOnly) {
+          // Month-only: check if any month in the league window matches the selected month number.
+          // Iterate month by month between cardStart and cardEnd.
+          var mm = dateRange.monthOnly;
+          var cs = new Date(cardStart + 'T00:00:00');
+          var ce = new Date(cardEnd   + 'T00:00:00');
+          var found = false;
+          var cur = new Date(cs.getFullYear(), cs.getMonth(), 1);
+          while (cur <= ce) {
+            if (String(cur.getMonth() + 1).padStart(2, '0') === mm) { found = true; break; }
+            cur.setMonth(cur.getMonth() + 1);
+          }
+          if (!found) show = false;
+        } else {
+          // Normal range overlap: league start <= range.to AND league end >= range.from.
+          if (cardEnd < dateRange.from || cardStart > dateRange.to) show = false;
+        }
+      }
+      if (prizeVal && d.prizes.indexOf(prizeVal) === -1) show = false;
+      if (typeVal !== 'all' && d.type !== typeVal) show = false;
+
+      card.style.display = show ? '' : 'none';
+      if (show) totalVisible++;
+    });
+
+    // Hide month groups with no visible cards
+    var months = container.querySelectorAll('.lb-archive-month-card');
+    months.forEach(function(month) {
+      var visibleCards = month.querySelectorAll('.lb-archive-league-card-link:not([style*="display: none"])');
+      month.style.display = visibleCards.length ? '' : 'none';
+      var countEl = month.querySelector('.lb-month-count');
+      if (countEl) countEl.textContent = visibleCards.length + (visibleCards.length === 1 ? ' league' : ' leagues');
+    });
+
+    noResults.style.display = totalVisible === 0 ? '' : 'none';
+  }
+
+  [statusEl, nameEl, yearEl, monthEl, prizeEl, typeEl].forEach(function(el) {
+    el.addEventListener('input', applyFilters);
+    el.addEventListener('change', applyFilters);
+  });
+
+  resetBtn.addEventListener('click', function() {
+    statusEl.value = 'all';
+    nameEl.value = '';
+    yearEl.value = '';
+    yearEl.classList.remove('lb-filter-input--invalid');
+    monthEl.value = '';
+    prizeEl.value = '';
+    typeEl.value = 'all';
+    applyFilters();
+  });
+})();
 <% end %>

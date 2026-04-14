@@ -19,6 +19,7 @@ class LeagueExpiryReminderJob < ApplicationJob
     deliver_league_started_to_members(now)
     deliver_league_ended_emails_to_members(now)
     deliver_end_reminders_to_members(now)
+    deliver_winner_congratulations(now)
   end
 
   private
@@ -134,6 +135,45 @@ class LeagueExpiryReminderJob < ApplicationJob
 
   def claim_end_slot(league_id, user_id, checkpoint)
     key = "league_expiry_notice/#{league_id}/#{user_id}/#{checkpoint}"
+    Rails.cache.write(key, true, expires_in: 3.days, unless_exist: true)
+  end
+
+  # When a league just ended, compute the final leaderboard and broadcast a global congrats to the winner.
+  def deliver_winner_congratulations(now)
+    League
+      .where(end_date: (now - CHECK_WINDOW)..now)
+      .find_each do |league|
+        next unless claim_winner_congrats_slot(league.id)
+
+        rankings = if league.team_mode?
+          TeamLeaderboardService.new(league).compute
+        else
+          LeaderboardService.new(league).compute
+        end
+
+        winner = rankings.first
+        next unless winner
+
+        winner_name = league.team_mode? ? winner[:team_name] : winner[:name]
+
+        league.broadcast_prepend_to(
+          "league_notifications",
+          target: "realtime-notifications",
+          partial: "leagues/realtime_notification",
+          locals: {
+            title: "League finished! \u{1F3C6}",
+            body: "Congratulations to #{winner_name} for winning \"#{league.name}\"!",
+            league: league,
+            tone: :success,
+            notification_id: "league-winner-#{league.id}",
+            auto_dismiss_ms: 0
+          }
+        )
+      end
+  end
+
+  def claim_winner_congrats_slot(league_id)
+    key = "league_winner_congrats/#{league_id}"
     Rails.cache.write(key, true, expires_in: 3.days, unless_exist: true)
   end
 
